@@ -43,25 +43,44 @@ backend/
 
 ### 1. Install MongoDB
 
+**Option A: MongoDB Atlas (Cloud - Recommended)**
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
+2. Create a FREE M0 cluster
+3. Create a database user and whitelist your IP
+4. Get your connection string
+
+📖 **Detailed Guide:** See [MONGODB_SETUP.md](MONGODB_SETUP.md)
+
+**Option B: Local MongoDB**
+
 Download and install MongoDB from [mongodb.com](https://www.mongodb.com/try/download/community)
 
-### 2. Configure Application Properties
+### 2. Configure Environment Variables
 
-Edit `src/main/resources/application.properties`:
+**Create a `.env` file** in the backend directory (or set system environment variables):
 
 ```properties
-# MongoDB Configuration
-spring.data.mongodb.uri=mongodb://localhost:27017/campuseats
+# MongoDB Atlas connection string (or use localhost)
+MONGODB_URI=mongodb+srv://your-username:your-password@your-cluster.xxxxx.mongodb.net/campuseats?retryWrites=true&w=majority
 
-# JWT Secret (Change this!)
-jwt.secret=your-secret-key-change-this-in-production-make-it-at-least-256-bits
+# JWT Secret (change this!)
+JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters-long
 
-# Stripe API Key
-stripe.api.key=your-stripe-secret-key-here
+# Stripe API Key (optional for now)
+STRIPE_API_KEY=sk_test_your-stripe-key
 
-# CORS (Update for production)
-cors.allowed.origins=http://localhost:5173
+# CORS Origins
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
+
+**Windows PowerShell:**
+```powershell
+$env:MONGODB_URI="mongodb+srv://username:password@cluster.mongodb.net/campuseats?retryWrites=true&w=majority"
+$env:JWT_SECRET="your-secret-key-here"
+```
+
+> **Note:** If `MONGODB_URI` is not set, the application will use `mongodb://localhost:27017/campuseats`
 
 ### 3. Build the Project
 
