@@ -1,16 +1,14 @@
-import { useState, useContext } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthContext } from '../context/AuthContext'
+import canteenAuthService from '../services/canteenAuthService'
 
-function Login() {
+function CanteenLogin() {
     const [formData, setFormData] = useState({
-        username: '',
+        email: '',
         password: '',
     })
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
-
-    const { login } = useContext(AuthContext)
     const navigate = useNavigate()
 
     const handleChange = (e) => {
@@ -26,21 +24,21 @@ function Login() {
         setLoading(true)
 
         try {
-            await login(formData)
-            navigate('/dashboard')
+            await canteenAuthService.login(formData)
+            navigate('/canteen/dashboard')
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please try again.')
+            setError(err.response?.data || 'Login failed. Please check your credentials.')
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center px-4">
             <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">CampusEats</h1>
-                    <p className="text-gray-600 mt-2">Login to your account</p>
+                    <p className="text-gray-600 mt-2">Canteen Owner Login</p>
                 </div>
 
                 {error && (
@@ -51,17 +49,17 @@ function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                            Username
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                            Email
                         </label>
                         <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            value={formData.username}
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={formData.email}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                     </div>
 
@@ -76,30 +74,31 @@ function Login() {
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                     </div>
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                        className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                     >
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
 
-                <p className="text-center mt-6 text-gray-600">
-                    Don't have an account?{' '}
-                    <Link to="/signup" className="text-primary-600 hover:text-primary-700 font-semibold">
-                        Sign up
-                    </Link>
-                </p>
+                <div className="mt-6 text-center">
+                    <p className="text-gray-600">
+                        Don't have a canteen?{' '}
+                        <Link to="/canteen/register" className="text-orange-600 hover:text-orange-700 font-semibold">
+                            Register your canteen
+                        </Link>
+                    </p>
+                </div>
 
-                <div className="text-center mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-gray-600 text-sm mb-2">Are you a canteen owner?</p>
-                    <Link to="/canteen/login" className="text-orange-600 hover:text-orange-700 font-semibold">
-                        Canteen Owner Login →
+                <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+                    <Link to="/login" className="text-sm text-gray-600 hover:text-gray-700">
+                        ← Back to Customer Login
                     </Link>
                 </div>
             </div>
@@ -107,4 +106,4 @@ function Login() {
     )
 }
 
-export default Login
+export default CanteenLogin
