@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import PendingApprovals from './pages/admin/PendingApprovals'
 import AllCanteenOwners from './pages/admin/AllCanteenOwners'
 import AllCanteens from './pages/admin/AllCanteens'
+import MenuManagement from './pages/MenuManagement'
 
 function App() {
     return (
@@ -38,6 +39,7 @@ function App() {
                     <Route path="/admin/pending-approvals" element={<PendingApprovals />} />
                     <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
                     <Route path="/admin/canteens" element={<AllCanteens />} />
+                    <Route path="/canteen/menu-management" element={<MenuManagement />} />
                 </Routes>
             </Router>
         </AuthProvider>
