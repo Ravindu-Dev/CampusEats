@@ -1,16 +1,42 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import Navbar from '../components/Navbar'
 import { menuItemService } from '../services/menuItemService'
+import { AuthContext } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages']
 
 function Menu() {
+    const { user } = useContext(AuthContext)
+    const { addToCart } = useCart()
+    const navigate = useNavigate()
     const [menuItems, setMenuItems] = useState([])
     const [canteens, setCanteens] = useState({})
     const [loading, setLoading] = useState(true)
+    const [addingToCart, setAddingToCart] = useState({}) // item.id -> loadingState
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All')
+
+    const handleAddToCart = async (item) => {
+        if (!user) {
+            // Show message or just redirect
+            alert('Please login to add items to cart')
+            navigate('/login')
+            return
+        }
+
+        try {
+            setAddingToCart(prev => ({ ...prev, [item.id]: true }))
+            const success = await addToCart(item.id, 1)
+            if (success) {
+                // Success feedback is handled by CartContext opening the cart
+            }
+        } finally {
+            setAddingToCart(prev => ({ ...prev, [item.id]: false }))
+        }
+    }
 
     useEffect(() => {
         const fetchData = async () => {
@@ -19,16 +45,16 @@ function Menu() {
                     menuItemService.getAllMenuItems(),
                     axios.get('/api/canteens') // Assuming there's a public endpoint for all canteens
                 ])
-                
+
                 setMenuItems(itemsData)
-                
+
                 // Create a map of canteenId -> canteenName
                 const canteenMap = {}
                 canteensRes.data.forEach(c => {
                     canteenMap[c.id] = c.canteenName
                 })
                 setCanteens(canteenMap)
-                
+
                 setLoading(false)
             } catch (err) {
                 console.error('Error fetching menu data:', err)
@@ -47,7 +73,7 @@ function Menu() {
 
     const filteredItems = menuItems.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+            item.description?.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
         return matchesSearch && matchesCategory && item.available
     })
@@ -95,11 +121,10 @@ function Menu() {
                             <button
                                 key={cat}
                                 onClick={() => setSelectedCategory(cat)}
-                                className={`px-5 py-2 rounded-xl font-semibold transition-all shadow-md ${
-                                    selectedCategory === cat
+                                className={`px-5 py-2 rounded-xl font-semibold transition-all shadow-md ${selectedCategory === cat
                                         ? 'bg-orange-600 text-white translate-y-[-2px]'
                                         : 'bg-white text-gray-600 hover:bg-orange-100 hover:text-orange-600'
-                                }`}
+                                    }`}
                             >
                                 {cat}
                             </button>
@@ -153,8 +178,25 @@ function Menu() {
                                     <p className="text-gray-600 text-sm h-12 overflow-hidden mb-6 line-clamp-2">
                                         {item.description || 'No description available for this delicious item.'}
                                     </p>
-                                    <button className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-bold shadow-lg transform active:scale-95 transition-all hover:shadow-orange-200">
-                                        Add to Cart
+                                    <button
+                                        onClick={() => handleAddToCart(item)}
+                                        disabled={addingToCart[item.id]}
+                                        className={`w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-bold shadow-lg transform active:scale-95 transition-all hover:shadow-orange-200 flex items-center justify-center gap-2 ${addingToCart[item.id] ? 'opacity-70 cursor-not-allowed' : ''
+                                            }`}
+                                    >
+                                        {addingToCart[item.id] ? (
+                                            <>
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                Adding...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                Add to Cart
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
