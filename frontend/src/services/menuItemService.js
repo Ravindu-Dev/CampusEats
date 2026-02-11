@@ -7,6 +7,11 @@ const getAuthHeaders = () => {
     return canteenOwner ? { Authorization: `Bearer ${canteenOwner.token}` } : {};
 };
 
+const getAllMenuItems = async () => {
+    const response = await axios.get(API_URL);
+    return response.data;
+};
+
 const getMenuItems = async (canteenId) => {
     const response = await axios.get(`${API_URL}/canteen/${canteenId}`, {
         headers: getAuthHeaders()
@@ -36,6 +41,7 @@ const deleteMenuItem = async (id) => {
 };
 
 export const menuItemService = {
+    getAllMenuItems,
     getMenuItems,
     createMenuItem,
     updateMenuItem,
