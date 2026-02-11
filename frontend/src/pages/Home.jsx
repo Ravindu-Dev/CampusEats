@@ -76,6 +76,24 @@ function Home() {
                     </div>
                 </div>
             </main>
+
+            <footer className="bg-white border-t border-gray-200 mt-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="text-gray-600 text-sm">
+                            © 2026 CampusEats. All rights reserved.
+                        </div>
+                        <div className="flex gap-6 text-sm">
+                            <Link to="/canteen/login" className="text-orange-600 hover:text-orange-700 font-medium">
+                                Canteen Owner Login
+                            </Link>
+                            <Link to="/admin/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                                Admin Portal
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     )
 }
