@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import adminAuthService from '../../services/adminAuthService'
+import canteenOwnerService from '../../services/canteenOwnerService'
+import canteenAdminService from '../../services/canteenAdminService'
 
 function AdminDashboard() {
     const [admin, setAdmin] = useState(null)
+    const [pendingCount, setPendingCount] = useState(0)
+    const [totalOwners, setTotalOwners] = useState(0)
+    const [totalCanteens, setTotalCanteens] = useState(0)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -13,7 +18,23 @@ function AdminDashboard() {
             return
         }
         setAdmin(adminData)
+        fetchStats()
     }, [navigate])
+
+    const fetchStats = async () => {
+        try {
+            const [pending, allOwners, allCanteens] = await Promise.all([
+                canteenOwnerService.getPendingRegistrations(),
+                canteenOwnerService.getAllCanteenOwners(),
+                canteenAdminService.getAllCanteens()
+            ])
+            setPendingCount(pending.length)
+            setTotalOwners(allOwners.length)
+            setTotalCanteens(allCanteens.length)
+        } catch (err) {
+            console.error('Failed to fetch dashboard stats:', err)
+        }
+    }
 
     const handleLogout = () => {
         adminAuthService.logout()
@@ -70,8 +91,8 @@ function AdminDashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">0</p>
-                        <p className="text-gray-600 text-sm">Total Users</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{totalOwners}</p>
+                        <p className="text-gray-600 text-sm">Canteen Owners</p>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
@@ -82,7 +103,7 @@ function AdminDashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">0</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{totalCanteens}</p>
                         <p className="text-gray-600 text-sm">Total Canteens</p>
                     </div>
 
@@ -94,7 +115,7 @@ function AdminDashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">0</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{pendingCount}</p>
                         <p className="text-gray-600 text-sm">Pending Approvals</p>
                     </div>
 
@@ -113,17 +134,23 @@ function AdminDashboard() {
 
                 {/* Quick Actions */}
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
-                    <button className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left">
+                    <button 
+                        onClick={() => navigate('/admin/canteen-owners')}
+                        className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left"
+                    >
                         <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">User Management</h3>
-                        <p className="text-gray-600">View and manage all users</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Owner Management</h3>
+                        <p className="text-gray-600">View and manage all canteen owners</p>
                     </button>
 
-                    <button className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left">
+                    <button 
+                        onClick={() => navigate('/admin/canteens')}
+                        className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left"
+                    >
                         <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -133,7 +160,10 @@ function AdminDashboard() {
                         <p className="text-gray-600">Manage canteen registrations</p>
                     </button>
 
-                    <button className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left">
+                    <button 
+                        onClick={() => navigate('/admin/pending-approvals')}
+                        className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left"
+                    >
                         <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -141,6 +171,11 @@ function AdminDashboard() {
                         </div>
                         <h3 className="text-xl font-bold text-gray-900 mb-2">Approval Queue</h3>
                         <p className="text-gray-600">Review pending canteen approvals</p>
+                        {pendingCount > 0 && (
+                            <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
+                                {pendingCount} pending
+                            </span>
+                        )}
                     </button>
 
                     <button className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left">
