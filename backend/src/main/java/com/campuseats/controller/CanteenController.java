@@ -17,6 +17,11 @@ public class CanteenController {
 
     private final CanteenService canteenService;
 
+    @GetMapping
+    public ResponseEntity<List<Canteen>> getAllCanteens() {
+        return ResponseEntity.ok(canteenService.getAllCanteens());
+    }
+
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<?> getCanteenByOwnerId(@PathVariable String ownerId) {
         try {

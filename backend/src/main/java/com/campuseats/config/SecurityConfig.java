@@ -57,6 +57,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/canteen-auth/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/menu-items/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/canteens/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated());
 

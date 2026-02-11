@@ -17,6 +17,11 @@ public class MenuItemController {
 
     private final MenuItemRepository menuItemRepository;
 
+    @GetMapping
+    public ResponseEntity<List<MenuItem>> getAllMenuItems() {
+        return ResponseEntity.ok(menuItemRepository.findAll());
+    }
+
     @GetMapping("/canteen/{canteenId}")
     public ResponseEntity<List<MenuItem>> getMenuItemsByCanteen(@PathVariable String canteenId) {
         return ResponseEntity.ok(menuItemRepository.findByCanteenId(canteenId));
