@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { CartProvider } from './context/CartContext'
+import Cart from './components/Cart'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -21,27 +23,30 @@ import MenuManagement from './pages/MenuManagement'
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/menu" element={<Menu />} />
-                    <Route path="/reviews" element={<Reviews />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/canteen/login" element={<CanteenLogin />} />
-                    <Route path="/canteen/register" element={<CanteenRegister />} />
-                    <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
-                    <Route path="/admin/login" element={<AdminLogin />} />
-                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                    <Route path="/admin/pending-approvals" element={<PendingApprovals />} />
-                    <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
-                    <Route path="/admin/canteens" element={<AllCanteens />} />
-                    <Route path="/canteen/menu-management" element={<MenuManagement />} />
-                </Routes>
-            </Router>
+            <CartProvider>
+                <Router>
+                    <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/menu" element={<Menu />} />
+                        <Route path="/reviews" element={<Reviews />} />
+                        <Route path="/contact" element={<Contact />} />
+                        <Route path="/about" element={<About />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/signup" element={<Signup />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/canteen/login" element={<CanteenLogin />} />
+                        <Route path="/canteen/register" element={<CanteenRegister />} />
+                        <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
+                        <Route path="/admin/login" element={<AdminLogin />} />
+                        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                        <Route path="/admin/pending-approvals" element={<PendingApprovals />} />
+                        <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
+                        <Route path="/admin/canteens" element={<AllCanteens />} />
+                        <Route path="/canteen/menu-management" element={<MenuManagement />} />
+                    </Routes>
+                    <Cart />
+                </Router>
+            </CartProvider>
         </AuthProvider>
     )
 }

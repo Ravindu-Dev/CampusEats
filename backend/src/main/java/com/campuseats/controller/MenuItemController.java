@@ -50,6 +50,15 @@ public class MenuItemController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<MenuItem> getMenuItemById(@PathVariable String id) {
+        if (id == null)
+            return ResponseEntity.badRequest().build();
+        return menuItemRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMenuItem(@PathVariable String id) {
         return menuItemRepository.findById(id)
