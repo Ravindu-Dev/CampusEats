@@ -82,7 +82,7 @@ function Login() {
                                         value={formData.username}
                                         onChange={handleChange}
                                         required
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="Enter your username"
                                     />
                                 </div>
@@ -105,7 +105,7 @@ function Login() {
                                         value={formData.password}
                                         onChange={handleChange}
                                         required
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="Enter your password"
                                     />
                                 </div>
