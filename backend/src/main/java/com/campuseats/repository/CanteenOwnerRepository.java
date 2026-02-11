@@ -4,6 +4,7 @@ import com.campuseats.model.CanteenOwner;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,4 +15,8 @@ public interface CanteenOwnerRepository extends MongoRepository<CanteenOwner, St
     boolean existsByEmail(String email);
 
     Optional<CanteenOwner> findByCanteenId(String canteenId);
+
+    List<CanteenOwner> findByApprovalStatus(String approvalStatus);
+
+    long countByApprovalStatus(String approvalStatus);
 }

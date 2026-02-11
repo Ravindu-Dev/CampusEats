@@ -14,4 +14,5 @@ public class CanteenOwnerResponse {
     private String canteenId;
     private String canteenName;
     private String canteenStatus;
+    private String approvalStatus;
 }

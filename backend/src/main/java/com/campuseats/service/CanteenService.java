@@ -100,4 +100,8 @@ public class CanteenService {
         canteen.setStatus(status);
         return canteenRepository.save(canteen);
     }
+
+    public List<Canteen> getAllCanteens() {
+        return canteenRepository.findAll();
+    }
 }
