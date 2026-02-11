@@ -80,7 +80,7 @@ function CanteenLogin() {
                                         value={formData.email}
                                         onChange={handleChange}
                                         required
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="owner@canteen.com"
                                     />
                                 </div>
@@ -103,7 +103,7 @@ function CanteenLogin() {
                                         value={formData.password}
                                         onChange={handleChange}
                                         required
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="Enter your password"
                                     />
                                 </div>

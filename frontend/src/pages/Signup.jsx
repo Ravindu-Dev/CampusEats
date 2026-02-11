@@ -79,7 +79,7 @@ function Signup() {
                                         value={formData.firstName}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-white"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="John"
                                     />
                                 </div>
@@ -94,7 +94,7 @@ function Signup() {
                                         value={formData.lastName}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-white"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="Doe"
                                     />
                                 </div>
@@ -111,7 +111,7 @@ function Signup() {
                                     value={formData.username}
                                     onChange={handleChange}
                                     required
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-white"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                     placeholder="johndoe"
                                 />
                             </div>
@@ -127,7 +127,7 @@ function Signup() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-white"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                     placeholder="john@example.com"
                                 />
                             </div>
@@ -144,7 +144,7 @@ function Signup() {
                                     onChange={handleChange}
                                     required
                                     minLength={6}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-white"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                     placeholder="Minimum 6 characters"
                                 />
                             </div>
@@ -160,7 +160,7 @@ function Signup() {
                                         name="phoneNumber"
                                         value={formData.phoneNumber}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-white"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="+1 (555) 000-0000"
                                     />
                                 </div>
@@ -174,7 +174,7 @@ function Signup() {
                                         name="address"
                                         value={formData.address}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-white"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm text-gray-900"
                                         placeholder="Campus address"
                                     />
                                 </div>

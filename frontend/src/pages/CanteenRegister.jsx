@@ -155,38 +155,38 @@ function CanteenRegister() {
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Owner Name *</label>
                                         <input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
                                         <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
                                     <input type="email" name="email" value={formData.email} onChange={handleChange} required
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
                                         <input type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password *</label>
                                         <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Alternative Contact (Optional)</label>
                                     <input type="tel" name="alternativeContactNumber" value={formData.alternativeContactNumber} onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                 </div>
                             </div>
                         )}
@@ -199,7 +199,7 @@ function CanteenRegister() {
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Canteen Name *</label>
                                     <input type="text" name="canteenName" value={formData.canteenName} onChange={handleChange} required
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -207,13 +207,13 @@ function CanteenRegister() {
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Campus</label>
                                         <input type="text" name="campus" value={formData.campus} onChange={handleChange}
                                             placeholder="e.g., Main Campus"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Building/Location *</label>
                                         <input type="text" name="location" value={formData.location} onChange={handleChange} required
                                             placeholder="e.g., Block A"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                 </div>
 
@@ -221,17 +221,17 @@ function CanteenRegister() {
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Floor Number</label>
                                         <input type="text" name="floorNumber" value={formData.floorNumber} onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Room/Shop Number</label>
                                         <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Seating Capacity</label>
                                         <input type="number" name="seatingCapacity" value={formData.seatingCapacity} onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                 </div>
 
@@ -239,14 +239,14 @@ function CanteenRegister() {
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Landmark/Directions</label>
                                     <input type="text" name="landmark" value={formData.landmark} onChange={handleChange}
                                         placeholder="e.g., Near Library Entrance"
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Description *</label>
                                     <textarea name="description" value={formData.description} onChange={handleChange} required rows="4"
                                         placeholder="Describe your canteen, specialties, etc."
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white"></textarea>
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900"></textarea>
                                 </div>
 
                                 <div>
@@ -281,7 +281,7 @@ function CanteenRegister() {
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Specialty Items</label>
                                     <input type="text" name="specialtyItems" value={formData.specialtyItems} onChange={handleChange}
                                         placeholder="e.g., Famous for dosas and filter coffee"
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                 </div>
                             </div>
                         )}
@@ -295,12 +295,12 @@ function CanteenRegister() {
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Opening Time *</label>
                                         <input type="time" name="openingTime" value={formData.openingTime} onChange={handleChange} required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">Closing Time *</label>
                                         <input type="time" name="closingTime" value={formData.closingTime} onChange={handleChange} required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                     </div>
                                 </div>
 
@@ -321,7 +321,7 @@ function CanteenRegister() {
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Average Preparation Time (minutes)</label>
                                     <input type="number" name="averagePreparationTime" value={formData.averagePreparationTime} onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -343,17 +343,17 @@ function CanteenRegister() {
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Business Registration Number</label>
                                             <input type="text" name="businessRegistrationNumber" value={formData.businessRegistrationNumber} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">GST Number</label>
                                             <input type="text" name="gstNumber" value={formData.gstNumber} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Food Safety License</label>
                                             <input type="text" name="foodSafeLicenseNumber" value={formData.foodSafeLicenseNumber} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                     </div>
                                 </div>
@@ -364,27 +364,27 @@ function CanteenRegister() {
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Bank Name</label>
                                             <input type="text" name="bankName" value={formData.bankName} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Account Holder Name</label>
                                             <input type="text" name="accountHolderName" value={formData.accountHolderName} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Account Number</label>
                                             <input type="text" name="accountNumber" value={formData.accountNumber} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">IFSC Code</label>
                                             <input type="text" name="ifscCode" value={formData.ifscCode} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">UPI ID</label>
                                             <input type="text" name="upiId" value={formData.upiId} onChange={handleChange}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-white" />
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition shadow-sm text-gray-900" />
                                         </div>
                                     </div>
                                 </div>
