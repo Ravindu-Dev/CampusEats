@@ -7,6 +7,10 @@ import Dashboard from './pages/Dashboard'
 import CanteenLogin from './pages/CanteenLogin'
 import CanteenRegister from './pages/CanteenRegister'
 import CanteenDashboard from './pages/CanteenDashboard'
+import Menu from './pages/Menu'
+import Reviews from './pages/Reviews'
+import Contact from './pages/Contact'
+import About from './pages/About'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 
@@ -16,6 +20,10 @@ function App() {
             <Router>
                 <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/menu" element={<Menu />} />
+                    <Route path="/reviews" element={<Reviews />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/about" element={<About />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/dashboard" element={<Dashboard />} />
