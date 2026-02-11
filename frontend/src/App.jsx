@@ -13,6 +13,9 @@ import Contact from './pages/Contact'
 import About from './pages/About'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import PendingApprovals from './pages/admin/PendingApprovals'
+import AllCanteenOwners from './pages/admin/AllCanteenOwners'
+import AllCanteens from './pages/admin/AllCanteens'
 
 function App() {
     return (
@@ -32,6 +35,9 @@ function App() {
                     <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/admin/pending-approvals" element={<PendingApprovals />} />
+                    <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
+                    <Route path="/admin/canteens" element={<AllCanteens />} />
                 </Routes>
             </Router>
         </AuthProvider>

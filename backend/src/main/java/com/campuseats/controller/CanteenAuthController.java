@@ -122,7 +122,7 @@ public class CanteenAuthController {
             canteenOwnerService.createCanteenOwner(savedOwner);
 
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("Canteen registered successfully! Your registration is pending approval.");
+                    .body("Canteen registered successfully! Your registration is pending admin approval. You will be able to log in once approved.");
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -136,6 +136,20 @@ public class CanteenAuthController {
             // Find the canteen owner
             CanteenOwner owner = canteenOwnerRepository.findByEmail(loginRequest.getEmail())
                     .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+
+            // Check approval status
+            if ("PENDING".equals(owner.getApprovalStatus())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Your registration is pending admin approval. Please wait for approval.");
+            }
+
+            if ("REJECTED".equals(owner.getApprovalStatus())) {
+                String message = "Your registration has been rejected.";
+                if (owner.getRejectionReason() != null && !owner.getRejectionReason().isEmpty()) {
+                    message += " Reason: " + owner.getRejectionReason();
+                }
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(message);
+            }
 
             // Authenticate
             Authentication authentication = authenticationManager.authenticate(
@@ -165,7 +179,8 @@ public class CanteenAuthController {
                     owner.getOwnerName(),
                     owner.getCanteenId(),
                     canteenName,
-                    canteenStatus);
+                    canteenStatus,
+                    owner.getApprovalStatus());
 
             return ResponseEntity.ok(response);
 

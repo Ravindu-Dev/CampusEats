@@ -39,6 +39,12 @@ public class CanteenOwner {
     private boolean enabled = true;
     private boolean emailVerified = false;
 
+    // Approval Workflow
+    private String approvalStatus = "PENDING"; // PENDING, APPROVED, REJECTED
+    private String approvedBy; // Admin ID who approved/rejected
+    private LocalDateTime approvedAt; // When the decision was made
+    private String rejectionReason; // Reason for rejection (optional)
+
     @CreatedDate
     private LocalDateTime createdAt;
 
