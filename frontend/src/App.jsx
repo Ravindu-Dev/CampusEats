@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard'
 import CanteenLogin from './pages/CanteenLogin'
 import CanteenRegister from './pages/CanteenRegister'
 import CanteenDashboard from './pages/CanteenDashboard'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminDashboard from './pages/admin/AdminDashboard'
 
 function App() {
     return (
@@ -20,6 +22,8 @@ function App() {
                     <Route path="/canteen/login" element={<CanteenLogin />} />
                     <Route path="/canteen/register" element={<CanteenRegister />} />
                     <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 </Routes>
             </Router>
         </AuthProvider>

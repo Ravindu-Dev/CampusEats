@@ -2,8 +2,10 @@ package com.campuseats.service;
 
 import com.campuseats.model.User;
 import com.campuseats.model.CanteenOwner;
+import com.campuseats.model.Admin;
 import com.campuseats.repository.UserRepository;
 import com.campuseats.repository.CanteenOwnerRepository;
+import com.campuseats.repository.AdminRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,6 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         private final UserRepository userRepository;
         private final CanteenOwnerRepository canteenOwnerRepository;
+        private final AdminRepository adminRepository;
 
         @Override
         @Transactional
@@ -56,6 +59,24 @@ public class CustomUserDetailsService implements UserDetailsService {
                                         owner.getEmail(),
                                         owner.getPassword(),
                                         owner.isEnabled(),
+                                        true,
+                                        true,
+                                        true,
+                                        authorities);
+                }
+
+                // If not found, try to find as admin by email
+                var optionalAdmin = adminRepository.findByEmail(username);
+                if (optionalAdmin.isPresent()) {
+                        Admin admin = optionalAdmin.get();
+                        Set<GrantedAuthority> authorities = admin.getRoles().stream()
+                                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                                        .collect(Collectors.toSet());
+
+                        return new org.springframework.security.core.userdetails.User(
+                                        admin.getEmail(),
+                                        admin.getPassword(),
+                                        admin.isEnabled(),
                                         true,
                                         true,
                                         true,
