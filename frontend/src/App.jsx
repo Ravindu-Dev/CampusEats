@@ -19,6 +19,7 @@ import PendingApprovals from './pages/admin/PendingApprovals'
 import AllCanteenOwners from './pages/admin/AllCanteenOwners'
 import AllCanteens from './pages/admin/AllCanteens'
 import MenuManagement from './pages/MenuManagement'
+import Checkout from './pages/Checkout'
 
 function App() {
     return (
@@ -43,6 +44,7 @@ function App() {
                         <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
                         <Route path="/admin/canteens" element={<AllCanteens />} />
                         <Route path="/canteen/menu-management" element={<MenuManagement />} />
+                        <Route path="/checkout" element={<Checkout />} />
                     </Routes>
                     <Cart />
                 </Router>
