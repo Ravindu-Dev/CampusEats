@@ -76,12 +76,45 @@ function CanteenRegister() {
         setFormData({ ...formData, [name]: newArray })
     }
 
+    const validateStep1 = () => {
+        if (!formData.ownerName || !formData.email || !formData.password || !formData.phoneNumber) {
+            setError('Please fill in all required fields')
+            return false
+        }
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match')
+            return false
+        }
+        if (formData.password.length < 6) {
+            setError('Password must be at least 6 characters')
+            return false
+        }
+        return true
+    }
+
+    const validateStep2 = () => {
+        if (!formData.canteenName || !formData.location || !formData.description) {
+            setError('Please fill in all required fields (Name, Location, Description)')
+            return false
+        }
+        return true
+    }
+
+    const validateStep3 = () => {
+        if (!formData.openingTime || !formData.closingTime) {
+            setError('Please provide opening and closing times')
+            return false
+        }
+        return true
+    }
+
     const nextStep = () => {
         setError('')
-        if (step === 1 && formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match')
-            return
-        }
+        
+        if (step === 1 && !validateStep1()) return
+        if (step === 2 && !validateStep2()) return
+        if (step === 3 && !validateStep3()) return
+
         setStep(step + 1)
     }
 
