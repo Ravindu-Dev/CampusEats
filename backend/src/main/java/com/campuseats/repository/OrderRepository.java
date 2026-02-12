@@ -14,4 +14,6 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     List<Order> findByUserIdOrderByCreatedAtDesc(String userId);
 
     Optional<Order> findByIdAndUserId(String id, String userId);
+
+    List<Order> findByOrderItemsCanteenIdOrderByCreatedAtDesc(String canteenId);
 }

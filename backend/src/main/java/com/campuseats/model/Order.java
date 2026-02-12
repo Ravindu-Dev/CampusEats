@@ -55,6 +55,7 @@ public class Order {
         private String name;
         private Double price;
         private Integer quantity;
+        private String canteenId;
         private String canteenName;
         private String imageUrl;
     }

@@ -21,6 +21,7 @@ import AllCanteens from './pages/admin/AllCanteens'
 import MenuManagement from './pages/MenuManagement'
 import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
+import CanteenOrders from './pages/CanteenOrders'
 
 function App() {
     return (
@@ -46,6 +47,7 @@ function App() {
                         <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
                         <Route path="/admin/canteens" element={<AllCanteens />} />
                         <Route path="/canteen/menu-management" element={<MenuManagement />} />
+                        <Route path="/canteen/orders" element={<CanteenOrders />} />
                         <Route path="/checkout" element={<Checkout />} />
                     </Routes>
                     <Cart />

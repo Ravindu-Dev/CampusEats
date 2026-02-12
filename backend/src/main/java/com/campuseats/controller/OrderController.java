@@ -51,4 +51,12 @@ public class OrderController {
         OrderResponse order = orderService.getOrderById(orderId, getCurrentUserId());
         return ResponseEntity.ok(order);
     }
+
+    @GetMapping("/canteen/{canteenId}")
+    @PreAuthorize("hasRole('CANTEEN_OWNER')")
+    public ResponseEntity<List<OrderResponse>> getCanteenOrders(@PathVariable String canteenId) {
+        // In a real app, verify that the current user owns this canteen
+        List<OrderResponse> orders = orderService.getCanteenOrders(canteenId);
+        return ResponseEntity.ok(orders);
+    }
 }

@@ -1,0 +1,178 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import canteenService from '../services/canteenService';
+import canteenAuthService from '../services/canteenAuthService';
+import orderService from '../services/orderService';
+
+function CanteenOrders() {
+    const navigate = useNavigate();
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [canteenOwner, setCanteenOwner] = useState(null);
+
+    useEffect(() => {
+        const owner = canteenAuthService.getCurrentCanteenOwner();
+        if (!owner) {
+            navigate('/canteen/login');
+            return;
+        }
+        setCanteenOwner(owner);
+
+        const fetchOrders = async () => {
+            try {
+                if (owner.canteenId) {
+                    const data = await orderService.getCanteenOrders(owner.canteenId);
+                    setOrders(data);
+                }
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrders();
+    }, [navigate]);
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'succeeded': return 'bg-green-100 text-green-800 border-green-200';
+            case 'failed': return 'bg-red-100 text-red-800 border-red-200';
+            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-600"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <nav className="bg-white shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between h-16 items-center">
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => navigate('/canteen/dashboard')}
+                                className="mr-4 text-gray-500 hover:text-gray-700"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                            </button>
+                            <h1 className="text-xl font-bold text-gray-900">Incoming Orders</h1>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {orders.length === 0 ? (
+                    <div className="text-center py-12">
+                        <div className="bg-white rounded-full h-24 w-24 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900">No orders yet</h3>
+                        <p className="mt-1 text-gray-500">Orders will appear here when customers verify them.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {orders.map((order) => (
+                            <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
+                                <div className="p-6">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <h3 className="text-lg font-bold text-gray-900">Order #{order.id.slice(-6).toUpperCase()}</h3>
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.paymentStatus)}`}>
+                                                    {order.paymentStatus.toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-500">
+                                                Placed on {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
+                                            </p>
+                                        </div>
+                                        <div className="mt-4 md:mt-0 text-right">
+                                            <p className="text-2xl font-bold text-orange-600">₹{order.totalAmount.toFixed(2)}</p>
+                                            <p className="text-sm text-gray-500">Total Amount</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t border-gray-100 pt-6 grid md:grid-cols-2 gap-8">
+                                        {/* Customer Details */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Customer Details</h4>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center text-gray-600">
+                                                    <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                    </svg>
+                                                    {order.customerName}
+                                                </div>
+                                                <div className="flex items-center text-gray-600">
+                                                    <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                    </svg>
+                                                    {order.customerEmail}
+                                                </div>
+                                                <div className="flex items-center text-gray-600">
+                                                    <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                    </svg>
+                                                    {order.customerPhone}
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4">
+                                                <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-2">Pickup Time</h4>
+                                                <div className="bg-orange-50 rounded-lg p-3 inline-block">
+                                                    <span className="font-medium text-orange-800">
+                                                        {new Date(order.pickupDate).toLocaleDateString()} at {order.pickupTime}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Order Items */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Items Ordered</h4>
+                                            <div className="space-y-3">
+                                                {order.orderItems.map((item, index) => (
+                                                    <div key={index} className="flex items-center gap-4">
+                                                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                                            {item.imageUrl ? (
+                                                                <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                                                            ) : (
+                                                                <div className="h-full w-full flex items-center justify-center text-xl">🍱</div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between">
+                                                                <p className="font-medium text-gray-900">{item.name}</p>
+                                                                <p className="font-medium text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                                            </div>
+                                                            <p className="text-sm text-gray-500">Qty: {item.quantity} × ₹{item.price}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+}
+
+export default CanteenOrders;
