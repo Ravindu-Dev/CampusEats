@@ -148,6 +148,10 @@ function Cart() {
                                 </div>
 
                                 <button
+                                    onClick={() => {
+                                        setIsCartOpen(false);
+                                        window.location.href = '/checkout';
+                                    }}
                                     className="w-full h-14 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-orange-200 transform active:scale-95 transition-all flex items-center justify-center gap-3 group"
                                 >
                                     Proceed to Checkout
