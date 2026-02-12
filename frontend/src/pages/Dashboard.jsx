@@ -1,10 +1,56 @@
-import { useContext } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
+import orderService from '../services/orderService'
 
 function Dashboard() {
     const { user, logout } = useContext(AuthContext)
     const navigate = useNavigate()
+    const [orders, setOrders] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [stats, setStats] = useState({
+        total: 0,
+        completed: 0,
+        reviews: 0,
+        favorites: 0
+    })
+
+    useEffect(() => {
+        fetchOrders()
+    }, [])
+
+    const fetchOrders = async () => {
+        try {
+            setLoading(true)
+            const data = await orderService.getUserOrders()
+            // Sort by most recent first
+            const sortedOrders = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            setOrders(sortedOrders)
+            
+            // Calculate stats
+            setStats({
+                total: data.length,
+                completed: data.filter(o => o.paymentStatus === 'succeeded').length,
+                reviews: 0, // TODO: Implement reviews count
+                favorites: 0 // TODO: Implement favorites count
+            })
+        } catch (err) {
+            console.error('Error fetching orders:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+    }
 
     const handleLogout = () => {
         logout()
@@ -59,7 +105,7 @@ function Dashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">0</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</p>
                         <p className="text-gray-600 text-sm">Total Orders</p>
                     </div>
 
@@ -71,7 +117,7 @@ function Dashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">0</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.completed}</p>
                         <p className="text-gray-600 text-sm">Completed</p>
                     </div>
 
@@ -83,7 +129,7 @@ function Dashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">0</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.reviews}</p>
                         <p className="text-gray-600 text-sm">Reviews</p>
                     </div>
 
@@ -95,7 +141,7 @@ function Dashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">0</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.favorites}</p>
                         <p className="text-gray-600 text-sm">Favorites</p>
                     </div>
                 </div>
@@ -135,19 +181,85 @@ function Dashboard() {
 
                 {/* Recent Activity */}
                 <div className="bg-white rounded-2xl shadow-xl p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-                    <div className="text-center py-12">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-                            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                            </svg>
-                        </div>
-                        <p className="text-gray-600 text-lg mb-4">No orders yet</p>
-                        <p className="text-gray-500 mb-6">Start exploring our menu and place your first order!</p>
-                        <Link to="/menu" className="inline-block px-8 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-md">
-                            Browse Menu
-                        </Link>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Recent Activity</h2>
+                        {orders.length > 0 && (
+                            <Link to="/orders" className="text-green-600 hover:text-green-700 font-semibold flex items-center">
+                                View All
+                                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </Link>
+                        )}
                     </div>
+                    
+                    {loading ? (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-green-600"></div>
+                        </div>
+                    ) : orders.length === 0 ? (
+                        <div className="text-center py-12">
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+                                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                            </div>
+                            <p className="text-gray-600 text-lg mb-4">No orders yet</p>
+                            <p className="text-gray-500 mb-6">Start exploring our menu and place your first order!</p>
+                            <Link to="/menu" className="inline-block px-8 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-md">
+                                Browse Menu
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {orders.slice(0, 3).map((order) => (
+                                <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <p className="font-semibold text-gray-900">Order #{order.id.substring(0, 8)}</p>
+                                            <p className="text-sm text-gray-500">{formatDate(order.createdAt)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-gray-900">₹{order.totalAmount?.toFixed(2)}</p>
+                                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                                                order.paymentStatus === 'succeeded' ? 'bg-green-100 text-green-800' :
+                                                order.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-red-100 text-red-800'
+                                            }`}>
+                                                {order.paymentStatus?.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Food Items */}
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-semibold text-gray-700 flex items-center">
+                                            <svg className="w-4 h-4 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            Items ({order.orderItems?.length || 0}):
+                                        </p>
+                                        <div className="pl-5 space-y-1">
+                                            {order.orderItems && order.orderItems.length > 0 ? (
+                                                order.orderItems.map((item, index) => (
+                                                    <div key={index} className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-gray-700">{item.name}</span>
+                                                            <span className="text-gray-500">x{item.quantity}</span>
+                                                            <span className="text-xs text-gray-500">({item.canteenName})</span>
+                                                        </div>
+                                                        <span className="text-gray-900 font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-sm text-gray-500">No items</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
