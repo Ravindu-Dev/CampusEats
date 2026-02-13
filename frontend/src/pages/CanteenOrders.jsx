@@ -9,6 +9,9 @@ function CanteenOrders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [canteenOwner, setCanteenOwner] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(new Date());
+    const [newOrdersCount, setNewOrdersCount] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         const owner = canteenAuthService.getCurrentCanteenOwner();
@@ -18,21 +21,61 @@ function CanteenOrders() {
         }
         setCanteenOwner(owner);
 
-        const fetchOrders = async () => {
+        const fetchOrders = async (showRefreshIndicator = false) => {
             try {
+                if (showRefreshIndicator) {
+                    setIsRefreshing(true);
+                }
+
                 if (owner.canteenId) {
                     const data = await orderService.getCanteenOrders(owner.canteenId);
+
+                    // Check for new orders
+                    if (orders.length > 0 && data.length > orders.length) {
+                        const newCount = data.length - orders.length;
+                        setNewOrdersCount(newCount);
+
+                        // Clear notification after 5 seconds
+                        setTimeout(() => setNewOrdersCount(0), 5000);
+                    }
+
                     setOrders(data);
+                    setLastUpdated(new Date());
                 }
             } catch (error) {
                 console.error('Error fetching orders:', error);
             } finally {
                 setLoading(false);
+                setIsRefreshing(false);
             }
         };
 
+        // Initial fetch
         fetchOrders();
-    }, [navigate]);
+
+        // Set up polling every 30 seconds
+        const pollInterval = setInterval(() => {
+            fetchOrders(false);
+        }, 30000);
+
+        // Cleanup interval on unmount
+        return () => clearInterval(pollInterval);
+    }, [navigate, orders.length]);
+
+    const handleManualRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            if (canteenOwner?.canteenId) {
+                const data = await orderService.getCanteenOrders(canteenOwner.canteenId);
+                setOrders(data);
+                setLastUpdated(new Date());
+            }
+        } catch (error) {
+            console.error('Error refreshing orders:', error);
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -41,6 +84,15 @@ function CanteenOrders() {
             case 'failed': return 'bg-red-100 text-red-800 border-red-200';
             default: return 'bg-gray-100 text-gray-800 border-gray-200';
         }
+    };
+
+    const getTimeSinceUpdate = () => {
+        const seconds = Math.floor((new Date() - lastUpdated) / 1000);
+        if (seconds < 60) return `${seconds}s ago`;
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        return `${hours}h ago`;
     };
 
     if (loading) {
@@ -53,25 +105,57 @@ function CanteenOrders() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow-sm">
+            <nav className="bg-white shadow-sm sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-4">
                             <button
                                 onClick={() => navigate('/canteen/dashboard')}
-                                className="mr-4 text-gray-500 hover:text-gray-700"
+                                className="text-gray-500 hover:text-gray-700 transition"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
                             </button>
-                            <h1 className="text-xl font-bold text-gray-900">Incoming Orders</h1>
+                            <div>
+                                <h1 className="text-xl font-bold text-gray-900">Incoming Orders</h1>
+                                <p className="text-xs text-gray-500">Last updated: {getTimeSinceUpdate()}</p>
+                            </div>
                         </div>
+                        <button
+                            onClick={handleManualRefresh}
+                            disabled={isRefreshing}
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <svg
+                                className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                        </button>
                     </div>
                 </div>
             </nav>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* New Orders Notification */}
+                {newOrdersCount > 0 && (
+                    <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg shadow-sm animate-pulse">
+                        <div className="flex items-center">
+                            <svg className="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-green-800 font-semibold">
+                                🎉 {newOrdersCount} new order{newOrdersCount > 1 ? 's' : ''} received!
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 {orders.length === 0 ? (
                     <div className="text-center py-12">
                         <div className="bg-white rounded-full h-24 w-24 flex items-center justify-center mx-auto mb-4 shadow-sm">
