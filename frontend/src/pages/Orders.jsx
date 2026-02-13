@@ -54,7 +54,7 @@ function Orders() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
             <Navbar />
-            
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-8">
@@ -94,8 +94,8 @@ function Orders() {
                                 </div>
                                 <h2 className="text-2xl font-bold text-gray-900 mb-3">No orders yet</h2>
                                 <p className="text-gray-600 mb-8 text-lg">Start exploring our menu and place your first order!</p>
-                                <Link 
-                                    to="/menu" 
+                                <Link
+                                    to="/menu"
                                     className="inline-block px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition font-semibold shadow-lg"
                                 >
                                     Browse Menu
@@ -137,8 +137,8 @@ function Orders() {
                                                             {/* Item Image */}
                                                             <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-200">
                                                                 {item.imageUrl ? (
-                                                                    <img 
-                                                                        src={item.imageUrl} 
+                                                                    <img
+                                                                        src={item.imageUrl}
                                                                         alt={item.name}
                                                                         className="w-full h-full object-cover"
                                                                     />
@@ -201,6 +201,18 @@ function Orders() {
                                                             </div>
                                                         )}
                                                     </div>
+                                                </div>
+                                            )}
+
+                                            {/* Track Order Button */}
+                                            {order.orderStatus && order.orderStatus !== 'COMPLETED' && (
+                                                <div className="mt-6">
+                                                    <Link
+                                                        to={`/orders/track/${order.id}`}
+                                                        className="block w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition font-semibold shadow-lg text-center transform hover:scale-105"
+                                                    >
+                                                        📍 Track Order Status
+                                                    </Link>
                                                 </div>
                                             )}
                                         </div>

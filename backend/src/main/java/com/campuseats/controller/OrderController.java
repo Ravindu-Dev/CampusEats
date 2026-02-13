@@ -59,4 +59,29 @@ public class OrderController {
         List<OrderResponse> orders = orderService.getCanteenOrders(canteenId);
         return ResponseEntity.ok(orders);
     }
+
+    @PatchMapping("/{orderId}/status")
+    @PreAuthorize("hasRole('CANTEEN_OWNER')")
+    public ResponseEntity<OrderResponse> updateOrderStatus(
+            @PathVariable String orderId,
+            @Valid @RequestBody com.campuseats.dto.OrderStatusUpdateRequest request,
+            @RequestParam String canteenId) {
+        try {
+            OrderResponse updatedOrder = orderService.updateOrderStatus(orderId, request.getStatus(), canteenId);
+            return ResponseEntity.ok(updatedOrder);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{orderId}/status")
+    public ResponseEntity<OrderResponse> getOrderStatus(@PathVariable String orderId) {
+        try {
+            // This endpoint is public so both users and canteen owners can check status
+            OrderResponse order = orderService.getOrderById(orderId, null);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

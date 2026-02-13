@@ -22,6 +22,8 @@ import MenuManagement from './pages/MenuManagement'
 import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
 import CanteenOrders from './pages/CanteenOrders'
+import KitchenDashboard from './pages/KitchenDashboard'
+import OrderTracking from './pages/OrderTracking'
 
 function App() {
     return (
@@ -48,7 +50,9 @@ function App() {
                         <Route path="/admin/canteens" element={<AllCanteens />} />
                         <Route path="/canteen/menu-management" element={<MenuManagement />} />
                         <Route path="/canteen/orders" element={<CanteenOrders />} />
+                        <Route path="/canteen/kitchen" element={<KitchenDashboard />} />
                         <Route path="/checkout" element={<Checkout />} />
+                        <Route path="/orders/track/:orderId" element={<OrderTracking />} />
                     </Routes>
                     <Cart />
                 </Router>
