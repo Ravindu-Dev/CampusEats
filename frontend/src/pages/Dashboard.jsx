@@ -2,6 +2,7 @@ import { useContext, useState, useEffect } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
 import orderService from '../services/orderService'
+import reviewService from '../services/reviewService'
 
 function Dashboard() {
     const { user, logout } = useContext(AuthContext)
@@ -17,6 +18,7 @@ function Dashboard() {
 
     useEffect(() => {
         fetchOrders()
+        fetchReviews()
     }, [])
 
     const fetchOrders = async () => {
@@ -26,18 +28,29 @@ function Dashboard() {
             // Sort by most recent first
             const sortedOrders = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             setOrders(sortedOrders)
-            
+
             // Calculate stats
-            setStats({
+            setStats(prevStats => ({
+                ...prevStats,
                 total: data.length,
-                completed: data.filter(o => o.paymentStatus === 'succeeded').length,
-                reviews: 0, // TODO: Implement reviews count
-                favorites: 0 // TODO: Implement favorites count
-            })
+                completed: data.filter(o => o.paymentStatus === 'succeeded').length
+            }))
         } catch (err) {
             console.error('Error fetching orders:', err)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const fetchReviews = async () => {
+        try {
+            const data = await reviewService.getMyReviews()
+            setStats(prevStats => ({
+                ...prevStats,
+                reviews: data.length
+            }))
+        } catch (err) {
+            console.error('Error fetching reviews:', err)
         }
     }
 
@@ -168,14 +181,14 @@ function Dashboard() {
                         <p className="text-gray-600">Track your order history and status</p>
                     </Link>
 
-                    <Link to="/reviews" className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                    <Link to="/my-reviews" className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1">
                         <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Write Reviews</h3>
-                        <p className="text-gray-600">Share your dining experience</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">My Reviews</h3>
+                        <p className="text-gray-600">View your rating history</p>
                     </Link>
                 </div>
 
@@ -192,7 +205,7 @@ function Dashboard() {
                             </Link>
                         )}
                     </div>
-                    
+
                     {loading ? (
                         <div className="flex justify-center items-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-green-600"></div>
@@ -221,16 +234,15 @@ function Dashboard() {
                                         </div>
                                         <div className="text-right">
                                             <p className="font-bold text-gray-900">₹{order.totalAmount?.toFixed(2)}</p>
-                                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                                                order.paymentStatus === 'succeeded' ? 'bg-green-100 text-green-800' :
+                                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${order.paymentStatus === 'succeeded' ? 'bg-green-100 text-green-800' :
                                                 order.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                'bg-red-100 text-red-800'
-                                            }`}>
+                                                    'bg-red-100 text-red-800'
+                                                }`}>
                                                 {order.paymentStatus?.toUpperCase()}
                                             </span>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Food Items */}
                                     <div className="space-y-2">
                                         <p className="text-sm font-semibold text-gray-700 flex items-center">

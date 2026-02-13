@@ -24,6 +24,7 @@ public class OrderResponse {
     private String paymentStatus;
     private String stripePaymentIntentId;
     private String orderStatus;
+    private Boolean hasReview;
     private LocalDateTime preparedAt;
     private LocalDateTime readyAt;
     private LocalDateTime completedAt;
