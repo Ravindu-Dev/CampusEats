@@ -43,6 +43,9 @@ public class Order {
     // Order status: PENDING, PREPARING, READY, COMPLETED
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
+    // Review tracking
+    private Boolean hasReview = false;
+
     private LocalDateTime preparedAt;
     private LocalDateTime readyAt;
     private LocalDateTime completedAt;

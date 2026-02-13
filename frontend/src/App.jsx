@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import CanteenLogin from './pages/CanteenLogin'
 import CanteenRegister from './pages/CanteenRegister'
 import CanteenDashboard from './pages/CanteenDashboard'
+import CanteenReviews from './pages/CanteenReviews'
 import Menu from './pages/Menu'
 import Reviews from './pages/Reviews'
 import Contact from './pages/Contact'
@@ -24,6 +25,7 @@ import Orders from './pages/Orders'
 import CanteenOrders from './pages/CanteenOrders'
 import KitchenDashboard from './pages/KitchenDashboard'
 import OrderTracking from './pages/OrderTracking'
+import MyReviews from './pages/MyReviews'
 
 function App() {
     return (
@@ -40,9 +42,11 @@ function App() {
                         <Route path="/signup" element={<Signup />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/orders" element={<Orders />} />
+                        <Route path="/my-reviews" element={<MyReviews />} />
                         <Route path="/canteen/login" element={<CanteenLogin />} />
                         <Route path="/canteen/register" element={<CanteenRegister />} />
                         <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
+                        <Route path="/canteen/reviews" element={<CanteenReviews />} />
                         <Route path="/admin/login" element={<AdminLogin />} />
                         <Route path="/admin/dashboard" element={<AdminDashboard />} />
                         <Route path="/admin/pending-approvals" element={<PendingApprovals />} />

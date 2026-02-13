@@ -122,6 +122,7 @@ public class OrderService {
                                 order.getPaymentStatus(),
                                 order.getStripePaymentIntentId(),
                                 order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",
+                                order.getHasReview(),
                                 order.getPreparedAt(),
                                 order.getReadyAt(),
                                 order.getCompletedAt(),

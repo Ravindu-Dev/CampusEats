@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import reviewService from '../services/reviewService'
 import Navbar from '../components/Navbar'
 
-function Reviews() {
+function MyReviews() {
     const [reviews, setReviews] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
-    const [searchTerm, setSearchTerm] = useState('')
-    const [filterRating, setFilterRating] = useState(0)
 
     useEffect(() => {
         fetchReviews()
@@ -16,7 +15,7 @@ function Reviews() {
     const fetchReviews = async () => {
         try {
             setLoading(true)
-            const data = await reviewService.getAllReviews()
+            const data = await reviewService.getMyReviews()
             setReviews(data)
         } catch (err) {
             console.error('Error fetching reviews:', err)
@@ -55,76 +54,37 @@ function Reviews() {
                         />
                     </svg>
                 ))}
+                <span className="ml-2 text-sm font-semibold text-gray-700">{rating}/5</span>
             </div>
         )
     }
 
-    // Filter reviews based on search and rating
-    const filteredReviews = reviews.filter(review => {
-        const matchesSearch = searchTerm === '' ||
-            review.canteenName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            review.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (review.comment && review.comment.toLowerCase().includes(searchTerm.toLowerCase()))
-
-        const matchesRating = filterRating === 0 || review.rating === filterRating
-
-        return matchesSearch && matchesRating
-    })
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
             <Navbar />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-5xl font-bold text-gray-900 mb-4 flex items-center justify-center">
-                        <svg className="w-12 h-12 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mb-8">
+                    <Link to="/dashboard" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-4">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back to Dashboard
+                    </Link>
+                    <h1 className="text-4xl font-bold text-gray-900 flex items-center">
+                        <svg className="w-10 h-10 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                         </svg>
-                        Customer Reviews
+                        My Reviews
                     </h1>
-                    <p className="text-xl text-gray-600">See what our community is saying about campus canteens</p>
-                </div>
-
-                {/* Search and Filter */}
-                <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-                    <div className="grid md:grid-cols-2 gap-4">
-                        {/* Search */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Search Reviews</label>
-                            <input
-                                type="text"
-                                placeholder="Search by canteen, user, or comment..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        {/* Rating Filter */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Rating</label>
-                            <select
-                                value={filterRating}
-                                onChange={(e) => setFilterRating(Number(e.target.value))}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                            >
-                                <option value={0}>All Ratings</option>
-                                <option value={5}>⭐⭐⭐⭐⭐ 5 Stars</option>
-                                <option value={4}>⭐⭐⭐⭐ 4 Stars</option>
-                                <option value={3}>⭐⭐⭐ 3 Stars</option>
-                                <option value={2}>⭐⭐ 2 Stars</option>
-                                <option value={1}>⭐ 1 Star</option>
-                            </select>
-                        </div>
-                    </div>
+                    <p className="text-gray-600 mt-2">Your complete rating history</p>
                 </div>
 
                 {/* Loading State */}
                 {loading && (
                     <div className="flex justify-center items-center py-20">
-                        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-600"></div>
+                        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                     </div>
                 )}
 
@@ -138,37 +98,32 @@ function Reviews() {
                 {/* Reviews List */}
                 {!loading && !error && (
                     <>
-                        {/* Results Count */}
-                        <div className="mb-6">
-                            <p className="text-gray-600 text-lg">
-                                Showing <span className="font-bold text-gray-900">{filteredReviews.length}</span> of <span className="font-bold text-gray-900">{reviews.length}</span> reviews
-                            </p>
-                        </div>
-
-                        {filteredReviews.length === 0 ? (
+                        {reviews.length === 0 ? (
                             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
                                 <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
                                     <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                                     </svg>
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-3">No reviews found</h2>
-                                <p className="text-gray-600 text-lg">
-                                    {searchTerm || filterRating ? 'Try adjusting your search or filter criteria' : 'Be the first to leave a review!'}
-                                </p>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-3">No reviews yet</h2>
+                                <p className="text-gray-600 mb-8 text-lg">Complete an order and share your experience!</p>
+                                <Link
+                                    to="/orders"
+                                    className="inline-block px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold shadow-lg"
+                                >
+                                    View Orders
+                                </Link>
                             </div>
                         ) : (
-                            <div className="grid gap-6">
-                                {filteredReviews.map((review) => (
+                            <div className="space-y-6">
+                                {reviews.map((review) => (
                                     <div key={review.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow">
                                         {/* Review Header */}
-                                        <div className="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4 text-white">
+                                        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 text-white">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <h3 className="text-2xl font-bold">{review.canteenName}</h3>
-                                                    <p className="text-sm opacity-90 mt-1">
-                                                        Reviewed by <span className="font-semibold">{review.userName}</span> • {formatDate(review.createdAt)}
-                                                    </p>
+                                                    <h3 className="text-xl font-bold">{review.canteenName}</h3>
+                                                    <p className="text-sm opacity-90 mt-1">{formatDate(review.createdAt)}</p>
                                                 </div>
                                                 <div className="bg-white bg-opacity-20 px-4 py-2 rounded-lg">
                                                     {renderStars(review.rating)}
@@ -189,7 +144,7 @@ function Reviews() {
                                                     </h4>
                                                     <div className="flex flex-wrap gap-2">
                                                         {review.orderItems.map((item, index) => (
-                                                            <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                                                            <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
                                                                 {item}
                                                             </span>
                                                         ))}
@@ -198,12 +153,14 @@ function Reviews() {
                                             )}
 
                                             {/* Review Comment */}
-                                            {review.comment ? (
+                                            {review.comment && (
                                                 <div className="bg-gray-50 rounded-lg p-4">
-                                                    <h4 className="text-sm font-semibold text-gray-600 mb-2">Review:</h4>
+                                                    <h4 className="text-sm font-semibold text-gray-600 mb-2">Your Review:</h4>
                                                     <p className="text-gray-800 leading-relaxed">{review.comment}</p>
                                                 </div>
-                                            ) : (
+                                            )}
+
+                                            {!review.comment && (
                                                 <p className="text-gray-500 italic">No written review provided</p>
                                             )}
                                         </div>
@@ -218,4 +175,4 @@ function Reviews() {
     )
 }
 
-export default Reviews
+export default MyReviews

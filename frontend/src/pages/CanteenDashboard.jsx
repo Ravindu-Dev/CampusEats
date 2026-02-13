@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import canteenAuthService from '../services/canteenAuthService'
 import canteenService from '../services/canteenService'
+import reviewService from '../services/reviewService'
 
 function CanteenDashboard() {
     const [canteenOwner, setCanteenOwner] = useState(null)
     const [canteen, setCanteen] = useState(null)
+
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
@@ -20,6 +22,8 @@ function CanteenDashboard() {
 
         // Fetch canteen details
         if (owner.canteenId) {
+
+
             canteenService.getMyCanteen(owner.canteenId)
                 .then(data => {
                     setCanteen(data)
@@ -33,6 +37,8 @@ function CanteenDashboard() {
             setLoading(false)
         }
     }, [navigate])
+
+
 
     const handleLogout = () => {
         canteenAuthService.logout()
@@ -228,6 +234,8 @@ function CanteenDashboard() {
                     </div>
                 )}
 
+
+
                 {/* Quick Actions */}
                 <div className="grid md:grid-cols-3 gap-6">
                     <Link to="/canteen/menu-management" className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left block">
@@ -261,7 +269,7 @@ function CanteenDashboard() {
                         <p className="text-gray-600">View and manage incoming orders</p>
                     </Link>
 
-                    <button className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left">
+                    <Link to="/canteen/reviews" className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left block">
                         <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -269,7 +277,7 @@ function CanteenDashboard() {
                         </div>
                         <h3 className="text-xl font-bold text-gray-900 mb-2">Reviews & Ratings</h3>
                         <p className="text-gray-600">See customer feedback</p>
-                    </button>
+                    </Link>
 
                     <button className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left">
                         <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
