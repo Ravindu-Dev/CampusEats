@@ -23,6 +23,10 @@ public class OrderResponse {
     private Double totalAmount;
     private String paymentStatus;
     private String stripePaymentIntentId;
+    private String orderStatus;
+    private LocalDateTime preparedAt;
+    private LocalDateTime readyAt;
+    private LocalDateTime completedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

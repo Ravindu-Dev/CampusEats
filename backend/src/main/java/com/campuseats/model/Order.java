@@ -40,12 +40,38 @@ public class Order {
 
     private String stripePaymentIntentId;
 
+    // Order status: PENDING, PREPARING, READY, COMPLETED
+    private OrderStatus orderStatus = OrderStatus.PENDING;
+
+    private LocalDateTime preparedAt;
+    private LocalDateTime readyAt;
+    private LocalDateTime completedAt;
+
+    private List<StatusChange> statusHistory = new ArrayList<>();
+
     @CreatedDate
     @Indexed
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    public enum OrderStatus {
+        PENDING,
+        PREPARING,
+        READY,
+        COMPLETED
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StatusChange {
+        private OrderStatus fromStatus;
+        private OrderStatus toStatus;
+        private LocalDateTime changedAt;
+        private String changedBy; // canteenId or system
+    }
 
     @Data
     @NoArgsConstructor

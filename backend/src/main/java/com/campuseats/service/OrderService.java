@@ -77,8 +77,15 @@ public class OrderService {
         }
 
         public OrderResponse getOrderById(String orderId, String userId) {
-                Order order = orderRepository.findByIdAndUserId(orderId, userId)
-                                .orElseThrow(() -> new RuntimeException("Order not found"));
+                Order order;
+                if (userId != null) {
+                        order = orderRepository.findByIdAndUserId(orderId, userId)
+                                        .orElseThrow(() -> new RuntimeException("Order not found"));
+                } else {
+                        // For public status checking (no userId verification)
+                        order = orderRepository.findById(orderId)
+                                        .orElseThrow(() -> new RuntimeException("Order not found"));
+                }
                 return convertToResponse(order);
         }
 
@@ -114,7 +121,80 @@ public class OrderService {
                                 order.getTotalAmount(),
                                 order.getPaymentStatus(),
                                 order.getStripePaymentIntentId(),
+                                order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",
+                                order.getPreparedAt(),
+                                order.getReadyAt(),
+                                order.getCompletedAt(),
                                 order.getCreatedAt(),
                                 order.getUpdatedAt());
+        }
+
+        public OrderResponse updateOrderStatus(String orderId, String newStatus, String canteenId) {
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+                // Verify that the order belongs to this canteen
+                boolean belongsToCanteen = order.getOrderItems().stream()
+                                .anyMatch(item -> item.getCanteenId().equals(canteenId));
+
+                if (!belongsToCanteen) {
+                        throw new RuntimeException("Unauthorized: Order does not belong to this canteen");
+                }
+
+                Order.OrderStatus currentStatus = order.getOrderStatus();
+                Order.OrderStatus targetStatus = Order.OrderStatus.valueOf(newStatus);
+
+                // Validate status transition (can only move forward)
+                if (!isValidStatusTransition(currentStatus, targetStatus)) {
+                        throw new RuntimeException(
+                                        "Invalid status transition from " + currentStatus + " to " + targetStatus);
+                }
+
+                // Record status change in history
+                Order.StatusChange statusChange = new Order.StatusChange(
+                                currentStatus,
+                                targetStatus,
+                                java.time.LocalDateTime.now(),
+                                canteenId);
+                order.getStatusHistory().add(statusChange);
+
+                // Update status and timestamps
+                order.setOrderStatus(targetStatus);
+                switch (targetStatus) {
+                        case PREPARING:
+                                order.setPreparedAt(java.time.LocalDateTime.now());
+                                break;
+                        case READY:
+                                order.setReadyAt(java.time.LocalDateTime.now());
+                                break;
+                        case COMPLETED:
+                                order.setCompletedAt(java.time.LocalDateTime.now());
+                                break;
+                        default:
+                                break;
+                }
+
+                Order updatedOrder = orderRepository.save(order);
+                return convertToResponse(updatedOrder);
+        }
+
+        private boolean isValidStatusTransition(Order.OrderStatus current, Order.OrderStatus target) {
+                // Define valid transitions (can only move forward)
+                if (current == target) {
+                        return false; // No point in updating to same status
+                }
+
+                switch (current) {
+                        case PENDING:
+                                return target == Order.OrderStatus.PREPARING;
+                        case PREPARING:
+                                return target == Order.OrderStatus.READY;
+                        case READY:
+                                return target == Order.OrderStatus.COMPLETED;
+                        case COMPLETED:
+                                return false; // Cannot transition from completed
+                        default:
+                                return false;
+                }
         }
 }

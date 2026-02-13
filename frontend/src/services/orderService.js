@@ -24,6 +24,24 @@ const orderService = {
             headers: { Authorization: `Bearer ${token}` }
         });
         return response.data;
+    },
+
+    updateOrderStatus: async (orderId, status, canteenId) => {
+        const owner = canteenAuthService.getCurrentCanteenOwner();
+        const token = owner?.token;
+        const response = await api.patch(
+            `/orders/${orderId}/status?canteenId=${canteenId}`,
+            { status },
+            {
+                headers: { Authorization: `Bearer ${token}` }
+            }
+        );
+        return response.data;
+    },
+
+    getOrderStatus: async (orderId) => {
+        const response = await api.get(`/orders/${orderId}/status`);
+        return response.data;
     }
 };
 
