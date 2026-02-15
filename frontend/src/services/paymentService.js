@@ -9,10 +9,10 @@ const paymentService = {
         return response.data;
     },
 
-    confirmPayment: async (paymentIntentId, orderId) => {
+    confirmPayment: async (paymentIntentId, orderIds) => {
         const response = await api.post('/payment/confirm', {
             paymentIntentId,
-            orderId
+            orderIds
         });
         return response.data;
     }

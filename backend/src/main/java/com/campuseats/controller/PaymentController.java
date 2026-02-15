@@ -41,11 +41,13 @@ public class PaymentController {
         try {
             String status = paymentService.getPaymentStatus(request.getPaymentIntentId());
 
-            // Update order payment status
-            orderService.updateOrderPaymentStatus(
-                    request.getOrderId(),
-                    status,
-                    request.getPaymentIntentId());
+            // Update payment status for all orders
+            for (String orderId : request.getOrderIds()) {
+                orderService.updateOrderPaymentStatus(
+                        orderId,
+                        status,
+                        request.getPaymentIntentId());
+            }
 
             Map<String, String> response = new HashMap<>();
             response.put("status", status);
