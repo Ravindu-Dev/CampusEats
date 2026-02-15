@@ -10,7 +10,7 @@ import PaymentSuccessModal from '../components/PaymentSuccessModal';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-function CheckoutForm({ orderId, totalAmount, onSuccess }) {
+function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
     const stripe = useStripe();
     const elements = useElements();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -36,8 +36,8 @@ function CheckoutForm({ orderId, totalAmount, onSuccess }) {
                 setErrorMessage(error.message);
                 setIsProcessing(false);
             } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-                // Confirm payment on backend
-                await paymentService.confirmPayment(paymentIntent.id, orderId);
+                // Confirm payment on backend with all order IDs
+                await paymentService.confirmPayment(paymentIntent.id, orderIds);
                 onSuccess();
             }
         } catch (err) {
@@ -155,14 +155,18 @@ function Checkout() {
         setIsCreatingOrder(true);
 
         try {
-            // Create order
-            const createdOrder = await orderService.createOrder(formData);
-            setOrder(createdOrder);
+            // Create orders (backend will split by canteen)
+            const createdOrders = await orderService.createOrder(formData);
+            setOrder(createdOrders); // Store array of orders
 
-            // Create payment intent
+            // Calculate combined total from all orders
+            const combinedTotal = createdOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+            // Create single payment intent for combined total
+            // We'll use the first order ID as reference, but store all IDs for confirmation
             const paymentIntent = await paymentService.createPaymentIntent(
-                createdOrder.id,
-                createdOrder.totalAmount
+                createdOrders[0].id,
+                combinedTotal
             );
 
             setClientSecret(paymentIntent.clientSecret);
@@ -274,7 +278,7 @@ function Checkout() {
                         <div className="border-t border-gray-200 pt-6 space-y-3">
                             <div className="flex justify-between text-base text-gray-600">
                                 <p>Subtotal</p>
-                                <p>₹{(subtotal || order?.totalAmount || 0).toFixed(2)}</p>
+                                <p>₹{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
                             </div>
                             <div className="flex justify-between text-base text-gray-600 pb-3 border-b border-gray-200 border-dashed">
                                 <p>Delivery Fee</p>
@@ -282,7 +286,7 @@ function Checkout() {
                             </div>
                             <div className="flex justify-between text-2xl font-black text-gray-900">
                                 <p>Total</p>
-                                <p className="text-orange-600">₹{(subtotal || order?.totalAmount || 0).toFixed(2)}</p>
+                                <p className="text-orange-600">₹{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
                             </div>
                         </div>
                     </div>
@@ -401,8 +405,8 @@ function Checkout() {
                                 {clientSecret && (
                                     <Elements stripe={stripePromise} options={options}>
                                         <CheckoutForm
-                                            orderId={order.id}
-                                            totalAmount={order.totalAmount}
+                                            orderIds={order.map(o => o.id)}
+                                            totalAmount={order.reduce((sum, o) => sum + o.totalAmount, 0)}
                                             onSuccess={handlePaymentSuccess}
                                         />
                                     </Elements>

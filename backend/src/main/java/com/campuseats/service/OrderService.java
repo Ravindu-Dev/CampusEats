@@ -3,13 +3,17 @@ package com.campuseats.service;
 import com.campuseats.dto.CreateOrderRequest;
 import com.campuseats.dto.OrderResponse;
 import com.campuseats.model.Cart;
+import com.campuseats.model.CartItem;
 import com.campuseats.model.Order;
 import com.campuseats.repository.CartRepository;
 import com.campuseats.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,7 +23,7 @@ public class OrderService {
         private final OrderRepository orderRepository;
         private final CartRepository cartRepository;
 
-        public OrderResponse createOrder(String userId, CreateOrderRequest request) {
+        public List<OrderResponse> createOrder(String userId, CreateOrderRequest request) {
                 // Get user's cart
                 Cart cart = cartRepository.findByUserId(userId)
                                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -28,38 +32,59 @@ public class OrderService {
                         throw new RuntimeException("Cart is empty");
                 }
 
-                // Calculate total amount
-                double totalAmount = cart.getItems().stream()
-                                .mapToDouble(item -> item.getPrice() * item.getQuantity())
-                                .sum();
+                // Group cart items by canteen
+                Map<String, List<CartItem>> itemsByCanteen = groupItemsByCanteen(cart.getItems());
 
-                // Create order items from cart items
-                List<Order.OrderItem> orderItems = cart.getItems().stream()
-                                .map(cartItem -> new Order.OrderItem(
-                                                cartItem.getMenuItemId(),
-                                                cartItem.getName(),
-                                                cartItem.getPrice(),
-                                                cartItem.getQuantity(),
-                                                cartItem.getCanteenId(), // Map canteenId
-                                                cartItem.getCanteenName(),
-                                                cartItem.getImageUrl()))
-                                .collect(Collectors.toList());
+                // Create separate orders for each canteen
+                List<OrderResponse> createdOrders = new ArrayList<>();
 
-                // Create order
-                Order order = new Order();
-                order.setUserId(userId);
-                order.setOrderItems(orderItems);
-                order.setCustomerName(request.getCustomerName());
-                order.setCustomerEmail(request.getCustomerEmail());
-                order.setCustomerPhone(request.getCustomerPhone());
-                order.setPickupDate(request.getPickupDate());
-                order.setPickupTime(request.getPickupTime());
-                order.setTotalAmount(totalAmount);
-                order.setPaymentStatus("pending");
+                for (Map.Entry<String, List<CartItem>> entry : itemsByCanteen.entrySet()) {
+                        String canteenId = entry.getKey();
+                        List<CartItem> canteenItems = entry.getValue();
 
-                Order savedOrder = orderRepository.save(order);
+                        // Calculate total for this canteen
+                        double canteenTotal = canteenItems.stream()
+                                        .mapToDouble(item -> item.getPrice() * item.getQuantity())
+                                        .sum();
 
-                return convertToResponse(savedOrder);
+                        // Create order items for this canteen
+                        List<Order.OrderItem> orderItems = canteenItems.stream()
+                                        .map(cartItem -> new Order.OrderItem(
+                                                        cartItem.getMenuItemId(),
+                                                        cartItem.getName(),
+                                                        cartItem.getPrice(),
+                                                        cartItem.getQuantity(),
+                                                        cartItem.getCanteenId(),
+                                                        cartItem.getCanteenName(),
+                                                        cartItem.getImageUrl()))
+                                        .collect(Collectors.toList());
+
+                        // Create order for this canteen
+                        Order order = new Order();
+                        order.setUserId(userId);
+                        order.setOrderItems(orderItems);
+                        order.setCustomerName(request.getCustomerName());
+                        order.setCustomerEmail(request.getCustomerEmail());
+                        order.setCustomerPhone(request.getCustomerPhone());
+                        order.setPickupDate(request.getPickupDate());
+                        order.setPickupTime(request.getPickupTime());
+                        order.setTotalAmount(canteenTotal);
+                        order.setPaymentStatus("pending");
+
+                        Order savedOrder = orderRepository.save(order);
+                        createdOrders.add(convertToResponse(savedOrder));
+                }
+
+                return createdOrders;
+        }
+
+        // Helper method to group cart items by canteen
+        private Map<String, List<CartItem>> groupItemsByCanteen(List<CartItem> cartItems) {
+                Map<String, List<CartItem>> grouped = new HashMap<>();
+                for (CartItem item : cartItems) {
+                        grouped.computeIfAbsent(item.getCanteenId(), k -> new ArrayList<>()).add(item);
+                }
+                return grouped;
         }
 
         public List<OrderResponse> getUserOrders(String userId) {
@@ -72,7 +97,7 @@ public class OrderService {
         public List<OrderResponse> getCanteenOrders(String canteenId) {
                 List<Order> orders = orderRepository.findByOrderItemsCanteenIdOrderByCreatedAtDesc(canteenId);
                 return orders.stream()
-                                .map(this::convertToResponse)
+                                .map(order -> convertToResponseForCanteen(order, canteenId))
                                 .collect(Collectors.toList());
         }
 
@@ -119,6 +144,47 @@ public class OrderService {
                                 order.getPickupDate(),
                                 order.getPickupTime(),
                                 order.getTotalAmount(),
+                                order.getPaymentStatus(),
+                                order.getStripePaymentIntentId(),
+                                order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",
+                                order.getHasReview(),
+                                order.getPreparedAt(),
+                                order.getReadyAt(),
+                                order.getCompletedAt(),
+                                order.getCreatedAt(),
+                                order.getUpdatedAt());
+        }
+
+        // Convert order to response, filtering items for a specific canteen
+        private OrderResponse convertToResponseForCanteen(Order order, String canteenId) {
+                // Filter order items to only include items from this canteen
+                List<OrderResponse.OrderItemDTO> itemDTOs = order.getOrderItems().stream()
+                                .filter(item -> item.getCanteenId().equals(canteenId))
+                                .map(item -> new OrderResponse.OrderItemDTO(
+                                                item.getMenuItemId(),
+                                                item.getName(),
+                                                item.getPrice(),
+                                                item.getQuantity(),
+                                                item.getCanteenId(),
+                                                item.getCanteenName(),
+                                                item.getImageUrl()))
+                                .collect(Collectors.toList());
+
+                // Calculate total amount for this canteen's items only
+                double canteenTotal = itemDTOs.stream()
+                                .mapToDouble(item -> item.getPrice() * item.getQuantity())
+                                .sum();
+
+                return new OrderResponse(
+                                order.getId(),
+                                order.getUserId(),
+                                itemDTOs,
+                                order.getCustomerName(),
+                                order.getCustomerEmail(),
+                                order.getCustomerPhone(),
+                                order.getPickupDate(),
+                                order.getPickupTime(),
+                                canteenTotal, // Use canteen-specific total instead of order total
                                 order.getPaymentStatus(),
                                 order.getStripePaymentIntentId(),
                                 order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",

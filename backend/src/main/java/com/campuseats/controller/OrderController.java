@@ -33,9 +33,9 @@ public class OrderController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-        OrderResponse order = orderService.createOrder(getCurrentUserId(), request);
-        return ResponseEntity.ok(order);
+    public ResponseEntity<List<OrderResponse>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+        List<OrderResponse> orders = orderService.createOrder(getCurrentUserId(), request);
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping
