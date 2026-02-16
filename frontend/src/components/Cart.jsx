@@ -1,7 +1,10 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import OrderTypeModal from './OrderTypeModal';
 
 function Cart() {
+    const navigate = useNavigate();
     const {
         cart,
         isCartOpen,
@@ -12,6 +15,17 @@ function Cart() {
         itemCount,
         loading
     } = useCart();
+
+    const [showOrderTypeModal, setShowOrderTypeModal] = useState(false);
+
+    const handleProceedToCheckout = () => {
+        setShowOrderTypeModal(true);
+    };
+
+    const handleSelectOrderType = (orderType) => {
+        setIsCartOpen(false);
+        navigate('/checkout', { state: { orderType } });
+    };
 
     if (!isCartOpen) return null;
 
@@ -148,10 +162,7 @@ function Cart() {
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        setIsCartOpen(false);
-                                        window.location.href = '/checkout';
-                                    }}
+                                    onClick={handleProceedToCheckout}
                                     className="w-full h-14 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-orange-200 transform active:scale-95 transition-all flex items-center justify-center gap-3 group"
                                 >
                                     Proceed to Checkout
@@ -167,6 +178,13 @@ function Cart() {
                     </div>
                 </div>
             </div>
+
+            {/* Order Type Modal */}
+            <OrderTypeModal
+                isOpen={showOrderTypeModal}
+                onClose={() => setShowOrderTypeModal(false)}
+                onSelectOrderType={handleSelectOrderType}
+            />
         </div>
     );
 }
