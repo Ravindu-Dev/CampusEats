@@ -37,8 +37,8 @@ function Navbar() {
     return (
         <nav
             className={`sticky top-0 z-50 transition-all duration-300 border-b ${scrolled
-                    ? 'bg-white/90 backdrop-blur-xl border-gray-200 shadow-sm py-2'
-                    : 'bg-white/80 backdrop-blur-lg border-transparent py-4'
+                ? 'bg-white/90 backdrop-blur-xl border-gray-200 shadow-sm py-2'
+                : 'bg-white/80 backdrop-blur-lg border-transparent py-4'
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,8 +62,8 @@ function Navbar() {
                                 key={link.path}
                                 to={link.path}
                                 className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 relative group ${isActive(link.path)
-                                        ? 'text-orange-600 bg-orange-50'
-                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                    ? 'text-orange-600 bg-orange-50'
+                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                                     }`}
                             >
                                 {link.name}
@@ -92,6 +92,16 @@ function Navbar() {
                                         </span>
                                     )}
                                 </button>
+
+                                <Link
+                                    to="/dashboard"
+                                    className="p-2.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all duration-300 group"
+                                    aria-label="Dashboard"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </Link>
 
                                 <div className="h-6 w-px bg-gray-200"></div>
 
@@ -174,8 +184,8 @@ function Navbar() {
                             to={link.path}
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all ${isActive(link.path)
-                                    ? 'bg-orange-50 text-orange-600'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                ? 'bg-orange-50 text-orange-600'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
                         >
                             {link.name}
