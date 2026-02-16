@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -81,13 +81,19 @@ function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
 
 function Checkout() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { cart, subtotal, clearCart, loading } = useCart();
+
+    // Get order type from navigation state, default to 'LATER' for backward compatibility
+    const orderType = location.state?.orderType || 'LATER';
+
     const [formData, setFormData] = useState({
         customerName: '',
         customerEmail: '',
         customerPhone: '',
         pickupDate: '',
-        pickupTime: ''
+        pickupTime: '',
+        orderType: orderType
     });
     const [errors, setErrors] = useState({});
     const [order, setOrder] = useState(null);
@@ -124,12 +130,15 @@ function Checkout() {
             newErrors.customerPhone = 'Phone number must be 10 digits';
         }
 
-        if (!formData.pickupDate) {
-            newErrors.pickupDate = 'Pickup date is required';
-        }
+        // Only validate date/time for LATER orders
+        if (orderType === 'LATER') {
+            if (!formData.pickupDate) {
+                newErrors.pickupDate = 'Pickup date is required';
+            }
 
-        if (!formData.pickupTime) {
-            newErrors.pickupTime = 'Pickup time is required';
+            if (!formData.pickupTime) {
+                newErrors.pickupTime = 'Pickup time is required';
+            }
         }
 
         setErrors(newErrors);
@@ -306,7 +315,7 @@ function Checkout() {
                     <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
                         {!showPayment ? (
                             <>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3">
                                     <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-xl">
                                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -314,6 +323,35 @@ function Checkout() {
                                     </div>
                                     Order Details
                                 </h2>
+
+                                {/* Order Type Badge */}
+                                <div className={`mb-6 p-4 rounded-xl border-2 ${orderType === 'NOW'
+                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300'
+                                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300'
+                                    }`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg ${orderType === 'NOW' ? 'bg-green-600' : 'bg-blue-600'
+                                            }`}>
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                {orderType === 'NOW' ? (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                ) : (
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                )}
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className={`font-bold ${orderType === 'NOW' ? 'text-green-800' : 'text-blue-800'}`}>
+                                                {orderType === 'NOW' ? 'Order Now' : 'Order Later'}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                {orderType === 'NOW'
+                                                    ? 'Your food will be ready for immediate pickup'
+                                                    : 'Schedule your pickup time below'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <form onSubmit={handleProceedToPayment} className="space-y-5">
                                     <div>
@@ -356,30 +394,35 @@ function Checkout() {
                                         {errors.customerPhone && <p className="text-red-500 text-sm mt-1">{errors.customerPhone}</p>}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Date</label>
-                                        <input
-                                            type="date"
-                                            name="pickupDate"
-                                            value={formData.pickupDate}
-                                            onChange={handleInputChange}
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className={`w-full px-4 py-3 border ${errors.pickupDate ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
-                                        />
-                                        {errors.pickupDate && <p className="text-red-500 text-sm mt-1">{errors.pickupDate}</p>}
-                                    </div>
+                                    {/* Conditionally render pickup date/time for LATER orders */}
+                                    {orderType === 'LATER' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Date</label>
+                                                <input
+                                                    type="date"
+                                                    name="pickupDate"
+                                                    value={formData.pickupDate}
+                                                    onChange={handleInputChange}
+                                                    min={new Date().toISOString().split('T')[0]}
+                                                    className={`w-full px-4 py-3 border ${errors.pickupDate ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
+                                                />
+                                                {errors.pickupDate && <p className="text-red-500 text-sm mt-1">{errors.pickupDate}</p>}
+                                            </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Time</label>
-                                        <input
-                                            type="time"
-                                            name="pickupTime"
-                                            value={formData.pickupTime}
-                                            onChange={handleInputChange}
-                                            className={`w-full px-4 py-3 border ${errors.pickupTime ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
-                                        />
-                                        {errors.pickupTime && <p className="text-red-500 text-sm mt-1">{errors.pickupTime}</p>}
-                                    </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Time</label>
+                                                <input
+                                                    type="time"
+                                                    name="pickupTime"
+                                                    value={formData.pickupTime}
+                                                    onChange={handleInputChange}
+                                                    className={`w-full px-4 py-3 border ${errors.pickupTime ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
+                                                />
+                                                {errors.pickupTime && <p className="text-red-500 text-sm mt-1">{errors.pickupTime}</p>}
+                                            </div>
+                                        </>
+                                    )}
 
                                     <button
                                         type="submit"

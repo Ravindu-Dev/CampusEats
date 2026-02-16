@@ -23,9 +23,11 @@ public class CreateOrderRequest {
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
     private String customerPhone;
 
-    @NotBlank(message = "Pickup date is required")
+    @NotBlank(message = "Order type is required")
+    private String orderType; // "NOW" or "LATER"
+
+    // Conditionally required based on orderType (validated in service layer)
     private String pickupDate;
 
-    @NotBlank(message = "Pickup time is required")
     private String pickupTime;
 }

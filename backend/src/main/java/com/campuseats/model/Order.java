@@ -46,6 +46,9 @@ public class Order {
     // Order status: PENDING, PREPARING, READY, COMPLETED
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
+    // Order type: NOW (immediate pickup) or LATER (scheduled pickup)
+    private OrderType orderType = OrderType.LATER;
+
     // Review tracking
     private Boolean hasReview = false;
 
@@ -67,6 +70,11 @@ public class Order {
         PREPARING,
         READY,
         COMPLETED
+    }
+
+    public enum OrderType {
+        NOW, // Immediate pickup
+        LATER // Scheduled pickup
     }
 
     @Data

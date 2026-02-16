@@ -25,6 +25,7 @@ public class OrderResponse {
     private String stripePaymentIntentId;
     private String qrCodeBase64;
     private String orderStatus;
+    private String orderType;
     private Boolean hasReview;
     private LocalDateTime preparedAt;
     private LocalDateTime readyAt;

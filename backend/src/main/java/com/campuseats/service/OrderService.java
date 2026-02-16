@@ -33,6 +33,22 @@ public class OrderService {
                         throw new RuntimeException("Cart is empty");
                 }
 
+                // Validate order type
+                if (request.getOrderType() == null ||
+                                (!request.getOrderType().equals("NOW") && !request.getOrderType().equals("LATER"))) {
+                        throw new RuntimeException("Invalid order type. Must be 'NOW' or 'LATER'");
+                }
+
+                // Validate pickup date/time for LATER orders
+                if (request.getOrderType().equals("LATER")) {
+                        if (request.getPickupDate() == null || request.getPickupDate().trim().isEmpty()) {
+                                throw new RuntimeException("Pickup date is required for scheduled orders");
+                        }
+                        if (request.getPickupTime() == null || request.getPickupTime().trim().isEmpty()) {
+                                throw new RuntimeException("Pickup time is required for scheduled orders");
+                        }
+                }
+
                 // Group cart items by canteen
                 Map<String, List<CartItem>> itemsByCanteen = groupItemsByCanteen(cart.getItems());
 
@@ -67,8 +83,24 @@ public class OrderService {
                         order.setCustomerName(request.getCustomerName());
                         order.setCustomerEmail(request.getCustomerEmail());
                         order.setCustomerPhone(request.getCustomerPhone());
-                        order.setPickupDate(request.getPickupDate());
-                        order.setPickupTime(request.getPickupTime());
+
+                        // Set order type
+                        order.setOrderType(Order.OrderType.valueOf(request.getOrderType()));
+
+                        // Set pickup date/time based on order type
+                        if (request.getOrderType().equals("NOW")) {
+                                // For NOW orders, set current date and time
+                                java.time.LocalDate currentDate = java.time.LocalDate.now();
+                                java.time.LocalTime currentTime = java.time.LocalTime.now();
+                                order.setPickupDate(currentDate.toString());
+                                order.setPickupTime(currentTime
+                                                .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+                        } else {
+                                // For LATER orders, use provided date/time
+                                order.setPickupDate(request.getPickupDate());
+                                order.setPickupTime(request.getPickupTime());
+                        }
+
                         order.setTotalAmount(canteenTotal);
                         order.setPaymentStatus("pending");
 
@@ -156,6 +188,7 @@ public class OrderService {
                                 order.getStripePaymentIntentId(),
                                 order.getQrCodeBase64(),
                                 order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",
+                                order.getOrderType() != null ? order.getOrderType().name() : "LATER",
                                 order.getHasReview(),
                                 order.getPreparedAt(),
                                 order.getReadyAt(),
@@ -198,6 +231,7 @@ public class OrderService {
                                 order.getStripePaymentIntentId(),
                                 order.getQrCodeBase64(),
                                 order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",
+                                order.getOrderType() != null ? order.getOrderType().name() : "LATER",
                                 order.getHasReview(),
                                 order.getPreparedAt(),
                                 order.getReadyAt(),
