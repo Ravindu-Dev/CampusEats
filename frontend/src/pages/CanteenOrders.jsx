@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import canteenService from '../services/canteenService';
 import canteenAuthService from '../services/canteenAuthService';
 import orderService from '../services/orderService';
 
 function CanteenOrders() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [canteenOwner, setCanteenOwner] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(new Date());
     const [newOrdersCount, setNewOrdersCount] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '');
+    const [highlightOrderId, setHighlightOrderId] = useState(location.state?.highlightOrderId || null);
 
     useEffect(() => {
         const owner = canteenAuthService.getCurrentCanteenOwner();
@@ -142,14 +145,38 @@ function CanteenOrders() {
             </nav>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Success Message */}
+                {successMessage && (
+                    <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <svg className="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p className="text-green-800 font-semibold">
+                                    ✅ {successMessage}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSuccessMessage('')}
+                                className="text-green-600 hover:text-green-800"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* New Orders Notification */}
                 {newOrdersCount > 0 && (
-                    <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg shadow-sm animate-pulse">
+                    <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg shadow-sm animate-pulse">
                         <div className="flex items-center">
-                            <svg className="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg className="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
-                            <p className="text-green-800 font-semibold">
+                            <p className="text-blue-800 font-semibold">
                                 🎉 {newOrdersCount} new order{newOrdersCount > 1 ? 's' : ''} received!
                             </p>
                         </div>
@@ -169,7 +196,13 @@ function CanteenOrders() {
                 ) : (
                     <div className="space-y-6">
                         {orders.map((order) => (
-                            <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
+                            <div
+                                key={order.id}
+                                className={`bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition ${highlightOrderId === order.id
+                                        ? 'border-4 border-green-500 ring-4 ring-green-200'
+                                        : 'border border-gray-100'
+                                    }`}
+                            >
                                 <div className="p-6">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                                         <div>

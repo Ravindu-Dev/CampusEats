@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import QRScanner from '../components/QRScanner';
 import OrderVerificationModal from '../components/OrderVerificationModal';
 import qrService from '../services/qrService';
+import orderService from '../services/orderService';
 import canteenAuthService from '../services/canteenAuthService';
 
 function ScanQRPage() {
@@ -48,16 +49,39 @@ function ScanQRPage() {
         console.error('Scan error:', error);
     };
 
-    const handleConfirmHandoff = () => {
-        // Close modal and show success message
-        setScannedOrder(null);
+    const handleConfirmHandoff = async () => {
+        if (!scannedOrder || !canteenOwner?.canteenId) return;
+
+        setIsVerifying(true);
         setError('');
 
-        // Show success notification
-        alert('Order handed off successfully! ✅');
+        try {
+            // Update order status to COMPLETED
+            await orderService.updateOrderStatus(
+                scannedOrder.id,
+                'COMPLETED',
+                canteenOwner.canteenId
+            );
 
-        // Optionally navigate back to dashboard
-        // navigate('/canteen/dashboard');
+            // Close modal
+            setScannedOrder(null);
+
+            // Navigate to canteen orders page
+            navigate('/canteen/orders', {
+                state: {
+                    successMessage: `Order #${scannedOrder.id.substring(0, 8)}... handed off successfully!`,
+                    highlightOrderId: scannedOrder.id
+                }
+            });
+        } catch (err) {
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to confirm handoff';
+            setError(errorMessage);
+
+            // Auto-clear error after 5 seconds
+            setTimeout(() => setError(''), 5000);
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
     const handleCancelVerification = () => {
