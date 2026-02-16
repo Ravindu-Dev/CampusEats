@@ -23,6 +23,7 @@ public class OrderResponse {
     private Double totalAmount;
     private String paymentStatus;
     private String stripePaymentIntentId;
+    private String qrCodeBase64;
     private String orderStatus;
     private Boolean hasReview;
     private LocalDateTime preparedAt;

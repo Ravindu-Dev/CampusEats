@@ -40,6 +40,9 @@ public class Order {
 
     private String stripePaymentIntentId;
 
+    // QR Code for order pickup (Base64 encoded image)
+    private String qrCodeBase64;
+
     // Order status: PENDING, PREPARING, READY, COMPLETED
     private OrderStatus orderStatus = OrderStatus.PENDING;
 

@@ -181,6 +181,17 @@ function Checkout() {
     const handlePaymentSuccess = async () => {
         // Preserve cart items before clearing
         setPreservedCartItems(cart?.items || []);
+
+        // Fetch updated orders with QR codes
+        try {
+            const updatedOrders = await Promise.all(
+                order.map(o => orderService.getOrderById(o.id))
+            );
+            setOrder(updatedOrders);
+        } catch (err) {
+            console.error('Error fetching updated orders:', err);
+        }
+
         await clearCart();
         setShowSuccess(true);
     };
@@ -417,7 +428,7 @@ function Checkout() {
                 </div>
             </div>
 
-            {showSuccess && <PaymentSuccessModal onClose={() => navigate('/menu')} />}
+            {showSuccess && <PaymentSuccessModal onClose={() => navigate('/menu')} orders={order || []} />}
         </div>
     );
 }

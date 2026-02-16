@@ -2,7 +2,9 @@ package com.campuseats.controller;
 
 import com.campuseats.dto.CreateOrderRequest;
 import com.campuseats.dto.OrderResponse;
+import com.campuseats.model.Order;
 import com.campuseats.model.User;
+import com.campuseats.repository.OrderRepository;
 import com.campuseats.repository.UserRepository;
 import com.campuseats.service.OrderService;
 import jakarta.validation.Valid;
@@ -14,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -22,6 +25,7 @@ public class OrderController {
 
     private final OrderService orderService;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
 
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -82,6 +86,36 @@ public class OrderController {
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/verify-qr")
+    @PreAuthorize("hasRole('CANTEEN_OWNER')")
+    public ResponseEntity<?> verifyQRCode(@Valid @RequestBody com.campuseats.dto.VerifyQRRequest request) {
+        try {
+            // Get the order by ID (scanned from QR code)
+            Order order = orderRepository.findById(request.getScannedData())
+                    .orElseThrow(() -> new RuntimeException("Order not found"));
+
+            // Verify payment status
+            if (!"succeeded".equals(order.getPaymentStatus())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Order payment not completed"));
+            }
+
+            // Verify the order belongs to this canteen
+            boolean belongsToCanteen = order.getOrderItems().stream()
+                    .anyMatch(item -> item.getCanteenId().equals(request.getCanteenId()));
+
+            if (!belongsToCanteen) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Order does not belong to this canteen"));
+            }
+
+            // Return full order details
+            OrderResponse orderResponse = orderService.getOrderById(request.getScannedData(), null);
+            return ResponseEntity.ok(orderResponse);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

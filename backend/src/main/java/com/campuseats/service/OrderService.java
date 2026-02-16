@@ -22,6 +22,7 @@ public class OrderService {
 
         private final OrderRepository orderRepository;
         private final CartRepository cartRepository;
+        private final QRCodeService qrCodeService;
 
         public List<OrderResponse> createOrder(String userId, CreateOrderRequest request) {
                 // Get user's cart
@@ -119,6 +120,13 @@ public class OrderService {
                                 .orElseThrow(() -> new RuntimeException("Order not found"));
                 order.setPaymentStatus(status);
                 order.setStripePaymentIntentId(paymentIntentId);
+
+                // Generate QR code for successful payments
+                if ("succeeded".equals(status)) {
+                        String qrCode = qrCodeService.generateQRCode(orderId);
+                        order.setQrCodeBase64(qrCode);
+                }
+
                 orderRepository.save(order);
         }
 
@@ -146,6 +154,7 @@ public class OrderService {
                                 order.getTotalAmount(),
                                 order.getPaymentStatus(),
                                 order.getStripePaymentIntentId(),
+                                order.getQrCodeBase64(),
                                 order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",
                                 order.getHasReview(),
                                 order.getPreparedAt(),
@@ -187,6 +196,7 @@ public class OrderService {
                                 canteenTotal, // Use canteen-specific total instead of order total
                                 order.getPaymentStatus(),
                                 order.getStripePaymentIntentId(),
+                                order.getQrCodeBase64(),
                                 order.getOrderStatus() != null ? order.getOrderStatus().name() : "PENDING",
                                 order.getHasReview(),
                                 order.getPreparedAt(),
