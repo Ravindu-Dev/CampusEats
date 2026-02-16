@@ -71,10 +71,13 @@ function KitchenDashboard() {
 
     // Filter orders when activeFilter or orders change
     useEffect(() => {
+        // Only show orders with successful payment
+        const paidOrders = orders.filter(order => order.paymentStatus === 'succeeded');
+
         if (activeFilter === 'ALL') {
-            setFilteredOrders(orders);
+            setFilteredOrders(paidOrders);
         } else {
-            setFilteredOrders(orders.filter(order => order.orderStatus === activeFilter));
+            setFilteredOrders(paidOrders.filter(order => order.orderStatus === activeFilter));
         }
     }, [activeFilter, orders]);
 
@@ -102,7 +105,15 @@ function KitchenDashboard() {
             setOrders(data);
         } catch (error) {
             console.error('Error updating order status:', error);
-            alert('Failed to update order status. Please try again.');
+
+            // Show specific error message
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update order status';
+
+            if (errorMessage.includes('Payment not completed')) {
+                alert('⚠️ Cannot update order status: Payment has not been completed yet.');
+            } else {
+                alert(`Failed to update order status: ${errorMessage}`);
+            }
         }
     };
 
@@ -157,12 +168,14 @@ function KitchenDashboard() {
     };
 
     const getOrderCounts = () => {
+        // Only count paid orders
+        const paidOrders = orders.filter(o => o.paymentStatus === 'succeeded');
         return {
-            ALL: orders.length,
-            PENDING: orders.filter(o => o.orderStatus === 'PENDING').length,
-            PREPARING: orders.filter(o => o.orderStatus === 'PREPARING').length,
-            READY: orders.filter(o => o.orderStatus === 'READY').length,
-            COMPLETED: orders.filter(o => o.orderStatus === 'COMPLETED').length,
+            ALL: paidOrders.length,
+            PENDING: paidOrders.filter(o => o.orderStatus === 'PENDING').length,
+            PREPARING: paidOrders.filter(o => o.orderStatus === 'PREPARING').length,
+            READY: paidOrders.filter(o => o.orderStatus === 'READY').length,
+            COMPLETED: paidOrders.filter(o => o.orderStatus === 'COMPLETED').length,
         };
     };
 
@@ -240,8 +253,8 @@ function KitchenDashboard() {
                                 key={filter}
                                 onClick={() => setActiveFilter(filter)}
                                 className={`flex-1 min-w-[120px] px-4 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 ${activeFilter === filter
-                                        ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 <span>{filter.charAt(0) + filter.slice(1).toLowerCase()}</span>
@@ -348,8 +361,8 @@ function KitchenDashboard() {
                                             onClick={() => handleStatusUpdate(order.id, 'PREPARING')}
                                             disabled={order.orderStatus !== 'PENDING'}
                                             className={`flex-1 min-w-[150px] px-6 py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg ${order.orderStatus === 'PENDING'
-                                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700'
-                                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700'
+                                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                                 }`}
                                         >
                                             🔥 Start Preparing
@@ -358,8 +371,8 @@ function KitchenDashboard() {
                                             onClick={() => handleStatusUpdate(order.id, 'READY')}
                                             disabled={order.orderStatus !== 'PREPARING'}
                                             className={`flex-1 min-w-[150px] px-6 py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg ${order.orderStatus === 'PREPARING'
-                                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
-                                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
+                                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                                 }`}
                                         >
                                             ✅ Mark Ready
@@ -368,8 +381,8 @@ function KitchenDashboard() {
                                             onClick={() => handleStatusUpdate(order.id, 'COMPLETED')}
                                             disabled={order.orderStatus !== 'READY'}
                                             className={`flex-1 min-w-[150px] px-6 py-3 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg ${order.orderStatus === 'READY'
-                                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
-                                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
+                                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                                 }`}
                                         >
                                             🎉 Complete
