@@ -22,6 +22,17 @@ public class CanteenController {
         return ResponseEntity.ok(canteenService.getAllCanteens());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCanteenById(@PathVariable String id) {
+        try {
+            Canteen canteen = canteenService.getCanteenById(id);
+            return ResponseEntity.ok(canteen);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<?> getCanteenByOwnerId(@PathVariable String ownerId) {
         try {

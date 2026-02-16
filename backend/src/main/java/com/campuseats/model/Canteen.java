@@ -1,5 +1,6 @@
 package com.campuseats.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,8 +48,8 @@ public class Canteen {
     private String landmark;
 
     // Operational Details
-    private LocalTime openingTime;
-    private LocalTime closingTime;
+    private String openingTime;
+    private String closingTime;
     private Set<String> operatingDays = new HashSet<>(); // MON, TUE, WED, THU, FRI, SAT, SUN
     private Integer averagePreparationTime; // in minutes
     private boolean deliveryAvailable = false;

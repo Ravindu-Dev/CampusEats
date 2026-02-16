@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect, useContext, useRef } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { menuItemService } from '../services/menuItemService'
@@ -19,6 +19,19 @@ function Menu() {
     const [addingToCart, setAddingToCart] = useState({}) // item.id -> loadingState
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All')
+    const [selectedRestaurant, setSelectedRestaurant] = useState(null) // null = all restaurants
+    const scrollContainerRef = useRef(null)
+
+    const scroll = (direction) => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = 300
+            const newScrollLeft = scrollContainerRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount)
+            scrollContainerRef.current.scrollTo({
+                left: newScrollLeft,
+                behavior: 'smooth'
+            })
+        }
+    }
 
     const handleAddToCart = async (item) => {
         if (!user) {
@@ -42,30 +55,55 @@ function Menu() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [itemsData, canteensRes] = await Promise.all([
-                    menuItemService.getAllMenuItems(),
-                    axios.get('/api/canteens') // Assuming there's a public endpoint for all canteens
-                ])
+                // Fetch all canteens first to build the filter bar
+                let canteenData = []
+                try {
+                    const response = await axios.get('/api/canteens')
+                    canteenData = response.data
+                } catch (canteenError) {
+                    console.error('Error fetching all canteens:', canteenError)
+                    // Fallback: will try to build from menu items later
+                }
 
+                // Fetch menu items
+                const itemsData = await menuItemService.getAllMenuItems()
                 setMenuItems(itemsData)
 
-                // Create a map of canteenId -> canteen object
+                // Build canteen map
                 const canteenMap = {}
-                canteensRes.data.forEach(c => {
-                    canteenMap[c.id] = c
-                })
-                setCanteens(canteenMap)
+                
+                // If we got canteen data from API, use it
+                if (canteenData && canteenData.length > 0) {
+                    canteenData.forEach(c => {
+                        canteenMap[c.id] = c
+                    })
+                }
 
+                // Ensure canteens from menu items are also in the map (just in case)
+                const uniqueCanteenIds = [...new Set(itemsData.map(item => item.canteenId).filter(Boolean))]
+                await Promise.all(
+                    uniqueCanteenIds.map(async (canteenId) => {
+                        if (!canteenMap[canteenId]) {
+                            try {
+                                const response = await axios.get(`/api/canteens/${canteenId}`)
+                                canteenMap[canteenId] = response.data
+                            } catch (error) {
+                                console.error(`Error fetching canteen ${canteenId}:`, error)
+                                canteenMap[canteenId] = {
+                                    id: canteenId,
+                                    canteenName: `Canteen ${canteenId.substring(0, 4)}`,
+                                    status: 'APPROVED',
+                                    active: true
+                                }
+                            }
+                        }
+                    })
+                )
+                
+                setCanteens(canteenMap)
                 setLoading(false)
             } catch (err) {
                 console.error('Error fetching menu data:', err)
-                // Fallback: If canteens endpoint fails, just show items
-                try {
-                    const itemsData = await menuItemService.getAllMenuItems()
-                    setMenuItems(itemsData)
-                } catch (e) {
-                    console.error('Second fetch failed:', e)
-                }
                 setLoading(false)
             }
         }
@@ -76,7 +114,8 @@ function Menu() {
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
-        return matchesSearch && matchesCategory && item.available
+        const matchesRestaurant = !selectedRestaurant || item.canteenId === selectedRestaurant
+        return matchesSearch && matchesCategory && matchesRestaurant && item.available
     })
 
     if (loading) {
@@ -111,6 +150,130 @@ function Menu() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10 pb-20">
+                {/* Restaurant Filter Bar */}
+                <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 animate-fade-in-up">
+                    <div className="flex items-center gap-3 mb-4">
+                        <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <h2 className="text-xl font-bold text-gray-900">Browse by Restaurant</h2>
+                    </div>
+                    
+                    <div className="relative group/scroll">
+                        {/* Navigation Buttons */}
+                        <button 
+                            onClick={() => scroll('left')}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-orange-600 hover:border-orange-200 transition-all opacity-0 group-hover/scroll:opacity-100 focus:opacity-100"
+                            aria-label="Scroll left"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+
+                        <button 
+                            onClick={() => scroll('right')}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-orange-600 hover:border-orange-200 transition-all opacity-0 group-hover/scroll:opacity-100 focus:opacity-100"
+                            aria-label="Scroll right"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+
+                        {/* Scroll container */}
+                        <div 
+                            ref={scrollContainerRef}
+                            className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth" 
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                            {/* All Restaurants Option */}
+                            <button
+                                onClick={() => setSelectedRestaurant(null)}
+                                className={`flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${
+                                    !selectedRestaurant
+                                        ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200 ring-4 ring-orange-200'
+                                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                }`}
+                                style={{ minWidth: '140px' }}
+                            >
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${
+                                    !selectedRestaurant ? 'bg-white/20' : 'bg-white'
+                                }`}>
+                                    🍽️
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-bold text-sm">All Restaurants</p>
+                                    <p className={`text-xs mt-1 ${!selectedRestaurant ? 'text-orange-100' : 'text-gray-500'}`}>
+                                        {menuItems.filter(item => item.available).length} items
+                                    </p>
+                                </div>
+                            </button>
+
+                            {/* Individual Restaurants */}
+                            {Object.values(canteens)
+                                .filter(canteen => canteen.active)
+                                .map(canteen => {
+                                    const itemCount = menuItems.filter(item => item.canteenId === canteen.id && item.available).length
+                                    const isSelected = selectedRestaurant === canteen.id
+                                    
+                                    return (
+                                        <button
+                                            key={canteen.id}
+                                            onClick={() => setSelectedRestaurant(canteen.id)}
+                                            className={`flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${
+                                                isSelected
+                                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200 ring-4 ring-orange-200'
+                                                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                            }`}
+                                            style={{ minWidth: '140px' }}
+                                        >
+                                            <div className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center ${
+                                                isSelected ? 'ring-4 ring-white/30' : 'ring-2 ring-gray-200'
+                                            }`}>
+                                                {canteen.logoUrl ? (
+                                                    <img 
+                                                        src={canteen.logoUrl} 
+                                                        alt={canteen.canteenName}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null
+                                                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y="50" font-size="40" text-anchor="middle" x="50"%3E🏪%3C/text%3E%3C/svg%3E'
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className={`w-full h-full flex items-center justify-center text-3xl ${
+                                                        isSelected ? 'bg-white/20' : 'bg-white'
+                                                    }`}>
+                                                        🏪
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-bold text-sm line-clamp-1" title={canteen.canteenName}>
+                                                    {canteen.canteenName}
+                                                </p>
+                                                <p className={`text-xs mt-1 ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
+                                                    {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                                                </p>
+                                                {canteen.rating > 0 && (
+                                                    <div className={`flex items-center justify-center gap-1 mt-1 ${
+                                                        isSelected ? 'text-yellow-200' : 'text-yellow-500'
+                                                    }`}>
+                                                        <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
+                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                        </svg>
+                                                        <span className="text-xs font-bold">{canteen.rating.toFixed(1)}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </button>
+                                    )
+                                })}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Search and Filter */}
                 <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 mb-12 animate-fade-in-up">
                     <div className="flex flex-col md:flex-row gap-6 items-center justify-between">

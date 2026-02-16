@@ -21,9 +21,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-
 @RestController
 @RequestMapping("/api/canteen-auth")
 @RequiredArgsConstructor
@@ -75,9 +72,8 @@ public class CanteenAuthController {
             canteen.setLandmark(request.getLandmark());
 
             // Operational details
-            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-            canteen.setOpeningTime(LocalTime.parse(request.getOpeningTime(), timeFormatter));
-            canteen.setClosingTime(LocalTime.parse(request.getClosingTime(), timeFormatter));
+            canteen.setOpeningTime(request.getOpeningTime());
+            canteen.setClosingTime(request.getClosingTime());
             canteen.setOperatingDays(request.getOperatingDays());
             canteen.setAveragePreparationTime(request.getAveragePreparationTime());
             canteen.setDeliveryAvailable(request.isDeliveryAvailable());
