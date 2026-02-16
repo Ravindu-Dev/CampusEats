@@ -26,6 +26,7 @@ import CanteenOrders from './pages/CanteenOrders'
 import KitchenDashboard from './pages/KitchenDashboard'
 import OrderTracking from './pages/OrderTracking'
 import MyReviews from './pages/MyReviews'
+import ScanQRPage from './pages/ScanQRPage'
 
 function App() {
     return (
@@ -47,6 +48,7 @@ function App() {
                         <Route path="/canteen/register" element={<CanteenRegister />} />
                         <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
                         <Route path="/canteen/reviews" element={<CanteenReviews />} />
+                        <Route path="/canteen/scan-qr" element={<ScanQRPage />} />
                         <Route path="/admin/login" element={<AdminLogin />} />
                         <Route path="/admin/dashboard" element={<AdminDashboard />} />
                         <Route path="/admin/pending-approvals" element={<PendingApprovals />} />

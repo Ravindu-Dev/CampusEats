@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import orderService from '../services/orderService'
 import Navbar from '../components/Navbar'
 import ReviewModal from '../components/ReviewModal'
+import QRCodeDisplay from '../components/QRCodeDisplay'
 
 function Orders() {
     const [orders, setOrders] = useState([])
@@ -226,6 +227,28 @@ function Orders() {
                                                                 <p className="font-semibold text-gray-900">{order.pickupTime}</p>
                                                             </div>
                                                         )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* QR Code for Pickup */}
+                                            {order.paymentStatus?.toLowerCase() === 'succeeded' && order.qrCodeBase64 && (
+                                                <div className="mt-6 bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 rounded-xl p-6">
+                                                    <h4 className="font-bold text-gray-900 mb-4 flex items-center text-lg">
+                                                        <svg className="w-6 h-6 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                                        </svg>
+                                                        Your Pickup QR Code
+                                                    </h4>
+                                                    <div className="bg-white rounded-lg p-4 mb-3">
+                                                        <p className="text-sm text-gray-600 mb-4 text-center">
+                                                            📱 Show this QR code to the canteen staff for quick pickup
+                                                        </p>
+                                                        <QRCodeDisplay
+                                                            qrCodeBase64={order.qrCodeBase64}
+                                                            orderId={order.id}
+                                                            size={200}
+                                                        />
                                                     </div>
                                                 </div>
                                             )}
