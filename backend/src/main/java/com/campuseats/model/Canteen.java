@@ -71,8 +71,8 @@ public class Canteen {
     private Set<String> acceptedPaymentMethods = new HashSet<>(); // CASH, CARD, UPI, WALLET
 
     // Uploads (file paths)
-    private String logoPath;
-    private String bannerPath;
+    private String logoUrl;
+    private String bannerUrl;
     private List<String> galleryPaths = new ArrayList<>();
     private List<String> documentPaths = new ArrayList<>(); // License documents
 

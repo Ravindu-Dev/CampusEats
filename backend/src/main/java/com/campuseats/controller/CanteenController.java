@@ -50,7 +50,7 @@ public class CanteenController {
             String filePath = canteenService.uploadFile(file, id, "logo");
             // Update canteen with logo path
             Canteen canteen = canteenService.getCanteenByOwnerId(id);
-            canteen.setLogoPath(filePath);
+            canteen.setLogoUrl(filePath);
             canteenService.updateCanteen(canteen.getId(), canteen);
             return ResponseEntity.ok("Logo uploaded successfully: " + filePath);
         } catch (Exception e) {
@@ -65,7 +65,7 @@ public class CanteenController {
             String filePath = canteenService.uploadFile(file, id, "banner");
             // Update canteen with banner path
             Canteen canteen = canteenService.getCanteenByOwnerId(id);
-            canteen.setBannerPath(filePath);
+            canteen.setBannerUrl(filePath);
             canteenService.updateCanteen(canteen.getId(), canteen);
             return ResponseEntity.ok("Banner uploaded successfully: " + filePath);
         } catch (Exception e) {
