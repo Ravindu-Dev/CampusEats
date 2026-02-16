@@ -218,6 +218,13 @@ public class OrderService {
                         throw new RuntimeException("Unauthorized: Order does not belong to this canteen");
                 }
 
+                // Verify that payment has been completed
+                if (!"succeeded".equals(order.getPaymentStatus())) {
+                        throw new RuntimeException(
+                                        "Cannot update order status: Payment not completed. Current payment status: "
+                                                        + order.getPaymentStatus());
+                }
+
                 Order.OrderStatus currentStatus = order.getOrderStatus();
                 Order.OrderStatus targetStatus = Order.OrderStatus.valueOf(newStatus);
 
