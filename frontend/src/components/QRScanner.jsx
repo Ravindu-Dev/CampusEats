@@ -1,60 +1,82 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import PropTypes from 'prop-types';
 
 function QRScanner({ onScanSuccess, onScanError }) {
     const scannerRef = useRef(null);
     const [isScanning, setIsScanning] = useState(false);
-    const hasInitialized = useRef(false);
+    const isMountedRef = useRef(true);
+    const callbacksRef = useRef({ onScanSuccess, onScanError });
 
-    // Wrap callbacks to prevent re-initialization
-    const handleSuccess = useCallback((decodedText) => {
-        setIsScanning(false);
-        onScanSuccess(decodedText);
-        if (scannerRef.current) {
-            scannerRef.current.clear().catch(console.error);
-        }
-    }, [onScanSuccess]);
-
-    const handleError = useCallback((error) => {
-        // Ignore frequent scan errors, only report actual failures
-        if (error.includes('NotFoundException')) {
-            return;
-        }
-        onScanError?.(error);
-    }, [onScanError]);
+    // Update callbacks ref when props change
+    useEffect(() => {
+        callbacksRef.current = { onScanSuccess, onScanError };
+    }, [onScanSuccess, onScanError]);
 
     useEffect(() => {
-        // Prevent multiple initializations
-        if (hasInitialized.current) return;
-        hasInitialized.current = true;
+        isMountedRef.current = true;
+
+        // Only initialize if scanner doesn't exist
+        if (scannerRef.current) {
+            return;
+        }
 
         const scanner = new Html5QrcodeScanner(
             "qr-reader",
             {
-                fps: 20, // Increased FPS for better detection
-                qrbox: { width: 300, height: 300 }, // Larger scan box
+                fps: 20,
+                qrbox: { width: 300, height: 300 },
                 aspectRatio: 1.0,
                 showTorchButtonIfSupported: true,
                 showZoomSliderIfSupported: true,
-                verbose: false, // Disable console logs
+                verbose: false,
                 rememberLastUsedCamera: true
             },
             false
         );
+
+        const handleSuccess = (decodedText) => {
+            if (!isMountedRef.current) return;
+
+            setIsScanning(false);
+
+            // Stop scanner immediately
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(console.error);
+                scannerRef.current = null;
+            }
+
+            // Call the callback
+            if (callbacksRef.current.onScanSuccess) {
+                callbacksRef.current.onScanSuccess(decodedText);
+            }
+        };
+
+        const handleError = (error) => {
+            if (!isMountedRef.current) return;
+
+            // Ignore frequent scan errors
+            if (error.includes('NotFoundException')) {
+                return;
+            }
+
+            if (callbacksRef.current.onScanError) {
+                callbacksRef.current.onScanError(error);
+            }
+        };
 
         scanner.render(handleSuccess, handleError);
         setIsScanning(true);
         scannerRef.current = scanner;
 
         return () => {
+            isMountedRef.current = false;
             if (scannerRef.current) {
                 scannerRef.current.clear().catch(console.error);
                 scannerRef.current = null;
             }
-            hasInitialized.current = false;
         };
-    }, [handleSuccess, handleError]);
+    }, []); // Empty dependency array - only run once on mount
 
     return (
         <div className="w-full max-w-2xl mx-auto">
