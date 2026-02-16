@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import canteenAuthService from '../services/canteenAuthService'
+import { imgbbService } from '../services/imgbbService'
 import Navbar from '../components/Navbar'
 
 function CanteenRegister() {
@@ -20,6 +21,7 @@ function CanteenRegister() {
 
         // Canteen Basic
         canteenName: '',
+        logoUrl: '',
         campus: '',
         location: '',
         floorNumber: '',
@@ -76,6 +78,24 @@ function CanteenRegister() {
         setFormData({ ...formData, [name]: newArray })
     }
 
+    const [uploading, setUploading] = useState(false)
+
+    const handleLogoUpload = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        setUploading(true)
+        setError('')
+        try {
+            const url = await imgbbService.uploadImage(file)
+            setFormData(prev => ({ ...prev, logoUrl: url }))
+        } catch (err) {
+            setError('Failed to upload logo. Please check your network or try again.')
+        } finally {
+            setUploading(false)
+        }
+    }
+
     const validateStep1 = () => {
         if (!formData.ownerName || !formData.email || !formData.password || !formData.phoneNumber) {
             setError('Please fill in all required fields')
@@ -95,6 +115,10 @@ function CanteenRegister() {
     const validateStep2 = () => {
         if (!formData.canteenName || !formData.location || !formData.description) {
             setError('Please fill in all required fields (Name, Location, Description)')
+            return false
+        }
+        if (!formData.logoUrl) {
+            setError('Please upload a canteen logo')
             return false
         }
         return true
@@ -242,6 +266,41 @@ function CanteenRegister() {
                                             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
                                     </div>
 
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Canteen Logo *</label>
+                                        <div className="flex flex-col gap-4">
+                                            {formData.logoUrl && (
+                                                <div className="relative w-32 h-32 bg-gray-100 rounded-xl overflow-hidden shadow-inner border border-gray-200">
+                                                    <img src={formData.logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, logoUrl: '' }))}
+                                                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-md"
+                                                    >
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-center w-full">
+                                                <label className={`w-full flex flex-col items-center px-4 py-6 bg-white rounded-xl shadow-md border-2 border-dashed border-gray-300 cursor-pointer hover:border-orange-500 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                    {uploading ? (
+                                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                                                    ) : (
+                                                        <>
+                                                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                            <span className="mt-2 text-sm text-gray-500">Click to upload logo</span>
+                                                        </>
+                                                    )}
+                                                    <input type="file" className="hidden" onChange={handleLogoUpload} disabled={uploading} accept="image/*" />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Campus</label>
@@ -362,10 +421,17 @@ function CanteenRegister() {
                                             <p className="text-gray-700">{formData.ownerName} <span className="text-gray-400">|</span> {formData.email}</p>
                                         </div>
 
-                                        <div className="border-t border-gray-200 pt-4">
-                                            <h4 className="font-bold text-gray-900 mb-2 uppercase text-xs tracking-wider">Canteen Details</h4>
-                                            <p className="font-semibold text-lg">{formData.canteenName}</p>
-                                            <p className="text-gray-600 text-sm">{formData.location} {formData.campus && `(${formData.campus})`}</p>
+                                        <div className="border-t border-gray-200 pt-4 flex gap-4">
+                                            {formData.logoUrl && (
+                                                <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                                    <img src={formData.logoUrl} alt="Canteen Logo" className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h4 className="font-bold text-gray-900 mb-2 uppercase text-xs tracking-wider">Canteen Details</h4>
+                                                <p className="font-semibold text-lg">{formData.canteenName}</p>
+                                                <p className="text-gray-600 text-sm">{formData.location} {formData.campus && `(${formData.campus})`}</p>
+                                            </div>
                                         </div>
 
                                         <div className="border-t border-gray-200 pt-4">

@@ -108,6 +108,9 @@ public class CanteenAuthController {
             canteen.setInstagramHandle(request.getInstagramHandle());
             canteen.setFacebookPage(request.getFacebookPage());
 
+            // Logo
+            canteen.setLogoUrl(request.getLogoUrl());
+
             // Set owner reference
             canteen.setOwnerId(savedOwner.getId());
 

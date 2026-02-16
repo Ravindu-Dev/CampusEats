@@ -81,4 +81,6 @@ public class CanteenRegistrationRequest {
     private String websiteUrl;
     private String instagramHandle;
     private String facebookPage;
+    @NotBlank(message = "Logo URL is required")
+    private String logoUrl;
 }
