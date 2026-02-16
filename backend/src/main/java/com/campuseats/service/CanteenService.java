@@ -64,6 +64,11 @@ public class CanteenService {
                 .orElseThrow(() -> new RuntimeException("Canteen not found for owner"));
     }
 
+    public Canteen getCanteenById(String id) {
+        return canteenRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Canteen not found"));
+    }
+
     public String uploadFile(MultipartFile file, String canteenId, String fileType) throws IOException {
         // Create directory if it doesn't exist
         Path uploadPath = Paths.get(UPLOAD_DIR + canteenId);
