@@ -16,4 +16,16 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     Optional<Order> findByIdAndUserId(String id, String userId);
 
     List<Order> findByOrderItemsCanteenIdOrderByCreatedAtDesc(String canteenId);
+
+    // Queue status methods - only count orders with successful payment
+    Long countByOrderItemsCanteenIdAndOrderStatusInAndPaymentStatus(
+            String canteenId,
+            List<Order.OrderStatus> statuses,
+            String paymentStatus);
+
+    Long countByOrderItemsCanteenIdAndOrderStatusInAndOrderTypeAndPaymentStatus(
+            String canteenId,
+            List<Order.OrderStatus> statuses,
+            Order.OrderType orderType,
+            String paymentStatus);
 }

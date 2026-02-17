@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, useRef } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { menuItemService } from '../services/menuItemService'
+import canteenService from '../services/canteenService'
 import { AuthContext } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useNavigate } from 'react-router-dom'
@@ -15,6 +16,7 @@ function Menu() {
     const navigate = useNavigate()
     const [menuItems, setMenuItems] = useState([])
     const [canteens, setCanteens] = useState({})
+    const [queueStatuses, setQueueStatuses] = useState({}) // canteenId -> queue status data
     const [loading, setLoading] = useState(true)
     const [addingToCart, setAddingToCart] = useState({}) // item.id -> loadingState
     const [searchTerm, setSearchTerm] = useState('')
@@ -69,9 +71,22 @@ function Menu() {
                 const itemsData = await menuItemService.getAllMenuItems()
                 setMenuItems(itemsData)
 
+                // Fetch queue status
+                try {
+                    const queueData = await canteenService.getQueueStatus()
+                    const queueMap = {}
+                    queueData.forEach(q => {
+                        queueMap[q.canteenId] = q
+                    })
+                    setQueueStatuses(queueMap)
+                } catch (queueError) {
+                    console.error('Error fetching queue status:', queueError)
+                    // Continue without queue status if it fails
+                }
+
                 // Build canteen map
                 const canteenMap = {}
-                
+
                 // If we got canteen data from API, use it
                 if (canteenData && canteenData.length > 0) {
                     canteenData.forEach(c => {
@@ -99,7 +114,7 @@ function Menu() {
                         }
                     })
                 )
-                
+
                 setCanteens(canteenMap)
                 setLoading(false)
             } catch (err) {
@@ -158,10 +173,10 @@ function Menu() {
                         </svg>
                         <h2 className="text-xl font-bold text-gray-900">Browse by Restaurant</h2>
                     </div>
-                    
+
                     <div className="relative group/scroll">
                         {/* Navigation Buttons */}
-                        <button 
+                        <button
                             onClick={() => scroll('left')}
                             className="absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-orange-600 hover:border-orange-200 transition-all opacity-0 group-hover/scroll:opacity-100 focus:opacity-100"
                             aria-label="Scroll left"
@@ -171,7 +186,7 @@ function Menu() {
                             </svg>
                         </button>
 
-                        <button 
+                        <button
                             onClick={() => scroll('right')}
                             className="absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-orange-600 hover:border-orange-200 transition-all opacity-0 group-hover/scroll:opacity-100 focus:opacity-100"
                             aria-label="Scroll right"
@@ -182,24 +197,22 @@ function Menu() {
                         </button>
 
                         {/* Scroll container */}
-                        <div 
+                        <div
                             ref={scrollContainerRef}
-                            className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth" 
+                            className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
                             {/* All Restaurants Option */}
                             <button
                                 onClick={() => setSelectedRestaurant(null)}
-                                className={`flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${
-                                    !selectedRestaurant
+                                className={`flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${!selectedRestaurant
                                         ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200 ring-4 ring-orange-200'
                                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                                }`}
+                                    }`}
                                 style={{ minWidth: '140px' }}
                             >
-                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${
-                                    !selectedRestaurant ? 'bg-white/20' : 'bg-white'
-                                }`}>
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${!selectedRestaurant ? 'bg-white/20' : 'bg-white'
+                                    }`}>
                                     🍽️
                                 </div>
                                 <div className="text-center">
@@ -216,24 +229,61 @@ function Menu() {
                                 .map(canteen => {
                                     const itemCount = menuItems.filter(item => item.canteenId === canteen.id && item.available).length
                                     const isSelected = selectedRestaurant === canteen.id
-                                    
+                                    const queueInfo = queueStatuses[canteen.id]
+
+                                    // Queue badge configuration
+                                    const getQueueBadge = () => {
+                                        if (!queueInfo || queueInfo.queueStatus === 'NONE') return null
+
+                                        const configs = {
+                                            HIGH: {
+                                                emoji: '🔥',
+                                                text: 'High Queue',
+                                                bgClass: 'bg-red-500',
+                                                textClass: 'text-white'
+                                            },
+                                            MEDIUM: {
+                                                emoji: '⚡',
+                                                text: 'Medium Queue',
+                                                bgClass: 'bg-yellow-500',
+                                                textClass: 'text-white'
+                                            },
+                                            LOW: {
+                                                emoji: '✓',
+                                                text: 'Low Queue',
+                                                bgClass: 'bg-green-500',
+                                                textClass: 'text-white'
+                                            }
+                                        }
+
+                                        return configs[queueInfo.queueStatus]
+                                    }
+
+                                    const queueBadge = getQueueBadge()
+
                                     return (
                                         <button
                                             key={canteen.id}
                                             onClick={() => setSelectedRestaurant(canteen.id)}
-                                            className={`flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${
-                                                isSelected
+                                            className={`relative flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${isSelected
                                                     ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200 ring-4 ring-orange-200'
                                                     : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                                            }`}
+                                                }`}
                                             style={{ minWidth: '140px' }}
                                         >
-                                            <div className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center ${
-                                                isSelected ? 'ring-4 ring-white/30' : 'ring-2 ring-gray-200'
-                                            }`}>
+                                            {/* Queue Badge */}
+                                            {queueBadge && (
+                                                <div className={`absolute -top-2 -right-2 ${queueBadge.bgClass} ${queueBadge.textClass} px-2 py-1 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm flex items-center gap-1 animate-pulse`}>
+                                                    <span>{queueBadge.emoji}</span>
+                                                    <span className="hidden sm:inline">{queueBadge.text}</span>
+                                                </div>
+                                            )}
+
+                                            <div className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center ${isSelected ? 'ring-4 ring-white/30' : 'ring-2 ring-gray-200'
+                                                }`}>
                                                 {canteen.logoUrl ? (
-                                                    <img 
-                                                        src={canteen.logoUrl} 
+                                                    <img
+                                                        src={canteen.logoUrl}
                                                         alt={canteen.canteenName}
                                                         className="w-full h-full object-cover"
                                                         onError={(e) => {
@@ -242,9 +292,8 @@ function Menu() {
                                                         }}
                                                     />
                                                 ) : (
-                                                    <div className={`w-full h-full flex items-center justify-center text-3xl ${
-                                                        isSelected ? 'bg-white/20' : 'bg-white'
-                                                    }`}>
+                                                    <div className={`w-full h-full flex items-center justify-center text-3xl ${isSelected ? 'bg-white/20' : 'bg-white'
+                                                        }`}>
                                                         🏪
                                                     </div>
                                                 )}
@@ -257,9 +306,8 @@ function Menu() {
                                                     {itemCount} {itemCount === 1 ? 'item' : 'items'}
                                                 </p>
                                                 {canteen.rating > 0 && (
-                                                    <div className={`flex items-center justify-center gap-1 mt-1 ${
-                                                        isSelected ? 'text-yellow-200' : 'text-yellow-500'
-                                                    }`}>
+                                                    <div className={`flex items-center justify-center gap-1 mt-1 ${isSelected ? 'text-yellow-200' : 'text-yellow-500'
+                                                        }`}>
                                                         <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
                                                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                                         </svg>

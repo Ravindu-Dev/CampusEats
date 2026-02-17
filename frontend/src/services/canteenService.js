@@ -73,6 +73,16 @@ const uploadDocuments = async (id, files) => {
     return response.data;
 };
 
+const getQueueStatus = async () => {
+    try {
+        const response = await axios.get('/api/canteens/queue-status');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching queue status:', error);
+        throw error;
+    }
+};
+
 const canteenService = {
     getMyCanteen,
     updateCanteen,
@@ -80,6 +90,7 @@ const canteenService = {
     uploadBanner,
     uploadGallery,
     uploadDocuments,
+    getQueueStatus,
 };
 
 export default canteenService;
