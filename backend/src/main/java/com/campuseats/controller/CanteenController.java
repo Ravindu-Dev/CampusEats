@@ -126,4 +126,14 @@ public class CanteenController {
                     .body("Error: " + e.getMessage());
         }
     }
+
+    @GetMapping("/queue-status")
+    public ResponseEntity<?> getQueueStatus() {
+        try {
+            return ResponseEntity.ok(canteenService.getAllCanteenQueueStatus());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
+        }
+    }
 }
