@@ -28,7 +28,7 @@ function Login() {
 
         try {
             await login(formData)
-            navigate('/dashboard')
+            navigate('/')
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please try again.')
         } finally {
