@@ -27,6 +27,8 @@ import KitchenDashboard from './pages/KitchenDashboard'
 import OrderTracking from './pages/OrderTracking'
 import MyReviews from './pages/MyReviews'
 import ScanQRPage from './pages/ScanQRPage'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 
 function App() {
     return (
@@ -59,6 +61,8 @@ function App() {
                         <Route path="/canteen/kitchen" element={<KitchenDashboard />} />
                         <Route path="/checkout" element={<Checkout />} />
                         <Route path="/orders/track/:orderId" element={<OrderTracking />} />
+                        <Route path="/privacy" element={<Privacy />} />
+                        <Route path="/terms" element={<Terms />} />
                     </Routes>
                     <Cart />
                 </Router>
