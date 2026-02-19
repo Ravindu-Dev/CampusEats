@@ -93,7 +93,7 @@ function OrderVerificationModal({ order, onConfirm, onCancel }) {
                                             <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                                         </div>
                                     </div>
-                                    <p className="font-bold text-orange-600">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                    <p className="font-bold text-orange-600">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                                 </div>
                             ))}
                         </div>
@@ -104,7 +104,7 @@ function OrderVerificationModal({ order, onConfirm, onCancel }) {
                         <div className="flex justify-between items-center">
                             <div>
                                 <p className="text-sm opacity-90">Total Amount</p>
-                                <p className="text-3xl font-black">₹{order.totalAmount?.toFixed(2)}</p>
+                                <p className="text-3xl font-black">Rs.{order.totalAmount?.toFixed(2)}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-sm opacity-90">Payment Status</p>

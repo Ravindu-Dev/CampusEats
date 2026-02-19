@@ -113,7 +113,7 @@ function Cart() {
                                                     </button>
                                                 </div>
                                                 <div className="flex-1 flex items-end justify-between">
-                                                    <p className="font-bold text-orange-600">₹{item.price}</p>
+                                                    <p className="font-bold text-orange-600">Rs.{item.price}</p>
                                                     <div className="flex items-center bg-white border border-orange-200 rounded-xl px-1 py-1 shadow-sm">
                                                         <button
                                                             onClick={() => updateQuantity(item.menuItemId, item.quantity - 1)}
@@ -149,7 +149,7 @@ function Cart() {
                                 <div className="space-y-4 mb-6">
                                     <div className="flex justify-between text-base text-gray-600 font-medium">
                                         <p>Subtotal</p>
-                                        <p>₹{subtotal.toFixed(2)}</p>
+                                        <p>Rs.{subtotal.toFixed(2)}</p>
                                     </div>
                                     <div className="flex justify-between text-base text-gray-600 font-medium pb-2 border-b border-gray-200 border-dashed">
                                         <p>Delivery Fee</p>
@@ -157,7 +157,7 @@ function Cart() {
                                     </div>
                                     <div className="flex justify-between text-xl font-black text-gray-900">
                                         <p>Grand Total</p>
-                                        <p className="text-orange-600">₹{subtotal.toFixed(2)}</p>
+                                        <p className="text-orange-600">Rs.{subtotal.toFixed(2)}</p>
                                     </div>
                                 </div>
 

@@ -164,7 +164,7 @@ function CanteenDashboard() {
                                 </svg>
                             </div>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900 mb-1">₹0</p>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">Rs.0</p>
                         <p className="text-gray-600 text-sm">Today's Revenue</p>
                     </div>
 

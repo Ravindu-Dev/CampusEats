@@ -280,7 +280,7 @@ function OrderTracking() {
                                     <p className="font-semibold text-gray-900">{item.name}</p>
                                     <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                                 </div>
-                                <p className="font-bold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                <p className="font-bold text-gray-900">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                             </div>
                         ))}
                     </div>
@@ -290,7 +290,7 @@ function OrderTracking() {
                         <div className="flex justify-between items-center">
                             <span className="text-lg font-semibold text-gray-900">Total Amount</span>
                             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                ₹{order.totalAmount.toFixed(2)}
+                                Rs.{order.totalAmount.toFixed(2)}
                             </span>
                         </div>
                     </div>

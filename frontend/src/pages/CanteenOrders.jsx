@@ -235,7 +235,7 @@ function CanteenOrders() {
                                             </p>
                                         </div>
                                         <div className="mt-4 md:mt-0 text-right">
-                                            <p className="text-2xl font-bold text-orange-600">₹{order.totalAmount.toFixed(2)}</p>
+                                            <p className="text-2xl font-bold text-orange-600">Rs.{order.totalAmount.toFixed(2)}</p>
                                             <p className="text-sm text-gray-500">Total Amount</p>
                                         </div>
                                     </div>
@@ -291,9 +291,9 @@ function CanteenOrders() {
                                                         <div className="flex-1">
                                                             <div className="flex justify-between">
                                                                 <p className="font-medium text-gray-900">{item.name}</p>
-                                                                <p className="font-medium text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                                                <p className="font-medium text-gray-900">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                                                             </div>
-                                                            <p className="text-sm text-gray-500">Qty: {item.quantity} × ₹{item.price}</p>
+                                                            <p className="text-sm text-gray-500">Qty: {item.quantity} × Rs.{item.price}</p>
                                                         </div>
                                                     </div>
                                                 ))}

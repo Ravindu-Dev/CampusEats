@@ -385,7 +385,7 @@ function Menu() {
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
 
                                         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-lg">
-                                            <span className="text-lg font-black text-gray-900">₹{item.price}</span>
+                                            <span className="text-lg font-black text-gray-900">Rs.{item.price}</span>
                                         </div>
                                         {item.vegetarian && (
                                             <div className="absolute top-4 left-4 bg-green-500/90 backdrop-blur-sm p-1.5 rounded-lg shadow-lg">

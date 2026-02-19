@@ -233,7 +233,7 @@ function Dashboard() {
                                             <p className="text-sm text-gray-500">{formatDate(order.createdAt)}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold text-gray-900">₹{order.totalAmount?.toFixed(2)}</p>
+                                            <p className="font-bold text-gray-900">Rs.{order.totalAmount?.toFixed(2)}</p>
                                             <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${order.paymentStatus === 'succeeded' ? 'bg-green-100 text-green-800' :
                                                 order.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                                     'bg-red-100 text-red-800'
@@ -260,7 +260,7 @@ function Dashboard() {
                                                             <span className="text-gray-500">x{item.quantity}</span>
                                                             <span className="text-xs text-gray-500">({item.canteenName})</span>
                                                         </div>
-                                                        <span className="text-gray-900 font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                                        <span className="text-gray-900 font-medium">Rs.{(item.price * item.quantity).toFixed(2)}</span>
                                                     </div>
                                                 ))
                                             ) : (
