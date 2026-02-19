@@ -225,7 +225,7 @@ function MenuManagement() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.) *</label>
                                         <input
                                             type="number"
                                             name="price"
@@ -388,7 +388,7 @@ function MenuManagement() {
                                                 <div className="p-6">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <h4 className="text-xl font-bold text-gray-900">{item.name}</h4>
-                                                        <span className="text-xl font-bold text-orange-600">₹{item.price}</span>
+                                                        <span className="text-xl font-bold text-orange-600">Rs.{item.price}</span>
                                                     </div>
                                                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">{item.description}</p>
                                                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">

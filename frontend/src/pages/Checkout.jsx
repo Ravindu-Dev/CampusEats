@@ -68,7 +68,7 @@ function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
                     </>
                 ) : (
                     <>
-                        Pay ₹{totalAmount.toFixed(2)}
+                        Pay Rs.{totalAmount.toFixed(2)}
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
@@ -288,7 +288,7 @@ function Checkout() {
                                         <p className="text-xs text-orange-500 font-medium">{item.canteenName}</p>
                                         <div className="flex justify-between items-center mt-2">
                                             <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                                            <p className="font-bold text-orange-600">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                            <p className="font-bold text-orange-600">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -298,7 +298,7 @@ function Checkout() {
                         <div className="border-t border-gray-200 pt-6 space-y-3">
                             <div className="flex justify-between text-base text-gray-600">
                                 <p>Subtotal</p>
-                                <p>₹{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
+                                <p>Rs.{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
                             </div>
                             <div className="flex justify-between text-base text-gray-600 pb-3 border-b border-gray-200 border-dashed">
                                 <p>Delivery Fee</p>
@@ -306,7 +306,7 @@ function Checkout() {
                             </div>
                             <div className="flex justify-between text-2xl font-black text-gray-900">
                                 <p>Total</p>
-                                <p className="text-orange-600">₹{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
+                                <p className="text-orange-600">Rs.{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
                             </div>
                         </div>
                     </div>

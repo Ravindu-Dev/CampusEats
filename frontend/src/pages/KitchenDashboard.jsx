@@ -326,7 +326,7 @@ function KitchenDashboard() {
                                         </div>
                                         <div className="mt-4 md:mt-0 text-right">
                                             <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                                                ₹{order.totalAmount.toFixed(2)}
+                                                Rs.{order.totalAmount.toFixed(2)}
                                             </p>
                                             <p className="text-sm text-gray-600">Total Amount</p>
                                         </div>
@@ -372,9 +372,9 @@ function KitchenDashboard() {
                                                     </div>
                                                     <div className="flex-1">
                                                         <p className="font-bold text-gray-900">{item.name}</p>
-                                                        <p className="text-sm text-gray-600">Qty: {item.quantity} × ₹{item.price}</p>
+                                                        <p className="text-sm text-gray-600">Qty: {item.quantity} × Rs.{item.price}</p>
                                                     </div>
-                                                    <p className="font-bold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                                    <p className="font-bold text-gray-900">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                                                 </div>
                                             ))}
                                         </div>

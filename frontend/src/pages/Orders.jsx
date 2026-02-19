@@ -144,7 +144,7 @@ function Orders() {
                                                     <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold border ${getPaymentStatusColor(order.paymentStatus)}`}>
                                                         {order.paymentStatus?.toUpperCase() || 'PENDING'}
                                                     </span>
-                                                    <p className="text-2xl font-bold mt-2">₹{order.totalAmount?.toFixed(2)}</p>
+                                                    <p className="text-2xl font-bold mt-2">Rs.{order.totalAmount?.toFixed(2)}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -192,10 +192,10 @@ function Orders() {
 
                                                             {/* Item Price */}
                                                             <div className="text-right">
-                                                                <p className="text-lg font-bold text-gray-900">₹{item.price?.toFixed(2)}</p>
+                                                                <p className="text-lg font-bold text-gray-900">Rs.{item.price?.toFixed(2)}</p>
                                                                 <p className="text-sm text-gray-500">per item</p>
                                                                 <p className="text-sm font-semibold text-blue-600 mt-1">
-                                                                    Total: ₹{(item.price * item.quantity).toFixed(2)}
+                                                                    Total: Rs.{(item.price * item.quantity).toFixed(2)}
                                                                 </p>
                                                             </div>
                                                         </div>
