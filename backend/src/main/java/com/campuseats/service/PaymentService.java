@@ -26,7 +26,7 @@ public class PaymentService {
 
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(amountInCents)
-                .setCurrency("inr")
+                .setCurrency("lkr")
                 .putMetadata("orderId", orderId)
                 .setAutomaticPaymentMethods(
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()

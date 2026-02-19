@@ -102,6 +102,9 @@ function Checkout() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
     const [preservedCartItems, setPreservedCartItems] = useState(null);
+    const [minOrderError, setMinOrderError] = useState('');
+
+    const MINIMUM_ORDER_AMOUNT = 200; // Rs. 200 minimum (Stripe requires ~$0.50 USD ≈ Rs. 165)
 
     useEffect(() => {
         // Only redirect if cart is loaded and empty (not during initial load)
@@ -156,8 +159,15 @@ function Checkout() {
 
     const handleProceedToPayment = async (e) => {
         e.preventDefault();
+        setMinOrderError('');
 
         if (!validateForm()) {
+            return;
+        }
+
+        // Stripe minimum: ~$0.50 USD ≈ Rs. 165 LKR. We enforce Rs. 200 for a safe buffer.
+        if (subtotal < MINIMUM_ORDER_AMOUNT) {
+            setMinOrderError(`Minimum order amount is Rs. ${MINIMUM_ORDER_AMOUNT.toFixed(2)}. Please add more items to your cart.`);
             return;
         }
 
@@ -422,6 +432,15 @@ function Checkout() {
                                                 {errors.pickupTime && <p className="text-red-500 text-sm mt-1">{errors.pickupTime}</p>}
                                             </div>
                                         </>
+                                    )}
+
+                                    {minOrderError && (
+                                        <div className="p-4 bg-orange-50 border border-orange-300 rounded-xl flex items-start gap-3">
+                                            <svg className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                            <p className="text-orange-700 text-sm font-medium">{minOrderError}</p>
+                                        </div>
                                     )}
 
                                     <button
