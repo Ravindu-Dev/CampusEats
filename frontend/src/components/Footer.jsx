@@ -135,8 +135,8 @@ function Footer() {
                         <h4 className="text-white font-bold text-xs tracking-[0.2em] uppercase mb-6">Legal</h4>
                         <ul className="space-y-3">
                             {[
-                                { label: 'Privacy', to: '#' },
-                                { label: 'Terms', to: '#' },
+                                { label: 'Privacy', to: '/privacy' },
+                                { label: 'Terms', to: '/terms' },
                             ].map((l) => (
                                 <li key={l.label}>
                                     <Link

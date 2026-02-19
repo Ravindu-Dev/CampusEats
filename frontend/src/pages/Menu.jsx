@@ -16,20 +16,19 @@ function Menu() {
     const navigate = useNavigate()
     const [menuItems, setMenuItems] = useState([])
     const [canteens, setCanteens] = useState({})
-    const [queueStatuses, setQueueStatuses] = useState({}) // canteenId -> queue status data
+    const [queueStatuses, setQueueStatuses] = useState({})
     const [loading, setLoading] = useState(true)
-    const [addingToCart, setAddingToCart] = useState({}) // item.id -> loadingState
+    const [addingToCart, setAddingToCart] = useState({})
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All')
-    const [selectedRestaurant, setSelectedRestaurant] = useState(null) // null = all restaurants
+    const [selectedRestaurant, setSelectedRestaurant] = useState(null)
     const scrollContainerRef = useRef(null)
 
     const scroll = (direction) => {
         if (scrollContainerRef.current) {
             const scrollAmount = 300
-            const newScrollLeft = scrollContainerRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount)
             scrollContainerRef.current.scrollTo({
-                left: newScrollLeft,
+                left: scrollContainerRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount),
                 behavior: 'smooth'
             })
         }
@@ -37,18 +36,13 @@ function Menu() {
 
     const handleAddToCart = async (item) => {
         if (!user) {
-            // Show message or just redirect
             alert('Please login to add items to cart')
             navigate('/login')
             return
         }
-
         try {
             setAddingToCart(prev => ({ ...prev, [item.id]: true }))
-            const success = await addToCart(item.id, 1)
-            if (success) {
-                // Success feedback is handled by CartContext opening the cart
-            }
+            await addToCart(item.id, 1)
         } finally {
             setAddingToCart(prev => ({ ...prev, [item.id]: false }))
         }
@@ -57,44 +51,31 @@ function Menu() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch all canteens first to build the filter bar
                 let canteenData = []
                 try {
                     const response = await axios.get('/api/canteens')
                     canteenData = response.data
                 } catch (canteenError) {
                     console.error('Error fetching all canteens:', canteenError)
-                    // Fallback: will try to build from menu items later
                 }
 
-                // Fetch menu items
                 const itemsData = await menuItemService.getAllMenuItems()
                 setMenuItems(itemsData)
 
-                // Fetch queue status
                 try {
                     const queueData = await canteenService.getQueueStatus()
                     const queueMap = {}
-                    queueData.forEach(q => {
-                        queueMap[q.canteenId] = q
-                    })
+                    queueData.forEach(q => { queueMap[q.canteenId] = q })
                     setQueueStatuses(queueMap)
                 } catch (queueError) {
                     console.error('Error fetching queue status:', queueError)
-                    // Continue without queue status if it fails
                 }
 
-                // Build canteen map
                 const canteenMap = {}
-
-                // If we got canteen data from API, use it
                 if (canteenData && canteenData.length > 0) {
-                    canteenData.forEach(c => {
-                        canteenMap[c.id] = c
-                    })
+                    canteenData.forEach(c => { canteenMap[c.id] = c })
                 }
 
-                // Ensure canteens from menu items are also in the map (just in case)
                 const uniqueCanteenIds = [...new Set(itemsData.map(item => item.canteenId).filter(Boolean))]
                 await Promise.all(
                     uniqueCanteenIds.map(async (canteenId) => {
@@ -103,13 +84,7 @@ function Menu() {
                                 const response = await axios.get(`/api/canteens/${canteenId}`)
                                 canteenMap[canteenId] = response.data
                             } catch (error) {
-                                console.error(`Error fetching canteen ${canteenId}:`, error)
-                                canteenMap[canteenId] = {
-                                    id: canteenId,
-                                    canteenName: `Canteen ${canteenId.substring(0, 4)}`,
-                                    status: 'APPROVED',
-                                    active: true
-                                }
+                                canteenMap[canteenId] = { id: canteenId, canteenName: `Canteen ${canteenId.substring(0, 4)}`, status: 'APPROVED', active: true }
                             }
                         }
                     })
@@ -133,154 +108,150 @@ function Menu() {
         return matchesSearch && matchesCategory && matchesRestaurant && item.available
     })
 
+    /* ── Queue badge helper ── */
+    const getQueueBadge = (canteenId) => {
+        const queueInfo = queueStatuses[canteenId]
+        if (!queueInfo || queueInfo.queueStatus === 'NONE') return null
+        const configs = {
+            HIGH: { emoji: '🔥', text: 'High Queue', bg: 'bg-red-500' },
+            MEDIUM: { emoji: '⚡', text: 'Medium Queue', bg: 'bg-yellow-500' },
+            LOW: { emoji: '✓', text: 'Low Queue', bg: 'bg-green-500' },
+        }
+        return configs[queueInfo.queueStatus] ?? null
+    }
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange-600"></div>
+            <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 border-4 border-white/10 border-t-orange-500 rounded-full animate-spin" />
+                    <p className="text-white/40 text-sm font-medium tracking-widest uppercase">Loading Menu…</p>
+                </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
+        <div className="min-h-screen bg-[#080808] font-sans text-white">
             <Navbar />
 
-            <div className="relative bg-gray-900 py-24 sm:py-32">
-                <div className="absolute inset-0 overflow-hidden">
+            {/* ── Hero banner ── */}
+            <div className="relative pt-20 pb-28 overflow-hidden">
+                {/* Bg image */}
+                <div className="absolute inset-0">
                     <img
                         src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop"
                         alt="Menu Background"
-                        className="w-full h-full object-cover opacity-30"
+                        className="w-full h-full object-cover opacity-20"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 via-gray-900/80 to-gray-900"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#080808]/60 via-[#080808]/70 to-[#080808]" />
                 </div>
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-                    <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-4">
-                        Discover & <span className="text-orange-500">Devour</span>
+
+                {/* Glow dot */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-8">
+                    <span className="inline-flex items-center gap-2 bg-orange-600/15 border border-orange-500/30 backdrop-blur-md px-4 py-2 rounded-full mb-6">
+                        <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+                        <span className="text-orange-300 text-xs font-bold tracking-widest uppercase">Campus Canteens</span>
+                    </span>
+                    <h1 className="text-5xl sm:text-7xl font-black tracking-tighter uppercase mb-4">
+                        Discover &amp; <span className="bg-gradient-to-r from-orange-500 via-red-500 to-yellow-400 bg-clip-text text-transparent">Devour</span>
                     </h1>
-                    <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto font-light">
-                        Explore a world of flavors from your campus canteens. Fresh, hot, and ready when you are.
+                    <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto font-light italic">
+                        Fresh, hot, and ready when you are.
                     </p>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10 pb-20">
-                {/* Restaurant Filter Bar */}
-                <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 animate-fade-in-up">
-                    <div className="flex items-center gap-3 mb-4">
-                        <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <h2 className="text-xl font-bold text-gray-900">Browse by Restaurant</h2>
+            {/* ── Main content ── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10 pb-24">
+
+                {/* ── Canteen filter bar ── */}
+                <div className="bg-[#111] border border-white/[0.07] rounded-2xl p-6 mb-5 shadow-xl">
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className="w-8 h-8 rounded-lg bg-orange-600/20 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                        <h2 className="text-base font-bold text-white tracking-wide">Browse by Restaurant</h2>
                     </div>
 
                     <div className="relative group/scroll">
-                        {/* Navigation Buttons */}
+                        {/* Scroll buttons */}
                         <button
                             onClick={() => scroll('left')}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-orange-600 hover:border-orange-200 transition-all opacity-0 group-hover/scroll:opacity-100 focus:opacity-100"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/scroll:opacity-100"
                             aria-label="Scroll left"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-
                         <button
                             onClick={() => scroll('right')}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-orange-600 hover:border-orange-200 transition-all opacity-0 group-hover/scroll:opacity-100 focus:opacity-100"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/scroll:opacity-100"
                             aria-label="Scroll right"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
 
-                        {/* Scroll container */}
+                        {/* Canteen chips */}
                         <div
                             ref={scrollContainerRef}
-                            className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+                            className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory scroll-smooth"
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
-                            {/* All Restaurants Option */}
+                            {/* All */}
                             <button
                                 onClick={() => setSelectedRestaurant(null)}
-                                className={`flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${!selectedRestaurant
-                                        ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200 ring-4 ring-orange-200'
-                                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                className={`flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl transition-all snap-start ${!selectedRestaurant
+                                    ? 'bg-gradient-to-br from-orange-600 to-red-600 text-white shadow-[0_4px_20px_rgba(234,88,12,0.35)]'
+                                    : 'bg-white/[0.05] border border-white/[0.07] text-gray-400 hover:border-orange-500/30 hover:text-white'
                                     }`}
-                                style={{ minWidth: '140px' }}
+                                style={{ minWidth: '130px' }}
                             >
-                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${!selectedRestaurant ? 'bg-white/20' : 'bg-white'
-                                    }`}>
+                                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${!selectedRestaurant ? 'bg-white/20' : 'bg-white/5'}`}>
                                     🍽️
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-bold text-sm">All Restaurants</p>
-                                    <p className={`text-xs mt-1 ${!selectedRestaurant ? 'text-orange-100' : 'text-gray-500'}`}>
-                                        {menuItems.filter(item => item.available).length} items
+                                    <p className="font-bold text-xs">All Restaurants</p>
+                                    <p className={`text-xs mt-0.5 ${!selectedRestaurant ? 'text-orange-100' : 'text-gray-600'}`}>
+                                        {menuItems.filter(i => i.available).length} items
                                     </p>
                                 </div>
                             </button>
 
-                            {/* Individual Restaurants */}
+                            {/* Individual canteens */}
                             {Object.values(canteens)
                                 .filter(canteen => canteen.active)
                                 .map(canteen => {
-                                    const itemCount = menuItems.filter(item => item.canteenId === canteen.id && item.available).length
+                                    const itemCount = menuItems.filter(i => i.canteenId === canteen.id && i.available).length
                                     const isSelected = selectedRestaurant === canteen.id
-                                    const queueInfo = queueStatuses[canteen.id]
-
-                                    // Queue badge configuration
-                                    const getQueueBadge = () => {
-                                        if (!queueInfo || queueInfo.queueStatus === 'NONE') return null
-
-                                        const configs = {
-                                            HIGH: {
-                                                emoji: '🔥',
-                                                text: 'High Queue',
-                                                bgClass: 'bg-red-500',
-                                                textClass: 'text-white'
-                                            },
-                                            MEDIUM: {
-                                                emoji: '⚡',
-                                                text: 'Medium Queue',
-                                                bgClass: 'bg-yellow-500',
-                                                textClass: 'text-white'
-                                            },
-                                            LOW: {
-                                                emoji: '✓',
-                                                text: 'Low Queue',
-                                                bgClass: 'bg-green-500',
-                                                textClass: 'text-white'
-                                            }
-                                        }
-
-                                        return configs[queueInfo.queueStatus]
-                                    }
-
-                                    const queueBadge = getQueueBadge()
+                                    const queueBadge = getQueueBadge(canteen.id)
 
                                     return (
                                         <button
                                             key={canteen.id}
                                             onClick={() => setSelectedRestaurant(canteen.id)}
-                                            className={`relative flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl transition-all transform hover:scale-105 snap-start ${isSelected
-                                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200 ring-4 ring-orange-200'
-                                                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                            className={`relative flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl transition-all snap-start ${isSelected
+                                                ? 'bg-gradient-to-br from-orange-600 to-red-600 text-white shadow-[0_4px_20px_rgba(234,88,12,0.35)]'
+                                                : 'bg-white/[0.05] border border-white/[0.07] text-gray-400 hover:border-orange-500/30 hover:text-white'
                                                 }`}
-                                            style={{ minWidth: '140px' }}
+                                            style={{ minWidth: '130px' }}
                                         >
-                                            {/* Queue Badge */}
+                                            {/* Queue badge — inside chip top-right so scroll container never clips it */}
                                             {queueBadge && (
-                                                <div className={`absolute -top-2 -right-2 ${queueBadge.bgClass} ${queueBadge.textClass} px-2 py-1 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm flex items-center gap-1 animate-pulse`}>
+                                                <div className={`absolute top-2 right-2 ${queueBadge.bg} text-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1`}>
                                                     <span>{queueBadge.emoji}</span>
-                                                    <span className="hidden sm:inline">{queueBadge.text}</span>
+                                                    <span>{queueBadge.text}</span>
                                                 </div>
                                             )}
 
-                                            <div className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center ${isSelected ? 'ring-4 ring-white/30' : 'ring-2 ring-gray-200'
-                                                }`}>
+                                            <div className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center ${isSelected ? 'ring-2 ring-white/40' : 'ring-1 ring-white/[0.08]'}`}>
                                                 {canteen.logoUrl ? (
                                                     <img
                                                         src={canteen.logoUrl}
@@ -292,26 +263,23 @@ function Menu() {
                                                         }}
                                                     />
                                                 ) : (
-                                                    <div className={`w-full h-full flex items-center justify-center text-3xl ${isSelected ? 'bg-white/20' : 'bg-white'
-                                                        }`}>
+                                                    <div className={`w-full h-full flex items-center justify-center text-2xl ${isSelected ? 'bg-white/20' : 'bg-white/5'}`}>
                                                         🏪
                                                     </div>
                                                 )}
                                             </div>
+
                                             <div className="text-center">
-                                                <p className="font-bold text-sm line-clamp-1" title={canteen.canteenName}>
-                                                    {canteen.canteenName}
-                                                </p>
-                                                <p className={`text-xs mt-1 ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
+                                                <p className="font-bold text-xs line-clamp-1" title={canteen.canteenName}>{canteen.canteenName}</p>
+                                                <p className={`text-xs mt-0.5 ${isSelected ? 'text-orange-100' : 'text-gray-600'}`}>
                                                     {itemCount} {itemCount === 1 ? 'item' : 'items'}
                                                 </p>
                                                 {canteen.rating > 0 && (
-                                                    <div className={`flex items-center justify-center gap-1 mt-1 ${isSelected ? 'text-yellow-200' : 'text-yellow-500'
-                                                        }`}>
+                                                    <div className={`flex items-center justify-center gap-1 mt-1 ${isSelected ? 'text-yellow-200' : 'text-yellow-500'}`}>
                                                         <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
                                                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                                         </svg>
-                                                        <span className="text-xs font-bold">{canteen.rating.toFixed(1)}</span>
+                                                        <span className="text-[10px] font-bold">{canteen.rating.toFixed(1)}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -322,30 +290,32 @@ function Menu() {
                     </div>
                 </div>
 
-                {/* Search and Filter */}
-                <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 mb-12 animate-fade-in-up">
-                    <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                {/* ── Search & category filter ── */}
+                <div className="bg-[#111] border border-white/[0.07] rounded-2xl p-4 md:p-5 mb-10 shadow-xl">
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        {/* Search */}
                         <div className="relative w-full md:w-96 group">
-                            <input
-                                type="text"
-                                placeholder="Search for food..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white transition-all outline-none text-gray-700 font-medium group-hover:bg-white group-hover:shadow-md"
-                            />
-                            <svg className="w-6 h-6 text-gray-400 absolute left-4 top-4 transition-colors group-hover:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
+                            <input
+                                type="text"
+                                placeholder="Search for food…"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] focus:border-orange-500/60 focus:bg-white/[0.08] transition-all outline-none text-white placeholder-gray-600 font-medium"
+                            />
                         </div>
 
+                        {/* Category pills */}
                         <div className="flex flex-wrap gap-2 justify-center">
                             {CATEGORIES.map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => setSelectedCategory(cat)}
-                                    className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all transform hover:scale-105 ${selectedCategory === cat
-                                        ? 'bg-orange-600 text-white shadow-lg shadow-orange-200 ring-2 ring-orange-600 ring-offset-2'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 ${selectedCategory === cat
+                                        ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-[0_0_20px_rgba(234,88,12,0.35)]'
+                                        : 'bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:border-orange-500/30 hover:text-white'
                                         }`}
                                 >
                                     {cat}
@@ -355,102 +325,118 @@ function Menu() {
                     </div>
                 </div>
 
-                {/* Menu Grid */}
+                {/* ── Results count ── */}
+                {filteredItems.length > 0 && (
+                    <p className="text-gray-600 text-sm font-medium mb-6">
+                        Showing <span className="text-orange-500 font-bold">{filteredItems.length}</span> {filteredItems.length === 1 ? 'item' : 'items'}
+                        {selectedCategory !== 'All' && <span> in <span className="text-white">{selectedCategory}</span></span>}
+                    </p>
+                )}
+
+                {/* ── Menu grid ── */}
                 {filteredItems.length === 0 ? (
-                    <div className="text-center py-32 bg-white rounded-3xl shadow-sm border border-gray-100 animate-fade-in-up">
-                        <div className="text-6xl mb-6 opacity-80">🍳</div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-2">No items found</h2>
-                        <p className="text-gray-500 text-lg">We couldn't find matches for your search. Try "Pizza" or "Coffee".</p>
+                    <div className="text-center py-32 bg-[#111] border border-white/[0.07] rounded-3xl">
+                        <div className="text-6xl mb-6 opacity-60">🍳</div>
+                        <h2 className="text-3xl font-black text-white mb-3">No items found</h2>
+                        <p className="text-gray-500 text-lg">We couldn't find matches for your search. Try "Rice" or "Coffee".</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredItems.map((item, index) => {
                             const canteen = canteens[item.canteenId]
                             return (
                                 <div
                                     key={item.id}
-                                    className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_20px_40px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 animate-fade-in-up"
-                                    style={{ animationDelay: `${index * 50}ms` }}
+                                    className="group bg-[#111] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-all duration-300"
+                                    style={{ animationDelay: `${index * 40}ms` }}
                                 >
-                                    <div className="relative h-60 overflow-hidden">
+                                    {/* Image */}
+                                    <div className="relative h-52 overflow-hidden">
                                         {item.imageUrl ? (
-                                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                                            <img
+                                                src={item.imageUrl}
+                                                alt={item.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                            />
                                         ) : (
-                                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-6xl opacity-20">
+                                            <div className="w-full h-full bg-white/[0.03] flex items-center justify-center text-5xl opacity-20">
                                                 🍽️
                                             </div>
                                         )}
 
-                                        {/* Overlay gradient */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                                        {/* Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-                                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-lg">
-                                            <span className="text-lg font-black text-gray-900">Rs.{item.price}</span>
+                                        {/* Price badge */}
+                                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full">
+                                            <span className="text-sm font-black text-white">Rs.{item.price}</span>
                                         </div>
+
+                                        {/* Veg badge */}
                                         {item.vegetarian && (
-                                            <div className="absolute top-4 left-4 bg-green-500/90 backdrop-blur-sm p-1.5 rounded-lg shadow-lg">
+                                            <div className="absolute top-3 left-3 bg-green-500/90 backdrop-blur-sm p-1.5 rounded-lg">
                                                 <div className="border border-white p-0.5 rounded-sm">
-                                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                                    <div className="w-2 h-2 bg-white rounded-full" />
                                                 </div>
                                             </div>
                                         )}
-                                        <div className="absolute bottom-4 left-4">
-                                            <span className="inline-block px-3 py-1 bg-black/50 backdrop-blur-md rounded-lg text-xs font-bold text-white uppercase tracking-wider border border-white/10">
+
+                                        {/* Category badge */}
+                                        <div className="absolute bottom-3 left-3">
+                                            <span className="px-2.5 py-1 bg-black/50 backdrop-blur-md rounded-lg text-[10px] font-bold text-white/80 uppercase tracking-widest border border-white/10">
                                                 {item.category}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <div className="p-6">
-                                        <div className="mb-4">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-orange-600 transition-colors line-clamp-1" title={item.name}>
-                                                    {item.name}
-                                                </h3>
+                                    {/* Body */}
+                                    <div className="p-5">
+                                        <h3 className="text-base font-black text-white leading-tight group-hover:text-orange-300 transition-colors line-clamp-1 mb-1" title={item.name}>
+                                            {item.name}
+                                        </h3>
+
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-1.5 text-gray-500">
+                                                <svg className="w-3.5 h-3.5 text-orange-500/70 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                </svg>
+                                                <span className="text-xs font-medium truncate max-w-[120px]" title={canteen?.canteenName ?? 'Campus Canteen'}>
+                                                    {canteen?.canteenName ?? 'Campus Canteen'}
+                                                </span>
                                             </div>
 
-                                            <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            {canteen?.rating > 0 && (
+                                                <div className="flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-md">
+                                                    <svg className="w-3 h-3 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                                     </svg>
-                                                    <span className="font-medium truncate max-w-[120px]" title={canteen ? canteen.canteenName : 'Campus Canteen'}>
-                                                        {canteen ? canteen.canteenName : 'Campus Canteen'}
-                                                    </span>
+                                                    <span className="text-[10px] font-bold text-yellow-400">{canteen.rating.toFixed(1)}</span>
                                                 </div>
-
-                                                {canteen && canteen.rating > 0 && (
-                                                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-md border border-yellow-100">
-                                                        <svg className="w-3.5 h-3.5 text-yellow-500 fill-current" viewBox="0 0 20 20">
-                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                        </svg>
-                                                        <span className="font-bold text-gray-800 text-xs">{canteen.rating.toFixed(1)}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <p className="text-gray-500 text-sm line-clamp-2 h-10 leading-relaxed mb-4">
-                                                {item.description || 'A delicious choice for your meal today.'}
-                                            </p>
+                                            )}
                                         </div>
 
+                                        <p className="text-gray-600 text-xs leading-relaxed line-clamp-2 h-8 mb-4">
+                                            {item.description || 'A delicious choice for your meal today.'}
+                                        </p>
+
+                                        {/* Add to cart button */}
                                         <button
                                             onClick={() => handleAddToCart(item)}
                                             disabled={addingToCart[item.id]}
-                                            className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all transform active:scale-95 ${addingToCart[item.id]
-                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                : 'bg-gray-900 text-white hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-200'
+                                            className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 ${addingToCart[item.id]
+                                                ? 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5'
+                                                : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-[0_0_25px_rgba(234,88,12,0.4)] hover:scale-[1.02] active:scale-95'
                                                 }`}
                                         >
                                             {addingToCart[item.id] ? (
                                                 <>
-                                                    <div className="w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full animate-spin"></div>
-                                                    Adding...
+                                                    <div className="w-3.5 h-3.5 border-2 border-gray-600 border-t-gray-400 rounded-full animate-spin" />
+                                                    Adding…
                                                 </>
                                             ) : (
                                                 <>
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                                     </svg>
                                                     Add to Cart
                                                 </>
@@ -463,6 +449,7 @@ function Menu() {
                     </div>
                 )}
             </div>
+
             <Footer />
         </div>
     )
