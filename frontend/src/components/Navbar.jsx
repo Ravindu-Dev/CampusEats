@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 
-function Navbar() {
+function Navbar({ isHome = false }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
     const { user, logout } = useContext(AuthContext)
@@ -34,11 +34,19 @@ function Navbar() {
         { name: 'About Us', path: '/about' },
     ]
 
+    // isTransparent = only at very top of home page (fully see-through bg)
+    // isHome = entire home page (dark theme throughout, white text always)
+    const isTransparent = isHome && !scrolled
+
     return (
         <nav
-            className={`sticky top-0 z-50 transition-all duration-300 border-b ${scrolled
-                ? 'bg-white/90 backdrop-blur-xl border-gray-200 shadow-sm py-2'
-                : 'bg-white/80 backdrop-blur-lg border-transparent py-4'
+            className={`top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${isHome
+                    ? isTransparent
+                        ? 'fixed bg-transparent border-white/10 py-4'
+                        : 'fixed bg-black/85 backdrop-blur-xl border-white/10 shadow-lg py-2'
+                    : scrolled
+                        ? 'sticky bg-white/95 backdrop-blur-xl border-gray-200 shadow-sm py-2'
+                        : 'sticky bg-white/80 backdrop-blur-lg border-transparent py-4'
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,7 +57,10 @@ function Navbar() {
                             <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:shadow-orange-500/30 transition-all duration-300 transform group-hover:scale-105">
                                 C
                             </div>
-                            <span className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent tracking-tight group-hover:from-orange-600 group-hover:to-red-600 transition-all duration-300">
+                            <span className={`text-2xl font-black tracking-tight transition-all duration-300 ${isHome
+                                    ? 'text-white'
+                                    : 'bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent group-hover:from-orange-600 group-hover:to-red-600'
+                                }`}>
                                 CampusEats
                             </span>
                         </Link>
@@ -61,14 +72,19 @@ function Navbar() {
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 relative group ${isActive(link.path)
-                                    ? 'text-orange-600 bg-orange-50'
-                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 relative group ${isHome
+                                        ? isActive(link.path)
+                                            ? 'text-orange-400 bg-white/10'
+                                            : 'text-white/80 hover:text-white hover:bg-white/10'
+                                        : isActive(link.path)
+                                            ? 'text-orange-600 bg-orange-50'
+                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                                     }`}
                             >
                                 {link.name}
                                 {isActive(link.path) && (
-                                    <span className="absolute bottom-1.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-orange-600 rounded-full"></span>
+                                    <span className={`absolute bottom-1.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${isHome ? 'bg-orange-400' : 'bg-orange-600'
+                                        }`}></span>
                                 )}
                             </Link>
                         ))}
@@ -80,7 +96,10 @@ function Navbar() {
                             <>
                                 <button
                                     onClick={toggleCart}
-                                    className="relative p-2.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all duration-300 group"
+                                    className={`relative p-2.5 rounded-full transition-all duration-300 group ${isHome
+                                            ? 'text-white/80 hover:text-white hover:bg-white/10'
+                                            : 'text-gray-500 hover:text-orange-600 hover:bg-orange-50'
+                                        }`}
                                     aria-label="Cart"
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +114,10 @@ function Navbar() {
 
                                 <Link
                                     to="/dashboard"
-                                    className="p-2.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all duration-300 group"
+                                    className={`p-2.5 rounded-full transition-all duration-300 group ${isHome
+                                            ? 'text-white/80 hover:text-white hover:bg-white/10'
+                                            : 'text-gray-500 hover:text-orange-600 hover:bg-orange-50'
+                                        }`}
                                     aria-label="Dashboard"
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,12 +125,12 @@ function Navbar() {
                                     </svg>
                                 </Link>
 
-                                <div className="h-6 w-px bg-gray-200"></div>
+                                <div className={`h-6 w-px ${isHome ? 'bg-white/20' : 'bg-gray-200'}`}></div>
 
                                 <div className="flex items-center gap-3 pl-2">
                                     <div className="text-right hidden lg:block">
-                                        <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Welcome</div>
-                                        <div className="text-sm font-bold text-gray-900 leading-none">{user.username}</div>
+                                        <div className={`text-xs font-medium uppercase tracking-wider ${isHome ? 'text-white/40' : 'text-gray-400'}`}>Welcome</div>
+                                        <div className={`text-sm font-bold leading-none ${isHome ? 'text-white' : 'text-gray-900'}`}>{user.username}</div>
                                     </div>
                                     <button
                                         onClick={handleLogout}
@@ -125,7 +147,8 @@ function Navbar() {
                             <div className="flex items-center gap-3">
                                 <Link
                                     to="/login"
-                                    className="px-5 py-2.5 text-gray-600 hover:text-gray-900 font-bold text-sm transition-colors"
+                                    className={`px-5 py-2.5 font-bold text-sm transition-colors ${isHome ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                                        }`}
                                 >
                                     Log In
                                 </Link>

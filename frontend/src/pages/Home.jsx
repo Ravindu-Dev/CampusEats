@@ -1,165 +1,302 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 
-function Home() {
-    return (
-        <div className="min-h-screen font-sans text-gray-900">
-            <Navbar />
+/* ─── Animated counter hook ─── */
+function useCounter(target, duration = 2000, startCounting) {
+    const [count, setCount] = useState(0)
+    useEffect(() => {
+        if (!startCounting) return
+        let start = 0
+        const step = target / (duration / 16)
+        const timer = setInterval(() => {
+            start += step
+            if (start >= target) { setCount(target); clearInterval(timer) }
+            else setCount(Math.floor(start))
+        }, 16)
+        return () => clearInterval(timer)
+    }, [startCounting, target, duration])
+    return count
+}
 
-            {/* Hero Section */}
-            <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-                {/* Background Image with Overlay */}
-                <div className="absolute inset-0 z-0">
+function Home() {
+    const heroRef = useRef(null)
+    const statsRef = useRef(null)
+    const [statsVisible, setStatsVisible] = useState(false)
+
+    /* ─── Parallax handler ─── */
+    useEffect(() => {
+        const handleScroll = () => {
+            if (heroRef.current) {
+                heroRef.current.style.transform = `translateY(${window.scrollY * 0.4}px)`
+            }
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
+
+    /* ─── Stats observer ─── */
+    useEffect(() => {
+        const obs = new IntersectionObserver(([e]) => {
+            if (e.isIntersecting) setStatsVisible(true)
+        }, { threshold: 0.4 })
+        if (statsRef.current) obs.observe(statsRef.current)
+        return () => obs.disconnect()
+    }, [])
+
+    const students = useCounter(1200, 2000, statsVisible)
+    const canteens = useCounter(10, 1500, statsVisible)
+    const orders = useCounter(8500, 2500, statsVisible)
+
+    return (
+        <div className="min-h-screen font-sans bg-black text-white overflow-x-hidden">
+            <Navbar isHome={true} />
+
+            {/* ═══════════════════════════════════════
+                SECTION 1 — CINEMATIC HERO
+            ═══════════════════════════════════════ */}
+            <section className="relative h-screen w-full overflow-hidden">
+                <div
+                    ref={heroRef}
+                    className="absolute inset-0 w-full h-[130%] -top-[15%]"
+                    style={{ willChange: 'transform' }}
+                >
                     <img
                         src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop"
-                        alt="Delicious Food"
+                        alt="Campus Food"
                         className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
                 </div>
 
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 tracking-tight animate-fade-in-up">
-                        <span className="block mb-2">Taste the</span>
-                        <span className="bg-gradient-to-r from-orange-400 to-yellow-300 bg-clip-text text-transparent">Excellence</span>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/90 z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/20 z-10" />
+
+                <div className="relative z-20 h-full flex flex-col items-start justify-center max-w-7xl mx-auto px-6 lg:px-12 pt-20">
+                    <div
+                        className="mb-6 inline-flex items-center gap-2 bg-orange-600/20 border border-orange-500/40 backdrop-blur-md px-4 py-2 rounded-full"
+                        style={{ animation: 'fadeInUp 0.6s ease forwards', animationDelay: '0.1s', opacity: 0 }}
+                    >
+                        <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+                        <span className="text-orange-300 text-sm font-bold tracking-widest uppercase">Campus Dining Reimagined</span>
+                    </div>
+
+                    <h1
+                        className="text-[clamp(3.5rem,8vw,7rem)] font-black leading-[0.9] tracking-tighter mb-5 uppercase"
+                        style={{ animation: 'fadeInUp 0.7s ease forwards', animationDelay: '0.2s', opacity: 0 }}
+                    >
+                        <span className="block text-white drop-shadow-2xl">CAMPUS.</span>
+                        <span className="block bg-gradient-to-r from-orange-500 via-red-500 to-yellow-400 bg-clip-text text-transparent drop-shadow-2xl">EATS.</span>
                     </h1>
-                    <p className="text-xl md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto font-light leading-relaxed animate-fade-in-up delay-100">
-                        Experience the finest campus dining. Order from your favorite canteens, skip the line, and savor every bite.
+
+                    {/* Tagline — outside h1 so it has its own clean, light style */}
+                    <p
+                        className="text-white/55 text-xl font-light italic tracking-wide mb-8"
+                        style={{ animation: 'fadeInUp 0.7s ease forwards', animationDelay: '0.3s', opacity: 0 }}
+                    >
+                        Skip the queue. Savor every bite.
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up delay-200">
+
+                    <p
+                        className="text-gray-300 text-lg md:text-xl max-w-xl mb-10 leading-relaxed font-light"
+                        style={{ animation: 'fadeInUp 0.7s ease forwards', animationDelay: '0.4s', opacity: 0 }}
+                    >
+                        Order from all campus canteens in one place. Your food will be hot and ready when you arrive.
+                    </p>
+
+                    <div
+                        className="flex flex-col sm:flex-row gap-4"
+                        style={{ animation: 'fadeInUp 0.7s ease forwards', animationDelay: '0.5s', opacity: 0 }}
+                    >
                         <Link
                             to="/menu"
-                            className="px-10 py-5 bg-orange-600 hover:bg-orange-700 text-white rounded-full text-lg font-bold shadow-[0_10px_20px_rgba(234,88,12,0.4)] transition-all transform hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(234,88,12,0.5)]"
+                            className="group px-8 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-black text-lg rounded-full shadow-[0_0_40px_rgba(234,88,12,0.4)] hover:shadow-[0_0_60px_rgba(234,88,12,0.6)] transition-all duration-300 hover:-translate-y-1 flex items-center justify-center gap-3"
                         >
-                            Browse Menu
+                            <span>Browse Menu</span>
+                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
                         </Link>
                         <Link
                             to="/signup"
-                            className="px-10 py-5 bg-white/10 backdrop-blur-md border border-white/30 text-white rounded-full text-lg font-bold hover:bg-white/20 transition-all transform hover:-translate-y-1 hover:shadow-lg"
+                            className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-black text-lg rounded-full hover:bg-white/20 hover:border-white/40 transition-all duration-300 hover:-translate-y-1 text-center"
                         >
                             Join Now
                         </Link>
                     </div>
                 </div>
 
-                {/* Scroll Indicator */}
-                <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-                    <svg className="w-8 h-8 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
+                <div
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+                    style={{ animation: 'fadeIn 1s ease forwards', animationDelay: '1.2s', opacity: 0 }}
+                >
+                    <span className="text-white/40 text-xs tracking-[0.3em] uppercase font-medium">Scroll</span>
+                    <div className="w-px h-12 bg-gradient-to-b from-white/40 to-transparent animate-pulse" />
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section className="py-24 bg-gray-50 relative overflow-hidden">
-                {/* Decorative blob */}
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
-                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-yellow-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
+            {/* ═══════════════════════════════════════
+                SECTION 2 — HOW IT WORKS (text-only)
+            ═══════════════════════════════════════ */}
+            <section className="relative bg-[#060606] py-32 overflow-hidden">
+                {/* Faint grid */}
+                <div
+                    className="absolute inset-0 pointer-events-none opacity-[0.025]"
+                    style={{
+                        backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
+                        backgroundSize: '80px 80px',
+                    }}
+                />
+                {/* Left edge glow */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-3/4 bg-gradient-to-b from-transparent via-orange-500/40 to-transparent" />
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="text-center mb-20">
-                        <h2 className="text-orange-600 font-bold tracking-wide uppercase text-sm mb-3">Why CampusEats?</h2>
-                        <h3 className="text-4xl md:text-5xl font-black text-gray-900 mb-6">
-                            Dining Reimagined
-                        </h3>
-                        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                            We've optimized every step of your food journey to give you more time for what matters.
-                        </p>
+                <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
+                    {/* Header */}
+                    <div className="mb-20">
+                        <span className="text-orange-500 text-sm font-bold tracking-[0.3em] uppercase">How it works</span>
+                        <h2 className="mt-3 text-5xl md:text-6xl font-black text-white leading-tight">
+                            Order smarter,<br />
+                            <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">eat faster.</span>
+                        </h2>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-10">
+                    {/* Steps — numbered large, bold, dark-card style */}
+                    <div className="grid md:grid-cols-3 gap-px bg-white/[0.04] rounded-3xl overflow-hidden">
                         {[
                             {
-                                title: "Lightning Fast",
-                                desc: "Skip the queue completely. Pre-order and pick up when your food is hot and ready.",
-                                icon: (
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                ),
-                                color: "from-orange-500 to-red-500"
+                                num: '01',
+                                title: 'Browse & Pick',
+                                desc: 'Explore menus across every campus canteen in one place. Filter by cuisine, canteen, or price.',
+                                icon: '🔍',
                             },
                             {
-                                title: "Diverse Selection",
-                                desc: "From healthy salads to cheat-day burgers, explore menus from all campus canteens.",
-                                icon: (
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                    </svg>
-                                ),
-                                color: "from-blue-500 to-indigo-500"
+                                num: '02',
+                                title: 'Order & Pay',
+                                desc: 'Place your order instantly — choose to eat now or schedule for later. Pay securely via Stripe.',
+                                icon: '💳',
                             },
                             {
-                                title: "Secure Payments",
-                                desc: "Complete peace of mind with our encrypted, cashless payment system.",
-                                icon: (
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                    </svg>
-                                ),
-                                color: "from-green-500 to-emerald-500"
-                            }
-                        ].map((feature, index) => (
-                            <div key={index} className="group relative p-1 rounded-3xl bg-gradient-to-br from-gray-100 via-white to-gray-100 hover:from-orange-500 hover:to-red-600 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-                                <div className="absolute inset-0 bg-white/40 backdrop-blur-3xl rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <div className="relative h-full bg-white/80 backdrop-blur-xl p-10 rounded-[22px] overflow-hidden border border-white/50 group-hover:border-transparent transition-all duration-300">
-                                    <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br ${feature.color} opacity-5 rounded-bl-full transition-all duration-500 group-hover:scale-150 group-hover:opacity-10`}></div>
+                                num: '03',
+                                title: 'Show QR & Collect',
+                                desc: 'Watch your order status live. When it\'s ready, flash your QR code and walk away with your food.',
+                                icon: '📲',
+                            },
+                        ].map((step, i) => (
+                            <div
+                                key={i}
+                                className="group relative bg-[#0c0c0c] p-10 hover:bg-[#111] transition-colors duration-300"
+                            >
+                                {/* Step number — giant, faded */}
+                                <span className="absolute top-6 right-8 text-[5rem] font-black leading-none text-white/[0.04] select-none group-hover:text-orange-500/10 transition-colors duration-500">
+                                    {step.num}
+                                </span>
 
-                                    <div className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-orange-500/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
-                                        {feature.icon}
-                                    </div>
+                                <div className="text-4xl mb-6">{step.icon}</div>
+                                <h3 className="text-2xl font-black text-white mb-3 group-hover:text-orange-300 transition-colors duration-300">
+                                    {step.title}
+                                </h3>
+                                <p className="text-gray-500 leading-relaxed">{step.desc}</p>
 
-                                    <h4 className="text-2xl font-black text-gray-900 mb-4 group-hover:bg-gradient-to-r group-hover:from-orange-600 group-hover:to-red-600 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
-                                        {feature.title}
-                                    </h4>
-
-                                    <p className="text-gray-600 leading-relaxed font-medium group-hover:text-gray-800 transition-colors duration-300">
-                                        {feature.desc}
-                                    </p>
-                                </div>
+                                {/* Bottom accent line */}
+                                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/0 to-transparent group-hover:via-orange-500/40 transition-all duration-500" />
                             </div>
                         ))}
                     </div>
+
+                    {/* Marquee strip */}
+                    <div className="mt-20 overflow-hidden border-y border-white/[0.06] py-5">
+                        <div className="flex gap-12 animate-[marquee_18s_linear_infinite] whitespace-nowrap w-max">
+                            {Array(8).fill(['Pre-Order', 'Skip the Queue', 'Live Tracking', 'QR Pickup', 'Secure Payments', 'All Canteens']).flat().map((t, i) => (
+                                <span key={i} className="text-sm font-bold tracking-widest text-white/20 uppercase">{t} &nbsp;·</span>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="relative py-24 bg-gray-900 overflow-hidden">
-                <div className="absolute inset-0">
-                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop" alt="Background" className="w-full h-full object-cover opacity-20" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/90 to-transparent"></div>
+            {/* ═══════════════════════════════════════
+                SECTION 3 — STATS BANNER
+            ═══════════════════════════════════════ */}
+            <section ref={statsRef} className="relative py-16 bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 overflow-hidden">
+                <div
+                    className="absolute inset-0 opacity-20"
+                    style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.15) 60px, rgba(255,255,255,0.15) 61px)' }}
+                />
+                <div className="relative max-w-5xl mx-auto px-6 grid grid-cols-3 gap-8 text-center text-white">
+                    {[
+                        { value: students, suffix: '+', label: 'Students Served' },
+                        { value: canteens, suffix: '', label: 'Campus Canteens' },
+                        { value: orders, suffix: '+', label: 'Orders Completed' },
+                    ].map((stat, i) => (
+                        <div key={i} className="flex flex-col items-center">
+                            <span className="text-5xl md:text-7xl font-black tabular-nums leading-none">
+                                {stat.value.toLocaleString()}{stat.suffix}
+                            </span>
+                            <span className="text-white/70 text-sm md:text-base font-semibold mt-2 tracking-wider uppercase">{stat.label}</span>
+                        </div>
+                    ))}
                 </div>
+            </section>
 
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-12">
-                    <div className="md:w-1/2">
-                        <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
-                            Hungry? <br />
-                            <span className="text-orange-500">We've got you covered.</span>
+
+            {/* ═══════════════════════════════════════
+                SECTION 5 — CTA
+            ═══════════════════════════════════════ */}
+            <section className="relative min-h-[60vh] flex items-center overflow-hidden bg-black">
+                <div className="absolute inset-0">
+                    <img
+                        src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop"
+                        alt="CTA bg"
+                        className="w-full h-full object-cover opacity-15"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+                </div>
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-orange-600/80 via-red-600/80 to-transparent" />
+
+                <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 py-24">
+                    <div className="max-w-2xl">
+                        <span className="text-orange-500 text-sm font-bold tracking-[0.3em] uppercase block mb-4">Ready to eat?</span>
+                        <h2 className="text-5xl md:text-7xl font-black text-white leading-tight mb-6 uppercase">
+                            Hungry?<br />
+                            <span className="text-orange-500">We Got You.</span>
                         </h2>
-                        <p className="text-gray-300 text-lg mb-8 max-w-lg">
-                            Join thousands of students who have already upgraded their campus dining experience. Good food is just a tap away.
+                        <p className="text-gray-400 text-xl mb-10 leading-relaxed">
+                            Join thousands of students who've already upgraded their campus dining. Good food is just a tap away.
                         </p>
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
                             <Link
                                 to="/signup"
-                                className="px-8 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-orange-900/20"
+                                className="px-10 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-black text-lg rounded-full shadow-[0_0_40px_rgba(234,88,12,0.4)] hover:shadow-[0_0_70px_rgba(234,88,12,0.6)] hover:-translate-y-1 transition-all duration-300 text-center"
                             >
-                                Get Started
+                                Get Started — It's Free
                             </Link>
                             <Link
-                                to="/contact"
-                                className="px-8 py-4 bg-transparent border border-white/20 text-white hover:bg-white/10 rounded-xl font-bold transition-all backdrop-blur-sm"
+                                to="/menu"
+                                className="px-10 py-4 border border-white/20 text-white font-black text-lg rounded-full hover:bg-white/10 hover:-translate-y-1 transition-all duration-300 text-center"
                             >
-                                Contact Support
+                                Browse Menu
                             </Link>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Footer */}
             <Footer />
+
+            <style>{`
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(30px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to   { opacity: 1; }
+                }
+                @keyframes marquee {
+                    from { transform: translateX(0); }
+                    to   { transform: translateX(-50%); }
+                }
+            `}</style>
         </div>
     )
 }
