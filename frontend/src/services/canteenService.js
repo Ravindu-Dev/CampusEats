@@ -14,6 +14,13 @@ const getMyCanteen = async (ownerId) => {
     return response.data;
 };
 
+const getCanteenById = async (id) => {
+    const response = await axios.get(API_URL + id, {
+        headers: getAuthHeaders()
+    });
+    return response.data;
+};
+
 const updateCanteen = async (id, canteenData) => {
     const response = await axios.put(API_URL + id, canteenData, {
         headers: getAuthHeaders()
@@ -24,7 +31,7 @@ const updateCanteen = async (id, canteenData) => {
 const uploadLogo = async (id, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await axios.post(API_URL + id + '/upload-logo', formData, {
         headers: {
             ...getAuthHeaders(),
@@ -37,7 +44,7 @@ const uploadLogo = async (id, file) => {
 const uploadBanner = async (id, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await axios.post(API_URL + id + '/upload-banner', formData, {
         headers: {
             ...getAuthHeaders(),
@@ -50,7 +57,7 @@ const uploadBanner = async (id, file) => {
 const uploadGallery = async (id, files) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
-    
+
     const response = await axios.post(API_URL + id + '/upload-gallery', formData, {
         headers: {
             ...getAuthHeaders(),
@@ -63,7 +70,7 @@ const uploadGallery = async (id, files) => {
 const uploadDocuments = async (id, files) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
-    
+
     const response = await axios.post(API_URL + id + '/upload-documents', formData, {
         headers: {
             ...getAuthHeaders(),
@@ -85,6 +92,7 @@ const getQueueStatus = async () => {
 
 const canteenService = {
     getMyCanteen,
+    getCanteenById,
     updateCanteen,
     uploadLogo,
     uploadBanner,
