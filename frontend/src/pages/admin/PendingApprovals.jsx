@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import adminAuthService from '../../services/adminAuthService'
 import canteenOwnerService from '../../services/canteenOwnerService'
+import AdminLayout from './AdminLayout'
 
 function PendingApprovals() {
     const [pendingOwners, setPendingOwners] = useState([])
@@ -37,15 +38,12 @@ function PendingApprovals() {
     }
 
     const handleApprove = async (ownerId, ownerName) => {
-        if (!confirm(`Are you sure you want to approve ${ownerName}?`)) {
-            return
-        }
-
+        if (!confirm(`Approve ${ownerName}?`)) return
         try {
             setActionLoading(true)
             await canteenOwnerService.approveCanteenOwner(ownerId)
             alert(`Successfully approved ${ownerName}`)
-            fetchPendingRegistrations() // Refresh list
+            fetchPendingRegistrations()
         } catch (err) {
             alert('Failed to approve canteen owner')
             console.error(err)
@@ -65,7 +63,6 @@ function PendingApprovals() {
             alert('Please provide a rejection reason')
             return
         }
-
         try {
             setActionLoading(true)
             await canteenOwnerService.rejectCanteenOwner(selectedOwner.id, rejectionReason)
@@ -73,7 +70,7 @@ function PendingApprovals() {
             setShowRejectModal(false)
             setSelectedOwner(null)
             setRejectionReason('')
-            fetchPendingRegistrations() // Refresh list
+            fetchPendingRegistrations()
         } catch (err) {
             alert('Failed to reject canteen owner')
             console.error(err)
@@ -85,119 +82,153 @@ function PendingApprovals() {
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A'
         return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit',
         })
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-            {/* Top Navigation */}
-            <nav className="bg-white shadow-md sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16 items-center">
-                        <button onClick={() => navigate('/admin/dashboard')} className="flex items-center space-x-2">
-                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                            <span className="text-lg font-semibold text-gray-700">Back to Dashboard</span>
-                        </button>
-                        <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            <span className="text-gray-700 font-medium">Admin</span>
-                        </div>
-                    </div>
+        <AdminLayout
+            pendingCount={pendingOwners.length}
+            pageTitle="Pending Approvals"
+            pageSubtitle="Review and manage canteen owner registration requests"
+        >
+            {/* Loading */}
+            {loading && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '240px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid rgba(249,115,22,0.2)', borderTop: '3px solid #f97316', animation: 'spin 0.8s linear infinite' }} />
                 </div>
-            </nav>
+            )}
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl shadow-xl p-8 text-white mb-8">
-                    <h1 className="text-4xl font-bold mb-2">Pending Approvals</h1>
-                    <p className="text-lg opacity-90">Review and manage canteen owner registration requests</p>
+            {/* Error */}
+            {error && (
+                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', padding: '20px', color: '#f87171' }}>
+                    {error}
                 </div>
+            )}
 
-                {/* Loading State */}
-                {loading && (
-                    <div className="flex justify-center items-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            {/* Empty */}
+            {!loading && !error && pendingOwners.length === 0 && (
+                <div style={{
+                    background: 'linear-gradient(135deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02))',
+                    border: '1px solid rgba(34,197,94,0.15)',
+                    borderRadius: '20px',
+                    padding: '64px 20px',
+                    textAlign: 'center',
+                }}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+                    <div style={{ color: 'white', fontWeight: 700, fontSize: '20px', marginBottom: '8px' }}>All Caught Up!</div>
+                    <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px' }}>No pending canteen owner registrations at this time.</div>
+                </div>
+            )}
+
+            {/* Table */}
+            {!loading && !error && pendingOwners.length > 0 && (
+                <>
+                    {/* Count badge */}
+                    <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                            background: 'rgba(234,179,8,0.12)',
+                            border: '1px solid rgba(234,179,8,0.3)',
+                            color: '#eab308',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            padding: '4px 12px',
+                            borderRadius: '999px',
+                        }}>
+                            {pendingOwners.length} pending
+                        </span>
                     </div>
-                )}
 
-                {/* Error State */}
-                {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
-                        <p className="font-semibold">Error</p>
-                        <p>{error}</p>
-                    </div>
-                )}
-
-                {/* Empty State */}
-                {!loading && !error && pendingOwners.length === 0 && (
-                    <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">All Caught Up!</h2>
-                        <p className="text-gray-600">No pending canteen owner registrations at this time.</p>
-                    </div>
-                )}
-
-                {/* Pending Registrations Table */}
-                {!loading && !error && pendingOwners.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                                    <tr>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold">Owner Name</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold">Email</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold">Phone</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold">Registered</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
-                                        <th className="px-6 py-4 text-center text-sm font-semibold">Actions</th>
+                    <div style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '16px',
+                        overflow: 'hidden',
+                    }}>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                        {['Owner', 'Email', 'Phone', 'Registered', 'Actions'].map(col => (
+                                            <th key={col} style={{
+                                                padding: '14px 20px',
+                                                textAlign: col === 'Actions' ? 'center' : 'left',
+                                                color: 'rgba(255,255,255,0.3)',
+                                                fontSize: '11px',
+                                                fontWeight: 700,
+                                                letterSpacing: '1px',
+                                                textTransform: 'uppercase',
+                                                whiteSpace: 'nowrap',
+                                            }}>{col}</th>
+                                        ))}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {pendingOwners.map((owner, index) => (
-                                        <tr key={owner.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <td className="px-6 py-4">
-                                                <div className="font-semibold text-gray-900">{owner.ownerName}</div>
+                                <tbody>
+                                    {pendingOwners.map((owner, i) => (
+                                        <tr key={owner.id}
+                                            style={{
+                                                borderBottom: i < pendingOwners.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                                transition: 'background 0.15s',
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                                        >
+                                            <td style={{ padding: '14px 20px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '50%',
+                                                        background: 'linear-gradient(135deg, #eab308, #f97316)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '12px', color: 'white', fontWeight: 800, flexShrink: 0,
+                                                    }}>
+                                                        {owner.ownerName[0].toUpperCase()}
+                                                    </div>
+                                                    <span style={{ color: 'white', fontWeight: 600, fontSize: '14px' }}>{owner.ownerName}</span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-gray-700">{owner.email}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-gray-700">{owner.phoneNumber}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-600">{formatDate(owner.createdAt)}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                                    {owner.approvalStatus}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex justify-center gap-2">
+                                            <td style={{ padding: '14px 20px', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{owner.email}</td>
+                                            <td style={{ padding: '14px 20px', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{owner.phoneNumber}</td>
+                                            <td style={{ padding: '14px 20px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>{formatDate(owner.createdAt)}</td>
+                                            <td style={{ padding: '14px 20px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                                                     <button
                                                         onClick={() => handleApprove(owner.id, owner.ownerName)}
                                                         disabled={actionLoading}
-                                                        className="px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        style={{
+                                                            padding: '7px 16px',
+                                                            borderRadius: '8px',
+                                                            border: 'none',
+                                                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                                                            color: 'white',
+                                                            fontSize: '12px',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer',
+                                                            opacity: actionLoading ? 0.5 : 1,
+                                                            transition: 'opacity 0.15s, transform 0.15s',
+                                                        }}
+                                                        onMouseEnter={e => { if (!actionLoading) e.currentTarget.style.transform = 'scale(1.03)' }}
+                                                        onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
                                                     >
                                                         Approve
                                                     </button>
                                                     <button
                                                         onClick={() => handleRejectClick(owner)}
                                                         disabled={actionLoading}
-                                                        className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg hover:from-red-700 hover:to-orange-700 transition font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        style={{
+                                                            padding: '7px 16px',
+                                                            borderRadius: '8px',
+                                                            border: '1px solid rgba(239,68,68,0.3)',
+                                                            background: 'rgba(239,68,68,0.1)',
+                                                            color: '#f87171',
+                                                            fontSize: '12px',
+                                                            fontWeight: 700,
+                                                            cursor: 'pointer',
+                                                            opacity: actionLoading ? 0.5 : 1,
+                                                            transition: 'all 0.15s',
+                                                        }}
+                                                        onMouseEnter={e => { if (!actionLoading) { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.transform = 'scale(1.03)' } }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.transform = 'none' }}
                                                     >
                                                         Reject
                                                     </button>
@@ -209,45 +240,90 @@ function PendingApprovals() {
                             </table>
                         </div>
                     </div>
-                )}
-            </main>
+                </>
+            )}
 
             {/* Rejection Modal */}
             {showRejectModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Reject Registration</h2>
-                        <p className="text-gray-600 mb-4">
-                            You are about to reject <span className="font-semibold">{selectedOwner?.ownerName}</span>'s registration.
-                        </p>
-                        <div className="mb-6">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Rejection Reason *
-                            </label>
-                            <textarea
-                                value={rejectionReason}
-                                onChange={(e) => setRejectionReason(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                rows="4"
-                                placeholder="Please provide a reason for rejection..."
-                            />
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px',
+                }}>
+                    <div style={{
+                        background: '#111',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '20px',
+                        padding: '32px',
+                        width: '100%',
+                        maxWidth: '440px',
+                        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                            <div style={{
+                                width: '40px', height: '40px', borderRadius: '12px',
+                                background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <span style={{ fontSize: '18px' }}>🚫</span>
+                            </div>
+                            <div>
+                                <div style={{ color: 'white', fontWeight: 800, fontSize: '16px' }}>Reject Registration</div>
+                                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
+                                    {selectedOwner?.ownerName}
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex gap-3">
+
+                        <label style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                            Rejection Reason *
+                        </label>
+                        <textarea
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            rows={4}
+                            placeholder="Please provide a reason for rejection..."
+                            style={{
+                                width: '100%',
+                                padding: '12px 14px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '10px',
+                                color: 'white',
+                                fontSize: '13px',
+                                resize: 'none',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                fontFamily: 'inherit',
+                                marginBottom: '20px',
+                            }}
+                            onFocus={e => { e.target.style.border = '1px solid rgba(239,68,68,0.4)' }}
+                            onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.1)' }}
+                        />
+
+                        <div style={{ display: 'flex', gap: '10px' }}>
                             <button
-                                onClick={() => {
-                                    setShowRejectModal(false)
-                                    setSelectedOwner(null)
-                                    setRejectionReason('')
-                                }}
+                                onClick={() => { setShowRejectModal(false); setSelectedOwner(null); setRejectionReason('') }}
                                 disabled={actionLoading}
-                                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold disabled:opacity-50"
+                                style={{
+                                    flex: 1, padding: '11px',
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '10px', color: 'rgba(255,255,255,0.6)',
+                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+                                }}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleRejectSubmit}
                                 disabled={actionLoading}
-                                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg hover:from-red-700 hover:to-orange-700 transition font-semibold shadow-md disabled:opacity-50"
+                                style={{
+                                    flex: 1, padding: '11px',
+                                    background: 'linear-gradient(135deg, #dc2626, #f97316)',
+                                    border: 'none', borderRadius: '10px', color: 'white',
+                                    fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+                                    opacity: actionLoading ? 0.6 : 1,
+                                }}
                             >
                                 {actionLoading ? 'Rejecting...' : 'Confirm Reject'}
                             </button>
@@ -255,7 +331,9 @@ function PendingApprovals() {
                     </div>
                 </div>
             )}
-        </div>
+
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </AdminLayout>
     )
 }
 

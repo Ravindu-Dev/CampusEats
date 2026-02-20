@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import adminAuthService from '../../services/adminAuthService'
 import canteenOwnerService from '../../services/canteenOwnerService'
+import AdminLayout from './AdminLayout'
 
 function AllCanteenOwners() {
     const [owners, setOwners] = useState([])
@@ -33,107 +34,162 @@ function AllCanteenOwners() {
         }
     }
 
-    const filteredOwners = owners.filter(owner => 
+    const filteredOwners = owners.filter(owner =>
         owner.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         owner.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    const getStatusBadgeClass = (status) => {
-        switch (status) {
-            case 'APPROVED': return 'bg-green-100 text-green-800'
-            case 'PENDING': return 'bg-yellow-100 text-yellow-800'
-            case 'REJECTED': return 'bg-red-100 text-red-800'
-            default: return 'bg-gray-100 text-gray-800'
-        }
+    const statusColors = {
+        APPROVED: { bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.3)', text: '#22c55e' },
+        PENDING: { bg: 'rgba(234,179,8,0.12)', border: 'rgba(234,179,8,0.3)', text: '#eab308' },
+        REJECTED: { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)', text: '#ef4444' },
     }
 
+    const getStatusStyle = (status) => statusColors[status] || { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)', text: 'rgba(255,255,255,0.5)' }
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-            <nav className="bg-white shadow-md sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16 items-center">
-                        <button onClick={() => navigate('/admin/dashboard')} className="flex items-center space-x-2">
-                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                            <span className="text-lg font-semibold text-gray-700">Back to Dashboard</span>
-                        </button>
-                    </div>
+        <AdminLayout pageTitle="Canteen Owners" pageSubtitle="View all registered canteen owners in the system">
+            {/* Search + count bar */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+            }}>
+                <div style={{ position: 'relative', flex: '1', minWidth: '240px', maxWidth: '380px' }}>
+                    <svg style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.25)', width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                        type="text"
+                        placeholder="Search by name or email..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{
+                            width: '100%',
+                            paddingLeft: '38px',
+                            paddingRight: '16px',
+                            paddingTop: '10px',
+                            paddingBottom: '10px',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '10px',
+                            color: 'white',
+                            fontSize: '13px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                        }}
+                        onFocus={e => { e.target.style.border = '1px solid rgba(249,115,22,0.5)' }}
+                        onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.1)' }}
+                    />
                 </div>
-            </nav>
-
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 text-white mb-8">
-                    <h1 className="text-4xl font-bold mb-2">Canteen Owners</h1>
-                    <p className="text-lg opacity-90">View all registered canteen owners in the system</p>
+                <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', marginLeft: 'auto' }}>
+                    {filteredOwners.length} owner{filteredOwners.length !== 1 ? 's' : ''}
                 </div>
+            </div>
 
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                        <div className="relative w-full md:w-96">
-                            <input
-                                type="text"
-                                placeholder="Search by name or email..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                            />
-                            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-                        <div className="text-gray-600 font-medium">
-                            Total: {filteredOwners.length} owners
-                        </div>
-                    </div>
+            {/* Content */}
+            {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '240px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid rgba(249,115,22,0.2)', borderTop: '3px solid #f97316', animation: 'spin 0.8s linear infinite' }} />
                 </div>
-
-                {loading ? (
-                    <div className="flex justify-center items-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    </div>
-                ) : error ? (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
-                        <p>{error}</p>
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50 border-b border-gray-200">
+            ) : error ? (
+                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', padding: '20px', color: '#f87171' }}>
+                    {error}
+                </div>
+            ) : (
+                <div style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                }}>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                    {['Name', 'Email', 'Phone', 'Status', 'Joined'].map(col => (
+                                        <th key={col} style={{
+                                            padding: '14px 20px',
+                                            textAlign: 'left',
+                                            color: 'rgba(255,255,255,0.3)',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            letterSpacing: '1px',
+                                            textTransform: 'uppercase',
+                                            whiteSpace: 'nowrap',
+                                        }}>{col}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredOwners.length === 0 ? (
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Joined Date</th>
+                                        <td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '14px' }}>
+                                            No owners found
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {filteredOwners.map((owner) => (
-                                        <tr key={owner.id} className="hover:bg-blue-50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="font-semibold text-gray-900">{owner.ownerName}</div>
+                                ) : filteredOwners.map((owner, i) => {
+                                    const s = getStatusStyle(owner.approvalStatus)
+                                    return (
+                                        <tr key={owner.id} style={{
+                                            borderBottom: i < filteredOwners.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                            transition: 'background 0.15s',
+                                        }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                                        >
+                                            <td style={{ padding: '14px 20px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '50%',
+                                                        background: 'linear-gradient(135deg, #f97316, #dc2626)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '12px',
+                                                        color: 'white',
+                                                        fontWeight: 800,
+                                                        flexShrink: 0,
+                                                    }}>
+                                                        {owner.ownerName[0].toUpperCase()}
+                                                    </div>
+                                                    <span style={{ color: 'white', fontWeight: 600, fontSize: '14px' }}>{owner.ownerName}</span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 text-gray-700">{owner.email}</td>
-                                            <td className="px-6 py-4 text-gray-700">{owner.phoneNumber}</td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeClass(owner.approvalStatus)}`}>
+                                            <td style={{ padding: '14px 20px', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{owner.email}</td>
+                                            <td style={{ padding: '14px 20px', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{owner.phoneNumber}</td>
+                                            <td style={{ padding: '14px 20px' }}>
+                                                <span style={{
+                                                    padding: '4px 12px',
+                                                    borderRadius: '999px',
+                                                    background: s.bg,
+                                                    border: `1px solid ${s.border}`,
+                                                    color: s.text,
+                                                    fontSize: '11px',
+                                                    fontWeight: 700,
+                                                    letterSpacing: '0.5px',
+                                                }}>
                                                     {owner.approvalStatus}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                            <td style={{ padding: '14px 20px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
                                                 {new Date(owner.createdAt).toLocaleDateString()}
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </div>
-                )}
-            </main>
-        </div>
+                </div>
+            )}
+
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </AdminLayout>
     )
 }
 
