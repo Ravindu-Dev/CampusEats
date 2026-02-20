@@ -2,161 +2,89 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import canteenAuthService from '../services/canteenAuthService'
 import { imgbbService } from '../services/imgbbService'
-import Navbar from '../components/Navbar'
+
+const STEP_META = [
+    { label: 'Account', icon: '👤' },
+    { label: 'Canteen', icon: '🏪' },
+    { label: 'Operations', icon: '⚙️' },
+    { label: 'Review', icon: '✅' },
+]
 
 function CanteenRegister() {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const [uploading, setUploading] = useState(false)
+    const [showSuccess, setShowSuccess] = useState(false)
     const [error, setError] = useState('')
     const navigate = useNavigate()
 
     const [formData, setFormData] = useState({
-        // Owner Account
-        ownerName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        phoneNumber: '',
-        alternativeContactNumber: '',
-
-        // Canteen Basic
-        canteenName: '',
-        logoUrl: '',
-        campus: '',
-        location: '',
-        floorNumber: '',
-        roomNumber: '',
-        landmark: '',
-        description: '',
-
-        // Operational
-        openingTime: '08:00',
-        closingTime: '18:00',
+        ownerName: '', email: '', password: '', confirmPassword: '',
+        phoneNumber: '', alternativeContactNumber: '',
+        canteenName: '', logoUrl: '', campus: '', location: '',
+        floorNumber: '', roomNumber: '', landmark: '', description: '',
+        openingTime: '08:00', closingTime: '18:00',
         operatingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
-        averagePreparationTime: 15,
-        deliveryAvailable: false,
-        pickupAvailable: true,
-        seatingCapacity: '',
-
-        // Categories
-        cuisineTypes: [],
-        specialtyItems: '',
-        dietaryOptions: [],
-
-        // Business Info
-        businessRegistrationNumber: '',
-        gstNumber: '',
-        foodSafeLicenseNumber: '',
-
-        // Banking
-        bankName: '',
-        accountHolderName: '',
-        accountNumber: '',
-        ifscCode: '',
-        upiId: '',
+        averagePreparationTime: 15, deliveryAvailable: false, pickupAvailable: true,
+        seatingCapacity: '', cuisineTypes: [], specialtyItems: '', dietaryOptions: [],
+        businessRegistrationNumber: '', gstNumber: '', foodSafeLicenseNumber: '',
+        bankName: '', accountHolderName: '', accountNumber: '', ifscCode: '', upiId: '',
         acceptedPaymentMethods: ['CASH', 'CARD', 'UPI'],
-
-        // Social
-        websiteUrl: '',
-        instagramHandle: '',
-        facebookPage: '',
+        websiteUrl: '', instagramHandle: '', facebookPage: '',
     })
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target
-        setFormData({
-            ...formData,
-            [name]: type === 'checkbox' ? checked : value,
-        })
+        setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
     }
 
     const handleCheckboxArray = (name, value) => {
-        const currentArray = formData[name] || []
-        const newArray = currentArray.includes(value)
-            ? currentArray.filter(item => item !== value)
-            : [...currentArray, value]
-        setFormData({ ...formData, [name]: newArray })
+        const cur = formData[name] || []
+        setFormData({ ...formData, [name]: cur.includes(value) ? cur.filter(i => i !== value) : [...cur, value] })
     }
-
-    const [uploading, setUploading] = useState(false)
 
     const handleLogoUpload = async (e) => {
         const file = e.target.files[0]
         if (!file) return
-
         setUploading(true)
         setError('')
         try {
             const url = await imgbbService.uploadImage(file)
             setFormData(prev => ({ ...prev, logoUrl: url }))
-        } catch (err) {
-            setError('Failed to upload logo. Please check your network or try again.')
+        } catch {
+            setError('Failed to upload logo. Please try again.')
         } finally {
             setUploading(false)
         }
     }
 
-    const validateStep1 = () => {
-        if (!formData.ownerName || !formData.email || !formData.password || !formData.phoneNumber) {
-            setError('Please fill in all required fields')
-            return false
+    const validate = () => {
+        if (step === 1) {
+            if (!formData.ownerName || !formData.email || !formData.password || !formData.phoneNumber) return setError('Please fill in all required fields.') || false
+            if (formData.password !== formData.confirmPassword) return setError('Passwords do not match.') || false
+            if (formData.password.length < 6) return setError('Password must be at least 6 characters.') || false
         }
-        if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match')
-            return false
+        if (step === 2) {
+            if (!formData.canteenName || !formData.location || !formData.description) return setError('Please fill in Canteen Name, Location, and Description.') || false
+            if (!formData.logoUrl) return setError('Please upload a canteen logo.') || false
         }
-        if (formData.password.length < 6) {
-            setError('Password must be at least 6 characters')
-            return false
-        }
-        return true
-    }
-
-    const validateStep2 = () => {
-        if (!formData.canteenName || !formData.location || !formData.description) {
-            setError('Please fill in all required fields (Name, Location, Description)')
-            return false
-        }
-        if (!formData.logoUrl) {
-            setError('Please upload a canteen logo')
-            return false
+        if (step === 3) {
+            if (!formData.openingTime || !formData.closingTime) return setError('Please provide opening and closing times.') || false
         }
         return true
     }
 
-    const validateStep3 = () => {
-        if (!formData.openingTime || !formData.closingTime) {
-            setError('Please provide opening and closing times')
-            return false
-        }
-        return true
-    }
+    const nextStep = () => { setError(''); if (validate()) setStep(s => s + 1) }
+    const prevStep = () => { setError(''); setStep(s => s - 1) }
 
-    const nextStep = () => {
-        setError('')
-
-        if (step === 1 && !validateStep1()) return
-        if (step === 2 && !validateStep2()) return
-        if (step === 3 && !validateStep3()) return
-
-        setStep(step + 1)
-    }
-
-    const prevStep = () => {
-        setError('')
-        setStep(step - 1)
-    }
-
-    const handleSubmit = async (e) => {
-        e.preventDefault()
+    const handleSubmit = async () => {
         setError('')
         setLoading(true)
-
         try {
-            const submitData = { ...formData }
-            delete submitData.confirmPassword
-            await canteenAuthService.register(submitData)
-            navigate('/canteen/login', { state: { message: 'Registration successful! Please login.' } })
+            const data = { ...formData }
+            delete data.confirmPassword
+            await canteenAuthService.register(data)
+            setShowSuccess(true)
         } catch (err) {
             setError(err.response?.data || 'Registration failed. Please try again.')
         } finally {
@@ -165,191 +93,186 @@ function CanteenRegister() {
     }
 
     const cuisineOptions = ['INDIAN', 'CHINESE', 'CONTINENTAL', 'ITALIAN', 'MEXICAN', 'BEVERAGES', 'SNACKS', 'DESSERTS']
-    const dietaryOptions = ['VEGETARIAN', 'VEGAN', 'HALAL', 'GLUTEN_FREE']
     const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
+    const inputCls = "w-full px-4 py-3 bg-[#0d0d0d] border border-white/[0.08] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition placeholder-gray-600 text-sm"
+    const labelCls = "block text-sm font-bold text-gray-400 mb-2"
+
     return (
-        <div className="min-h-screen relative font-sans">
-            <Navbar />
+        <>
+            <div className="min-h-screen bg-[#080808] font-sans text-white">
 
-            {/* Background Image with Blur */}
-            <div className="absolute inset-0 z-0">
-                <img
-                    src="https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=2070&auto=format&fit=crop"
-                    alt="Canteen Background"
-                    className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-            </div>
-
-            <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-64px)] px-4 py-12">
-                <div className="w-full max-w-4xl">
-                    <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 animate-fade-in-up">
-                        <div className="text-center mb-8">
-                            <h2 className="text-3xl font-black text-gray-900 mb-2">Partner with CampusEats</h2>
-                            <p className="text-gray-600">Register your canteen in 4 simple steps</p>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="mb-8">
-                            <div className="flex justify-between mb-2 text-sm font-semibold">
-                                <span className={step >= 1 ? 'text-orange-600' : 'text-gray-400'}>Account</span>
-                                <span className={step >= 2 ? 'text-orange-600' : 'text-gray-400'}>Basic Info</span>
-                                <span className={step >= 3 ? 'text-orange-600' : 'text-gray-400'}>Operations</span>
-                                <span className={step >= 4 ? 'text-orange-600' : 'text-gray-400'}>Review</span>
+                {/* Top bar */}
+                <div className="sticky top-0 z-50 bg-[#080808]/80 backdrop-blur-xl border-b border-white/[0.06]">
+                    <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+                        <Link to="/" className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                                <span className="text-white font-black text-sm">C</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                <div className="bg-orange-600 h-2.5 rounded-full transition-all duration-500 ease-in-out" style={{ width: `${(step / 4) * 100}%` }}></div>
-                            </div>
-                        </div>
+                            <span className="text-white font-black">CampusEats</span>
+                            <span className="text-xs text-orange-400 font-bold bg-orange-500/15 border border-orange-500/25 px-2 py-0.5 rounded-full ml-1">Partner</span>
+                        </Link>
+                        <Link to="/canteen/login" className="text-sm text-gray-500 hover:text-white transition font-medium">
+                            Already registered? Login →
+                        </Link>
+                    </div>
+                </div>
 
+                <div className="max-w-5xl mx-auto px-6 py-12">
+                    {/* Header */}
+                    <div className="text-center mb-12">
+                        <span className="inline-flex items-center gap-2 bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-full mb-4">
+                            🏪 Partner Registration
+                        </span>
+                        <h1 className="text-4xl font-black tracking-tighter">Partner with CampusEats</h1>
+                        <p className="text-gray-500 mt-2">Register your canteen in 4 simple steps</p>
+                    </div>
+
+                    {/* Step progress */}
+                    <div className="flex items-center justify-center gap-0 mb-10">
+                        {STEP_META.map((s, i) => (
+                            <div key={s.label} className="flex items-center">
+                                <div className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${i + 1 === step ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/30' : i + 1 < step ? 'bg-orange-500/20 text-orange-400' : 'bg-white/[0.04] text-gray-600'}`}>
+                                    <span className="text-base">{s.icon}</span>
+                                    <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">{s.label}</span>
+                                </div>
+                                {i < STEP_META.length - 1 && (
+                                    <div className={`w-8 h-px mx-1 transition-all ${i + 1 < step ? 'bg-orange-500' : 'bg-white/[0.06]'}`} />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Card */}
+                    <div className="bg-[#0f0f0f] border border-white/[0.07] rounded-3xl p-8 shadow-2xl">
+
+                        {/* Error */}
                         {error && (
-                            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg mb-6">
+                            <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/25 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm">
+                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
                                 {error}
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Step 1: Owner Account Details */}
+                        <div className="space-y-6">
+
+                            {/* ── Step 1: Owner Account ── */}
                             {step === 1 && (
-                                <div className="space-y-5 animate-fade-in-up">
-                                    <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Owner Account Details</h3>
-
+                                <div className="space-y-5">
+                                    <h3 className="text-lg font-black text-white border-b border-white/[0.07] pb-3 mb-5">👤 Owner Account Details</h3>
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Owner Name *</label>
-                                            <input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} required
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Owner Name *</label>
+                                            <input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} required className={inputCls} placeholder="Your full name" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number *</label>
-                                            <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Phone Number *</label>
+                                            <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className={inputCls} placeholder="+94 77 000 0000" />
                                         </div>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
-                                        <input type="email" name="email" value={formData.email} onChange={handleChange} required
-                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                        <label className={labelCls}>Email *</label>
+                                        <input type="email" name="email" value={formData.email} onChange={handleChange} required className={inputCls} placeholder="owner@canteen.com" />
                                     </div>
-
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Password *</label>
-                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6"
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Password *</label>
+                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6" className={inputCls} placeholder="Min. 6 characters" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Confirm Password *</label>
-                                            <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Confirm Password *</label>
+                                            <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required className={inputCls} placeholder="Repeat password" />
                                         </div>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Alternative Contact (Optional)</label>
-                                        <input type="tel" name="alternativeContactNumber" value={formData.alternativeContactNumber} onChange={handleChange}
-                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                        <label className={labelCls}>Alternative Contact <span className="text-gray-600 font-normal">(Optional)</span></label>
+                                        <input type="tel" name="alternativeContactNumber" value={formData.alternativeContactNumber} onChange={handleChange} className={inputCls} placeholder="+94 77 000 0000" />
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 2: Canteen Basic Info */}
+                            {/* ── Step 2: Canteen Info ── */}
                             {step === 2 && (
-                                <div className="space-y-5 animate-fade-in-up">
-                                    <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Canteen Basic Information</h3>
-
+                                <div className="space-y-5">
+                                    <h3 className="text-lg font-black text-white border-b border-white/[0.07] pb-3 mb-5">🏪 Canteen Information</h3>
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Canteen Name *</label>
-                                        <input type="text" name="canteenName" value={formData.canteenName} onChange={handleChange} required
-                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                        <label className={labelCls}>Canteen Name *</label>
+                                        <input type="text" name="canteenName" value={formData.canteenName} onChange={handleChange} required className={inputCls} placeholder="e.g., The Campus Kitchen" />
                                     </div>
 
+                                    {/* Logo Upload */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Canteen Logo *</label>
-                                        <div className="flex flex-col gap-4">
+                                        <label className={labelCls}>Canteen Logo *</label>
+                                        <div className="flex items-start gap-4">
                                             {formData.logoUrl && (
-                                                <div className="relative w-32 h-32 bg-gray-100 rounded-xl overflow-hidden shadow-inner border border-gray-200">
-                                                    <img src={formData.logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData(prev => ({ ...prev, logoUrl: '' }))}
-                                                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-md"
-                                                    >
-                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                    </button>
+                                                <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-white/[0.1] flex-shrink-0">
+                                                    <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                                    <button type="button" onClick={() => setFormData(p => ({ ...p, logoUrl: '' }))}
+                                                        className="absolute top-1 right-1 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs hover:bg-red-700">×</button>
                                                 </div>
                                             )}
-                                            <div className="flex items-center justify-center w-full">
-                                                <label className={`w-full flex flex-col items-center px-4 py-6 bg-white rounded-xl shadow-md border-2 border-dashed border-gray-300 cursor-pointer hover:border-orange-500 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                                    {uploading ? (
-                                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                            <span className="mt-2 text-sm text-gray-500">Click to upload logo</span>
-                                                        </>
-                                                    )}
-                                                    <input type="file" className="hidden" onChange={handleLogoUpload} disabled={uploading} accept="image/*" />
-                                                </label>
-                                            </div>
+                                            <label className={`flex-1 flex flex-col items-center justify-center px-4 py-8 bg-[#0d0d0d] rounded-2xl border-2 border-dashed border-white/[0.1] cursor-pointer hover:border-orange-500/50 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                {uploading ? (
+                                                    <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <svg className="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        <span className="text-sm text-gray-500">Click to upload logo</span>
+                                                        <span className="text-xs text-gray-700 mt-1">PNG, JPG up to 5MB</span>
+                                                    </>
+                                                )}
+                                                <input type="file" className="hidden" onChange={handleLogoUpload} disabled={uploading} accept="image/*" />
+                                            </label>
                                         </div>
                                     </div>
 
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Campus</label>
-                                            <input type="text" name="campus" value={formData.campus} onChange={handleChange}
-                                                placeholder="e.g., Main Campus"
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Campus</label>
+                                            <input type="text" name="campus" value={formData.campus} onChange={handleChange} className={inputCls} placeholder="e.g., Main Campus" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Building/Location *</label>
-                                            <input type="text" name="location" value={formData.location} onChange={handleChange} required
-                                                placeholder="e.g., Block A"
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Building/Location *</label>
+                                            <input type="text" name="location" value={formData.location} onChange={handleChange} required className={inputCls} placeholder="e.g., Block A" />
                                         </div>
                                     </div>
 
                                     <div className="grid md:grid-cols-3 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Floor Number</label>
-                                            <input type="text" name="floorNumber" value={formData.floorNumber} onChange={handleChange}
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Floor Number</label>
+                                            <input type="text" name="floorNumber" value={formData.floorNumber} onChange={handleChange} className={inputCls} placeholder="e.g., 2" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Room/Shop Number</label>
-                                            <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange}
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Room/Shop No.</label>
+                                            <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange} className={inputCls} placeholder="e.g., 205" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Seating Capacity</label>
-                                            <input type="number" name="seatingCapacity" value={formData.seatingCapacity} onChange={handleChange}
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Seating Capacity</label>
+                                            <input type="number" name="seatingCapacity" value={formData.seatingCapacity} onChange={handleChange} className={inputCls} placeholder="e.g., 50" />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Description *</label>
-                                        <textarea name="description" value={formData.description} onChange={handleChange} required rows="3"
-                                            placeholder="Describe your canteen..."
-                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none"></textarea>
+                                        <label className={labelCls}>Description *</label>
+                                        <textarea name="description" value={formData.description} onChange={handleChange} required rows="3" placeholder="Describe your canteen..."
+                                            className={`${inputCls} resize-none`} />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Cuisine Types</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            {cuisineOptions.map(cuisine => (
-                                                <label key={cuisine} className="flex items-center space-x-2 cursor-pointer bg-gray-50 p-2 rounded-lg hover:bg-orange-50 transition">
-                                                    <input type="checkbox" checked={formData.cuisineTypes.includes(cuisine)}
-                                                        onChange={() => handleCheckboxArray('cuisineTypes', cuisine)}
-                                                        className="rounded text-orange-600 focus:ring-orange-500 w-4 h-4" />
-                                                    <span className="text-sm font-medium text-gray-700">{cuisine}</span>
+                                        <label className={labelCls}>Cuisine Types</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            {cuisineOptions.map(c => (
+                                                <label key={c} className={`flex items-center gap-2 p-3 rounded-xl cursor-pointer border transition-all ${formData.cuisineTypes.includes(c) ? 'bg-orange-500/15 border-orange-500/40 text-orange-300' : 'bg-[#0d0d0d] border-white/[0.06] text-gray-500 hover:border-white/20'}`}>
+                                                    <input type="checkbox" checked={formData.cuisineTypes.includes(c)}
+                                                        onChange={() => handleCheckboxArray('cuisineTypes', c)} className="hidden" />
+                                                    <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-all ${formData.cuisineTypes.includes(c) ? 'bg-orange-500 border-orange-500' : 'border-white/20'}`}>
+                                                        {formData.cuisineTypes.includes(c) && <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>}
+                                                    </span>
+                                                    <span className="text-xs font-bold">{c}</span>
                                                 </label>
                                             ))}
                                         </div>
@@ -357,32 +280,27 @@ function CanteenRegister() {
                                 </div>
                             )}
 
-                            {/* Step 3: Operational Details */}
+                            {/* ── Step 3: Operations ── */}
                             {step === 3 && (
-                                <div className="space-y-5 animate-fade-in-up">
-                                    <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Operational Details</h3>
-
+                                <div className="space-y-5">
+                                    <h3 className="text-lg font-black text-white border-b border-white/[0.07] pb-3 mb-5">⚙️ Operational Details</h3>
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Opening Time *</label>
-                                            <input type="time" name="openingTime" value={formData.openingTime} onChange={handleChange} required
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Opening Time *</label>
+                                            <input type="time" name="openingTime" value={formData.openingTime} onChange={handleChange} required className={inputCls} style={{ colorScheme: 'dark' }} />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Closing Time *</label>
-                                            <input type="time" name="closingTime" value={formData.closingTime} onChange={handleChange} required
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                            <label className={labelCls}>Closing Time *</label>
+                                            <input type="time" name="closingTime" value={formData.closingTime} onChange={handleChange} required className={inputCls} style={{ colorScheme: 'dark' }} />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Operating Days</label>
+                                        <label className={labelCls}>Operating Days</label>
                                         <div className="flex flex-wrap gap-2">
                                             {days.map(day => (
-                                                <label key={day} className={`cursor-pointer px-4 py-2 rounded-xl text-sm font-bold transition-all ${formData.operatingDays.includes(day) ? 'bg-orange-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                                                    <input type="checkbox" checked={formData.operatingDays.includes(day)}
-                                                        onChange={() => handleCheckboxArray('operatingDays', day)}
-                                                        className="hidden" />
+                                                <label key={day} className={`cursor-pointer px-4 py-2 rounded-xl text-sm font-black transition-all border ${formData.operatingDays.includes(day) ? 'bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-900/30' : 'bg-[#0d0d0d] text-gray-500 border-white/[0.07] hover:border-white/20'}`}>
+                                                    <input type="checkbox" checked={formData.operatingDays.includes(day)} onChange={() => handleCheckboxArray('operatingDays', day)} className="hidden" />
                                                     {day}
                                                 </label>
                                             ))}
@@ -390,102 +308,145 @@ function CanteenRegister() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Avg. Prep Time (mins)</label>
-                                        <input type="number" name="averagePreparationTime" value={formData.averagePreparationTime} onChange={handleChange}
-                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition outline-none" />
+                                        <label className={labelCls}>Avg. Preparation Time <span className="text-gray-600 font-normal">(minutes)</span></label>
+                                        <input type="number" name="averagePreparationTime" value={formData.averagePreparationTime} onChange={handleChange} className={`${inputCls} w-40`} />
                                     </div>
 
-                                    <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
-                                        <label className="flex items-center space-x-3 cursor-pointer">
-                                            <input type="checkbox" name="deliveryAvailable" checked={formData.deliveryAvailable} onChange={handleChange}
-                                                className="rounded text-orange-600 focus:ring-orange-500 h-5 w-5" />
-                                            <span className="font-bold text-gray-800">Delivery Available</span>
-                                        </label>
-                                        <label className="flex items-center space-x-3 cursor-pointer">
-                                            <input type="checkbox" name="pickupAvailable" checked={formData.pickupAvailable} onChange={handleChange}
-                                                className="rounded text-orange-600 focus:ring-orange-500 h-5 w-5" />
-                                            <span className="font-bold text-gray-800">Pickup Available</span>
-                                        </label>
+                                    <div className="flex flex-col sm:flex-row gap-4 bg-[#0d0d0d] border border-white/[0.07] p-5 rounded-2xl">
+                                        {[
+                                            { name: 'deliveryAvailable', label: 'Delivery Available', icon: '🛵' },
+                                            { name: 'pickupAvailable', label: 'Pickup Available', icon: '🏃' },
+                                        ].map(opt => (
+                                            <label key={opt.name} className={`flex items-center gap-3 cursor-pointer flex-1 p-3 rounded-xl border transition-all ${formData[opt.name] ? 'bg-orange-500/10 border-orange-500/30' : 'border-transparent hover:bg-white/[0.03]'}`}>
+                                                <input type="checkbox" name={opt.name} checked={formData[opt.name]} onChange={handleChange} className="hidden" />
+                                                <span className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData[opt.name] ? 'bg-orange-500 border-orange-500' : 'border-white/20'}`}>
+                                                    {formData[opt.name] && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                                </span>
+                                                <span className="text-lg">{opt.icon}</span>
+                                                <span className="text-white font-bold text-sm">{opt.label}</span>
+                                            </label>
+                                        ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 4: Review */}
+                            {/* ── Step 4: Review ── */}
                             {step === 4 && (
-                                <div className="space-y-6 animate-fade-in-up">
-                                    <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Review Your Information</h3>
+                                <div className="space-y-5">
+                                    <h3 className="text-lg font-black text-white border-b border-white/[0.07] pb-3 mb-5">✅ Review Your Application</h3>
 
-                                    <div className="bg-gray-50 rounded-2xl p-6 space-y-4 border border-gray-100">
+                                    <div className="bg-[#0d0d0d] border border-white/[0.07] rounded-2xl p-6 space-y-4">
                                         <div>
-                                            <h4 className="font-bold text-gray-900 mb-2 uppercase text-xs tracking-wider">Owner</h4>
-                                            <p className="text-gray-700">{formData.ownerName} <span className="text-gray-400">|</span> {formData.email}</p>
+                                            <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-1">Owner</p>
+                                            <p className="text-white font-semibold">{formData.ownerName}</p>
+                                            <p className="text-gray-500 text-sm">{formData.email}</p>
                                         </div>
-
-                                        <div className="border-t border-gray-200 pt-4 flex gap-4">
+                                        <div className="border-t border-white/[0.06] pt-4 flex gap-4 items-center">
                                             {formData.logoUrl && (
-                                                <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-                                                    <img src={formData.logoUrl} alt="Canteen Logo" className="w-full h-full object-cover" />
+                                                <div className="w-14 h-14 rounded-xl overflow-hidden border border-white/[0.1] flex-shrink-0">
+                                                    <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
                                                 </div>
                                             )}
                                             <div>
-                                                <h4 className="font-bold text-gray-900 mb-2 uppercase text-xs tracking-wider">Canteen Details</h4>
-                                                <p className="font-semibold text-lg">{formData.canteenName}</p>
-                                                <p className="text-gray-600 text-sm">{formData.location} {formData.campus && `(${formData.campus})`}</p>
+                                                <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-1">Canteen</p>
+                                                <p className="text-white font-bold">{formData.canteenName}</p>
+                                                <p className="text-gray-500 text-sm">{formData.location}{formData.campus ? ` (${formData.campus})` : ''}</p>
                                             </div>
                                         </div>
-
-                                        <div className="border-t border-gray-200 pt-4">
-                                            <h4 className="font-bold text-gray-900 mb-2 uppercase text-xs tracking-wider">Operations</h4>
-                                            <p className="text-gray-700">{formData.openingTime} - {formData.closingTime}</p>
-                                            <div className="flex gap-1 mt-1 flex-wrap">
-                                                {formData.operatingDays.map(day => (
-                                                    <span key={day} className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-md font-bold">{day}</span>
+                                        <div className="border-t border-white/[0.06] pt-4">
+                                            <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-2">Operations</p>
+                                            <p className="text-white text-sm">{formData.openingTime} – {formData.closingTime}</p>
+                                            <div className="flex gap-1.5 mt-2 flex-wrap">
+                                                {formData.operatingDays.map(d => (
+                                                    <span key={d} className="px-2 py-0.5 bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs rounded-lg font-bold">{d}</span>
                                                 ))}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
-                                        <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <p className="text-sm text-blue-800 font-medium">
-                                            Your application will be reviewed by our admin team. You'll receive an email notification upon approval.
-                                        </p>
+                                    <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-3 rounded-xl text-sm">
+                                        <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p>Your application will be reviewed by our admin team. You'll receive an email notification upon approval — usually within 24 hours.</p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Navigation Buttons */}
-                            <div className="flex justify-between pt-4 border-t border-gray-200/50">
-                                {step > 1 && (
+                            {/* Navigation */}
+                            <div className="flex justify-between pt-4 border-t border-white/[0.06]">
+                                {step > 1 ? (
                                     <button type="button" onClick={prevStep}
-                                        className="px-6 py-3 border-2 border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 hover:border-gray-300 font-bold transition">
-                                        Back
+                                        className="px-6 py-3 bg-white/[0.06] border border-white/[0.08] text-white font-bold rounded-xl hover:bg-white/10 transition">
+                                        ← Back
                                     </button>
-                                )}
+                                ) : <div />}
 
                                 {step < 4 ? (
                                     <button type="button" onClick={nextStep}
-                                        className="ml-auto px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold shadow-lg shadow-orange-200 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
-                                        Next
+                                        className="px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-orange-900/30 hover:-translate-y-0.5 transition-all">
+                                        Continue →
                                     </button>
                                 ) : (
-                                    <button type="submit" disabled={loading}
-                                        className="ml-auto px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-lg shadow-green-200 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed">
-                                        {loading ? 'Submitting...' : 'Submit Application'}
+                                    <button type="button" onClick={handleSubmit} disabled={loading}
+                                        className="px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-orange-900/30 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
+                                        {loading ? (
+                                            <span className="flex items-center gap-2">
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Submitting...
+                                            </span>
+                                        ) : 'Submit Application →'}
                                     </button>
                                 )}
                             </div>
-                        </form>
-
-                        <div className="mt-8 text-center">
-                            <Link to="/canteen/login" className="text-orange-600 font-bold hover:underline">
-                                Already have an account? Login here
-                            </Link>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+
+            {/* ── Success Modal ── */}
+            {
+                showSuccess && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        {/* Backdrop */}
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+                        {/* Card */}
+                        <div className="relative bg-[#111] border border-white/[0.08] rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
+                            {/* Checkmark icon */}
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500/20 to-red-600/20 border border-orange-500/30 flex items-center justify-center mx-auto mb-6">
+                                <svg className="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+
+                            <h2 className="text-2xl font-black text-white tracking-tight mb-3">Application Submitted!</h2>
+                            <p className="text-gray-400 leading-relaxed mb-2">
+                                Thank you for partnering with <span className="text-orange-400 font-bold">CampusEats</span>. Your canteen registration is now under review.
+                            </p>
+                            <p className="text-gray-500 text-sm leading-relaxed mb-8">
+                                Our admin team will verify your details and get back to you via email within <span className="text-white font-semibold">24–48 hours</span>. Please wait for approval before attempting to log in.
+                            </p>
+
+                            {/* Status badge */}
+                            <div className="flex items-center justify-center gap-2 bg-yellow-500/10 border border-yellow-500/25 text-yellow-400 px-4 py-2.5 rounded-xl mb-8">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="text-sm font-bold">Status: Pending Admin Approval</span>
+                            </div>
+
+                            <button
+                                onClick={() => navigate('/canteen/login')}
+                                className="w-full py-3.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-orange-900/30 hover:-translate-y-0.5 transition-all">
+                                Go to Login
+                            </button>
+                            <p className="text-xs text-gray-600 mt-4">You will not be able to log in until your application is approved.</p>
+                        </div>
+                    </div>
+                )
+            }
+        </>
     )
 }
 
