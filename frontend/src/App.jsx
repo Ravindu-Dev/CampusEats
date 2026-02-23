@@ -29,6 +29,13 @@ import MyReviews from './pages/MyReviews'
 import ScanQRPage from './pages/ScanQRPage'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import StaffManagement from './pages/StaffManagement'
+import AttendanceManagement from './pages/AttendanceManagement'
+import CanteenPayroll from './pages/CanteenPayroll'
+import PayrollDetail from './pages/PayrollDetail'
+import AdminPayroll from './pages/admin/AdminPayroll'
+import PayrollConfig from './pages/admin/PayrollConfig'
+import PayrollReview from './pages/admin/PayrollReview'
 
 function App() {
     return (
@@ -51,11 +58,18 @@ function App() {
                         <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
                         <Route path="/canteen/reviews" element={<CanteenReviews />} />
                         <Route path="/canteen/scan-qr" element={<ScanQRPage />} />
+                        <Route path="/canteen/staff" element={<StaffManagement />} />
+                        <Route path="/canteen/attendance" element={<AttendanceManagement />} />
+                        <Route path="/canteen/payroll" element={<CanteenPayroll />} />
+                        <Route path="/canteen/payroll/:id" element={<PayrollDetail />} />
                         <Route path="/admin/login" element={<AdminLogin />} />
                         <Route path="/admin/dashboard" element={<AdminDashboard />} />
                         <Route path="/admin/pending-approvals" element={<PendingApprovals />} />
                         <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
                         <Route path="/admin/canteens" element={<AllCanteens />} />
+                        <Route path="/admin/payroll" element={<AdminPayroll />} />
+                        <Route path="/admin/payroll/config" element={<PayrollConfig />} />
+                        <Route path="/admin/payroll/:id" element={<PayrollReview />} />
                         <Route path="/canteen/menu-management" element={<MenuManagement />} />
                         <Route path="/canteen/orders" element={<CanteenOrders />} />
                         <Route path="/canteen/kitchen" element={<KitchenDashboard />} />
@@ -72,3 +86,4 @@ function App() {
 }
 
 export default App
+

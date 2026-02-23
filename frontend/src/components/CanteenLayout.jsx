@@ -7,6 +7,9 @@ const navItems = [
     { path: '/canteen/orders', label: 'Orders', icon: '📝', color: 'indigo' },
     { path: '/canteen/kitchen', label: 'Kitchen', icon: '🍳', color: 'red' },
     { path: '/canteen/menu-management', label: 'Menu', icon: '🍽️', color: 'orange' },
+    { path: '/canteen/staff', label: 'Staff', icon: '👥', color: 'purple' },
+    { path: '/canteen/attendance', label: 'Attendance', icon: '📅', color: 'cyan' },
+    { path: '/canteen/payroll', label: 'Payroll', icon: '💰', color: 'emerald' },
     { path: '/canteen/reviews', label: 'Reviews', icon: '⭐', color: 'yellow' },
     { path: '/canteen/scan-qr', label: 'Scan QR', icon: '📷', color: 'green' },
 ]
@@ -218,8 +221,8 @@ export default function CanteenLayout({ children, pageTitle, pageSubtitle }) {
                                         to={item.path}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${active
-                                                ? 'bg-orange-500/10 text-orange-400'
-                                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                            ? 'bg-orange-500/10 text-orange-400'
+                                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                             }`}
                                     >
                                         <span className="text-lg">{item.icon}</span>
