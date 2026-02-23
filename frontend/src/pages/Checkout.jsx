@@ -10,6 +10,7 @@ import PaymentSuccessModal from '../components/PaymentSuccessModal';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
+/* ─── Stripe Payment Sub-form ─── */
 function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
     const stripe = useStripe();
     const elements = useElements();
@@ -18,10 +19,7 @@ function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!stripe || !elements) {
-            return;
-        }
+        if (!stripe || !elements) return;
 
         setIsProcessing(true);
         setErrorMessage('');
@@ -36,7 +34,6 @@ function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
                 setErrorMessage(error.message);
                 setIsProcessing(false);
             } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-                // Confirm payment on backend with all order IDs
                 await paymentService.confirmPayment(paymentIntent.id, orderIds);
                 onSuccess();
             }
@@ -48,30 +45,36 @@ function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <PaymentElement />
+            {/* Stripe element renders inside a white bg box — keep it on a light surface for legibility */}
+            <div className="bg-white rounded-2xl p-4">
+                <PaymentElement />
+            </div>
 
             {errorMessage && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <p className="text-red-600 text-sm">{errorMessage}</p>
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
+                    <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p className="text-red-400 text-sm">{errorMessage}</p>
                 </div>
             )}
 
             <button
                 type="submit"
                 disabled={!stripe || isProcessing}
-                className="w-full h-14 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-orange-200 transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                className="w-full h-14 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-black text-base shadow-xl shadow-orange-900/40 hover:shadow-[0_0_30px_rgba(234,88,12,0.45)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
                 {isProcessing ? (
                     <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Processing...
                     </>
                 ) : (
                     <>
-                        Pay Rs.{totalAmount.toFixed(2)}
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
+                        Pay Rs.{totalAmount.toFixed(2)}
                     </>
                 )}
             </button>
@@ -79,12 +82,12 @@ function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
     );
 }
 
+/* ─── Main Checkout Page ─── */
 function Checkout() {
     const navigate = useNavigate();
     const location = useLocation();
     const { cart, subtotal, clearCart, loading } = useCart();
 
-    // Get order type from navigation state, default to 'LATER' for backward compatibility
     const orderType = location.state?.orderType || 'LATER';
 
     const [formData, setFormData] = useState({
@@ -104,11 +107,9 @@ function Checkout() {
     const [preservedCartItems, setPreservedCartItems] = useState(null);
     const [minOrderError, setMinOrderError] = useState('');
 
-    const MINIMUM_ORDER_AMOUNT = 200; // Rs. 200 minimum (Stripe requires ~$0.50 USD ≈ Rs. 165)
+    const MINIMUM_ORDER_AMOUNT = 200;
 
     useEffect(() => {
-        // Only redirect if cart is loaded and empty (not during initial load)
-        // AND success modal is not being shown
         if (!loading && !showSuccess && cart && cart.items && cart.items.length === 0) {
             navigate('/menu');
         }
@@ -116,34 +117,15 @@ function Checkout() {
 
     const validateForm = () => {
         const newErrors = {};
-
-        if (!formData.customerName.trim()) {
-            newErrors.customerName = 'Name is required';
-        }
-
-        if (!formData.customerEmail.trim()) {
-            newErrors.customerEmail = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customerEmail)) {
-            newErrors.customerEmail = 'Invalid email format';
-        }
-
-        if (!formData.customerPhone.trim()) {
-            newErrors.customerPhone = 'Phone number is required';
-        } else if (!/^[0-9]{10}$/.test(formData.customerPhone)) {
-            newErrors.customerPhone = 'Phone number must be 10 digits';
-        }
-
-        // Only validate date/time for LATER orders
+        if (!formData.customerName.trim()) newErrors.customerName = 'Name is required';
+        if (!formData.customerEmail.trim()) newErrors.customerEmail = 'Email is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customerEmail)) newErrors.customerEmail = 'Invalid email format';
+        if (!formData.customerPhone.trim()) newErrors.customerPhone = 'Phone number is required';
+        else if (!/^[0-9]{10}$/.test(formData.customerPhone)) newErrors.customerPhone = 'Phone number must be 10 digits';
         if (orderType === 'LATER') {
-            if (!formData.pickupDate) {
-                newErrors.pickupDate = 'Pickup date is required';
-            }
-
-            if (!formData.pickupTime) {
-                newErrors.pickupTime = 'Pickup time is required';
-            }
+            if (!formData.pickupDate) newErrors.pickupDate = 'Pickup date is required';
+            if (!formData.pickupTime) newErrors.pickupTime = 'Pickup time is required';
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -151,43 +133,23 @@ function Checkout() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear error when user starts typing
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
     const handleProceedToPayment = async (e) => {
         e.preventDefault();
         setMinOrderError('');
-
-        if (!validateForm()) {
-            return;
-        }
-
-        // Stripe minimum: ~$0.50 USD ≈ Rs. 165 LKR. We enforce Rs. 200 for a safe buffer.
+        if (!validateForm()) return;
         if (subtotal < MINIMUM_ORDER_AMOUNT) {
             setMinOrderError(`Minimum order amount is Rs. ${MINIMUM_ORDER_AMOUNT.toFixed(2)}. Please add more items to your cart.`);
             return;
         }
-
         setIsCreatingOrder(true);
-
         try {
-            // Create orders (backend will split by canteen)
             const createdOrders = await orderService.createOrder(formData);
-            setOrder(createdOrders); // Store array of orders
-
-            // Calculate combined total from all orders
-            const combinedTotal = createdOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-            // Create single payment intent for combined total
-            // We'll use the first order ID as reference, but store all IDs for confirmation
-            const paymentIntent = await paymentService.createPaymentIntent(
-                createdOrders[0].id,
-                combinedTotal
-            );
-
+            setOrder(createdOrders);
+            const combinedTotal = createdOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+            const paymentIntent = await paymentService.createPaymentIntent(createdOrders[0].id, combinedTotal);
             setClientSecret(paymentIntent.clientSecret);
             setShowPayment(true);
         } catch (err) {
@@ -198,40 +160,18 @@ function Checkout() {
     };
 
     const handlePaymentSuccess = async () => {
-        // Preserve cart items before clearing
         setPreservedCartItems(cart?.items || []);
-
-        // Fetch updated orders with QR codes
         try {
-            const updatedOrders = await Promise.all(
-                order.map(o => orderService.getOrderById(o.id))
-            );
+            const updatedOrders = await Promise.all(order.map(o => orderService.getOrderById(o.id)));
             setOrder(updatedOrders);
         } catch (err) {
             console.error('Error fetching updated orders:', err);
         }
-
         await clearCart();
         setShowSuccess(true);
     };
 
-    // Show loading state while cart is being fetched
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600 text-lg">Loading checkout...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Allow rendering if showing success modal, even if cart is empty
-    if (!showSuccess && (!cart || !cart.items || cart.items.length === 0)) {
-        return null;
-    }
-
+    // ── Stripe appearance ──
     const appearance = {
         theme: 'stripe',
         variables: {
@@ -245,89 +185,148 @@ function Checkout() {
         },
     };
 
-    const options = {
-        clientSecret,
-        appearance,
-    };
+    const displayItems = cart?.items || preservedCartItems || [];
+    const displayTotal = subtotal || (order ? (Array.isArray(order) ? order.reduce((s, o) => s + o.totalAmount, 0) : order.totalAmount) : 0);
+
+    // ── Loading state ──
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-14 h-14 border-2 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-gray-500 text-sm">Loading checkout...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!showSuccess && (!cart || !cart.items || cart.items.length === 0)) return null;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50">
+        <div className="min-h-screen bg-[#0a0a0a]">
             <Navbar />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Header */}
+            {/* Subtle ambient radial glow */}
+            <div className="pointer-events-none fixed inset-0 z-0">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-orange-600/5 rounded-full blur-3xl" />
+            </div>
+
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+                {/* ── Header ── */}
                 <div className="mb-8">
                     <button
                         onClick={() => navigate('/menu')}
-                        className="flex items-center gap-2 text-gray-600 hover:text-orange-600 transition mb-4"
+                        className="flex items-center gap-2 text-gray-500 hover:text-orange-400 transition mb-5 text-sm font-medium group"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                         Back to Menu
                     </button>
-                    <h1 className="text-4xl font-bold text-gray-900">Checkout</h1>
-                    <p className="text-gray-600 mt-2">Complete your order and proceed to payment</p>
+
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            {/* Step 1 */}
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${!showPayment
+                                    ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/30'
+                                    : 'bg-white/[0.04] text-white/40 border border-white/[0.06]'
+                                }`}>
+                                <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center font-black ${showPayment ? 'bg-green-500 text-white' : 'bg-white/20'
+                                    }`}>
+                                    {showPayment ? (
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    ) : '1'}
+                                </span>
+                                Order Details
+                            </div>
+
+                            <svg className="w-4 h-4 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+
+                            {/* Step 2 */}
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${showPayment
+                                    ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/30'
+                                    : 'bg-white/[0.04] text-white/40 border border-white/[0.06]'
+                                }`}>
+                                <span className="w-5 h-5 rounded-full text-xs flex items-center justify-center font-black bg-white/20">2</span>
+                                Payment
+                            </div>
+                        </div>
+                    </div>
+
+                    <h1 className="text-3xl font-black text-white mt-5 tracking-tight">Checkout</h1>
+                    <p className="text-gray-500 mt-1 text-sm">Complete your order and proceed to payment</p>
                 </div>
 
-                {/* Main Content */}
-                <div className="grid lg:grid-cols-2 gap-8">
-                    {/* Left: Order Summary */}
-                    <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 h-fit">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                            <div className="bg-gradient-to-br from-orange-600 to-red-600 p-2 rounded-xl">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* ── Two-column layout ── */}
+                <div className="grid lg:grid-cols-2 gap-6">
+
+                    {/* ── Left: Order Summary ── */}
+                    <div className="bg-white/[0.03] border border-white/[0.07] rounded-3xl p-7 h-fit">
+                        <h2 className="text-lg font-black text-white mb-5 flex items-center gap-3">
+                            <div className="bg-gradient-to-br from-orange-600 to-red-600 p-2 rounded-xl shadow-lg shadow-orange-900/30">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                 </svg>
                             </div>
                             Order Summary
                         </h2>
 
-                        <div className="space-y-4 mb-6">
-                            {(cart?.items || preservedCartItems || []).map((item) => (
-                                <div key={item.menuItemId} className="flex gap-4 p-4 bg-orange-50/50 rounded-xl border border-orange-100/50">
-                                    <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-white shadow-sm">
+                        <div className="space-y-3 mb-6">
+                            {displayItems.map((item) => (
+                                <div
+                                    key={item.menuItemId}
+                                    className="flex gap-4 p-4 bg-white/[0.04] border border-white/[0.06] rounded-2xl hover:border-orange-500/20 transition-colors"
+                                >
+                                    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-white/5">
                                         {item.imageUrl ? (
                                             <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
                                         ) : (
-                                            <div className="h-full w-full flex items-center justify-center text-3xl opacity-20">🍕</div>
+                                            <div className="h-full w-full flex items-center justify-center text-2xl opacity-20">🍕</div>
                                         )}
                                     </div>
-                                    <div className="flex-1">
-                                        <h4 className="font-bold text-gray-900">{item.name}</h4>
-                                        <p className="text-xs text-orange-500 font-medium">{item.canteenName}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold text-white text-sm truncate">{item.name}</h4>
+                                        <p className="text-xs text-orange-400/80 font-medium mt-0.5">{item.canteenName}</p>
                                         <div className="flex justify-between items-center mt-2">
-                                            <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                                            <p className="font-bold text-orange-600">Rs.{(item.price * item.quantity).toFixed(2)}</p>
+                                            <span className="text-xs text-gray-600 bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
+                                                x{item.quantity}
+                                            </span>
+                                            <p className="font-black text-orange-400 text-sm">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                                         </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="border-t border-gray-200 pt-6 space-y-3">
-                            <div className="flex justify-between text-base text-gray-600">
+                        {/* Totals */}
+                        <div className="border-t border-white/[0.06] pt-5 space-y-3">
+                            <div className="flex justify-between text-sm text-gray-500 font-medium">
                                 <p>Subtotal</p>
-                                <p>Rs.{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
+                                <p className="text-white">Rs.{displayTotal.toFixed(2)}</p>
                             </div>
-                            <div className="flex justify-between text-base text-gray-600 pb-3 border-b border-gray-200 border-dashed">
+                            <div className="flex justify-between text-sm text-gray-500 font-medium pb-4 border-b border-white/[0.06] border-dashed">
                                 <p>Delivery Fee</p>
-                                <p className="text-green-600 font-medium">FREE</p>
+                                <p className="text-green-400 font-bold">FREE</p>
                             </div>
-                            <div className="flex justify-between text-2xl font-black text-gray-900">
-                                <p>Total</p>
-                                <p className="text-orange-600">Rs.{(subtotal || (order ? (Array.isArray(order) ? order.reduce((sum, o) => sum + o.totalAmount, 0) : order.totalAmount) : 0)).toFixed(2)}</p>
+                            <div className="flex justify-between text-xl font-black pt-1">
+                                <p className="text-white">Total</p>
+                                <p className="text-orange-400">Rs.{displayTotal.toFixed(2)}</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right: Order Details Form or Payment */}
-                    <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+                    {/* ── Right: Form or Payment ── */}
+                    <div className="bg-white/[0.03] border border-white/[0.07] rounded-3xl p-7">
                         {!showPayment ? (
                             <>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-xl">
-                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <h2 className="text-lg font-black text-white mb-4 flex items-center gap-3">
+                                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-900/30">
+                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                         </svg>
                                     </div>
@@ -335,128 +334,135 @@ function Checkout() {
                                 </h2>
 
                                 {/* Order Type Badge */}
-                                <div className={`mb-6 p-4 rounded-xl border-2 ${orderType === 'NOW'
-                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300'
-                                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300'
+                                <div className={`mb-6 p-4 rounded-2xl border flex items-center gap-3 ${orderType === 'NOW'
+                                        ? 'bg-green-500/10 border-green-500/20'
+                                        : 'bg-blue-500/10 border-blue-500/20'
                                     }`}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-lg ${orderType === 'NOW' ? 'bg-green-600' : 'bg-blue-600'
-                                            }`}>
-                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                {orderType === 'NOW' ? (
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                ) : (
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                )}
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p className={`font-bold ${orderType === 'NOW' ? 'text-green-800' : 'text-blue-800'}`}>
-                                                {orderType === 'NOW' ? 'Order Now' : 'Order Later'}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                                {orderType === 'NOW'
-                                                    ? 'Your food will be ready for immediate pickup'
-                                                    : 'Schedule your pickup time below'}
-                                            </p>
-                                        </div>
+                                    <div className={`p-2 rounded-xl ${orderType === 'NOW' ? 'bg-green-600' : 'bg-blue-600'}`}>
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            {orderType === 'NOW' ? (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            ) : (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            )}
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className={`font-bold text-sm ${orderType === 'NOW' ? 'text-green-400' : 'text-blue-400'}`}>
+                                            {orderType === 'NOW' ? 'Order Now' : 'Order Later'}
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                            {orderType === 'NOW'
+                                                ? 'Your food will be ready for immediate pickup'
+                                                : 'Schedule your pickup time below'}
+                                        </p>
                                     </div>
                                 </div>
 
-                                <form onSubmit={handleProceedToPayment} className="space-y-5">
+                                <form onSubmit={handleProceedToPayment} className="space-y-4">
+                                    {/* Full Name */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                        <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Full Name</label>
                                         <input
                                             type="text"
                                             name="customerName"
                                             value={formData.customerName}
                                             onChange={handleInputChange}
-                                            className={`w-full px-4 py-3 border ${errors.customerName ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
                                             placeholder="Enter your full name"
+                                            className={`w-full px-4 py-3 rounded-xl bg-white/[0.06] border text-white placeholder-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition ${errors.customerName ? 'border-red-500/50 bg-red-500/5' : 'border-white/[0.08] focus:border-orange-500/40'
+                                                }`}
                                         />
-                                        {errors.customerName && <p className="text-red-500 text-sm mt-1">{errors.customerName}</p>}
+                                        {errors.customerName && <p className="text-red-400 text-xs mt-1">{errors.customerName}</p>}
                                     </div>
 
+                                    {/* Email */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                        <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email Address</label>
                                         <input
                                             type="email"
                                             name="customerEmail"
                                             value={formData.customerEmail}
                                             onChange={handleInputChange}
-                                            className={`w-full px-4 py-3 border ${errors.customerEmail ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
                                             placeholder="your.email@example.com"
+                                            className={`w-full px-4 py-3 rounded-xl bg-white/[0.06] border text-white placeholder-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition ${errors.customerEmail ? 'border-red-500/50 bg-red-500/5' : 'border-white/[0.08] focus:border-orange-500/40'
+                                                }`}
                                         />
-                                        {errors.customerEmail && <p className="text-red-500 text-sm mt-1">{errors.customerEmail}</p>}
+                                        {errors.customerEmail && <p className="text-red-400 text-xs mt-1">{errors.customerEmail}</p>}
                                     </div>
 
+                                    {/* Phone */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                        <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Phone Number</label>
                                         <input
                                             type="tel"
                                             name="customerPhone"
                                             value={formData.customerPhone}
                                             onChange={handleInputChange}
-                                            className={`w-full px-4 py-3 border ${errors.customerPhone ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
                                             placeholder="10-digit phone number"
                                             maxLength="10"
+                                            className={`w-full px-4 py-3 rounded-xl bg-white/[0.06] border text-white placeholder-white/25 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition ${errors.customerPhone ? 'border-red-500/50 bg-red-500/5' : 'border-white/[0.08] focus:border-orange-500/40'
+                                                }`}
                                         />
-                                        {errors.customerPhone && <p className="text-red-500 text-sm mt-1">{errors.customerPhone}</p>}
+                                        {errors.customerPhone && <p className="text-red-400 text-xs mt-1">{errors.customerPhone}</p>}
                                     </div>
 
-                                    {/* Conditionally render pickup date/time for LATER orders */}
+                                    {/* Pickup Date + Time (LATER only) */}
                                     {orderType === 'LATER' && (
-                                        <>
+                                        <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Date</label>
+                                                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Pickup Date</label>
                                                 <input
                                                     type="date"
                                                     name="pickupDate"
                                                     value={formData.pickupDate}
                                                     onChange={handleInputChange}
                                                     min={new Date().toISOString().split('T')[0]}
-                                                    className={`w-full px-4 py-3 border ${errors.pickupDate ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
+                                                    className={`w-full px-4 py-3 rounded-xl bg-white/[0.06] border text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition ${errors.pickupDate ? 'border-red-500/50 bg-red-500/5' : 'border-white/[0.08] focus:border-orange-500/40'
+                                                        }`}
+                                                    style={{ colorScheme: 'dark' }}
                                                 />
-                                                {errors.pickupDate && <p className="text-red-500 text-sm mt-1">{errors.pickupDate}</p>}
+                                                {errors.pickupDate && <p className="text-red-400 text-xs mt-1">{errors.pickupDate}</p>}
                                             </div>
-
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Time</label>
+                                                <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Pickup Time</label>
                                                 <input
                                                     type="time"
                                                     name="pickupTime"
                                                     value={formData.pickupTime}
                                                     onChange={handleInputChange}
-                                                    className={`w-full px-4 py-3 border ${errors.pickupTime ? 'border-red-300' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition`}
+                                                    className={`w-full px-4 py-3 rounded-xl bg-white/[0.06] border text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition ${errors.pickupTime ? 'border-red-500/50 bg-red-500/5' : 'border-white/[0.08] focus:border-orange-500/40'
+                                                        }`}
+                                                    style={{ colorScheme: 'dark' }}
                                                 />
-                                                {errors.pickupTime && <p className="text-red-500 text-sm mt-1">{errors.pickupTime}</p>}
+                                                {errors.pickupTime && <p className="text-red-400 text-xs mt-1">{errors.pickupTime}</p>}
                                             </div>
-                                        </>
+                                        </div>
                                     )}
 
+                                    {/* Min order error */}
                                     {minOrderError && (
-                                        <div className="p-4 bg-orange-50 border border-orange-300 rounded-xl flex items-start gap-3">
-                                            <svg className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="p-4 bg-orange-500/10 border border-orange-500/25 rounded-xl flex items-start gap-3">
+                                            <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                             </svg>
-                                            <p className="text-orange-700 text-sm font-medium">{minOrderError}</p>
+                                            <p className="text-orange-400 text-sm font-medium">{minOrderError}</p>
                                         </div>
                                     )}
 
                                     <button
                                         type="submit"
                                         disabled={isCreatingOrder}
-                                        className="w-full h-14 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-orange-200 transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                        className="w-full h-14 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-black text-base shadow-xl shadow-orange-900/30 hover:shadow-[0_0_30px_rgba(234,88,12,0.4)] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group mt-2"
                                     >
                                         {isCreatingOrder ? (
                                             <>
-                                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                                 Creating Order...
                                             </>
                                         ) : (
                                             <>
                                                 Proceed to Payment
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                                 </svg>
                                             </>
@@ -466,9 +472,9 @@ function Checkout() {
                             </>
                         ) : (
                             <>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                                    <div className="bg-gradient-to-br from-green-600 to-teal-600 p-2 rounded-xl">
-                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <h2 className="text-lg font-black text-white mb-6 flex items-center gap-3">
+                                    <div className="bg-gradient-to-br from-green-600 to-teal-600 p-2 rounded-xl shadow-lg shadow-green-900/30">
+                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                                         </svg>
                                     </div>
@@ -476,7 +482,7 @@ function Checkout() {
                                 </h2>
 
                                 {clientSecret && (
-                                    <Elements stripe={stripePromise} options={options}>
+                                    <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
                                         <CheckoutForm
                                             orderIds={order.map(o => o.id)}
                                             totalAmount={order.reduce((sum, o) => sum + o.totalAmount, 0)}
