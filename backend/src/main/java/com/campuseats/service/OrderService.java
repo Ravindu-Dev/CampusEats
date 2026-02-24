@@ -23,6 +23,7 @@ public class OrderService {
         private final OrderRepository orderRepository;
         private final CartRepository cartRepository;
         private final QRCodeService qrCodeService;
+        private final PushNotificationService pushNotificationService;
 
         public List<OrderResponse> createOrder(String userId, CreateOrderRequest request) {
                 // Get user's cart
@@ -293,6 +294,16 @@ public class OrderService {
                 }
 
                 Order updatedOrder = orderRepository.save(order);
+
+                // Send push notification about status change
+                try {
+                        pushNotificationService.sendOrderStatusNotification(updatedOrder, targetStatus.name());
+                } catch (Exception e) {
+                        // Don't let notification failure affect order processing
+                        org.slf4j.LoggerFactory.getLogger(OrderService.class)
+                                        .error("Failed to send push notification: {}", e.getMessage());
+                }
+
                 return convertToResponse(updatedOrder);
         }
 

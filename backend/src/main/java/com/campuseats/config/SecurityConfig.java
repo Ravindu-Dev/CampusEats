@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/attendance/**").permitAll()
                         .requestMatchers("/api/payroll/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reviews/**").permitAll()
+                        .requestMatchers("/api/fcm/**").authenticated()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated());
