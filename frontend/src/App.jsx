@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import Cart from './components/Cart'
@@ -36,12 +37,121 @@ import PayrollDetail from './pages/PayrollDetail'
 import AdminPayroll from './pages/admin/AdminPayroll'
 import PayrollConfig from './pages/admin/PayrollConfig'
 import PayrollReview from './pages/admin/PayrollReview'
+import notificationService from './services/notificationService'
+
+// In-app notification toast for foreground push notifications
+function NotificationToast({ notification, onClose }) {
+    if (!notification) return null;
+
+    return (
+        <div
+            onClick={() => {
+                window.location.href = '/orders';
+                onClose();
+            }}
+            style={{
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                zIndex: 10000,
+                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                border: '1px solid rgba(255, 140, 0, 0.3)',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                maxWidth: '380px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 140, 0, 0.1)',
+                cursor: 'pointer',
+                animation: 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                backdropFilter: 'blur(10px)',
+                color: '#fff',
+            }}
+        >
+            <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #ff8c00, #ff6b00)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                flexShrink: 0,
+            }}>
+                🔔
+            </div>
+            <div style={{ flex: 1 }}>
+                <div style={{
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    marginBottom: '4px',
+                    color: '#ff8c00',
+                }}>
+                    {notification.title}
+                </div>
+                <div style={{
+                    fontSize: '13px',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    lineHeight: 1.4,
+                }}>
+                    {notification.body}
+                </div>
+            </div>
+            <button
+                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    padding: '0',
+                    lineHeight: 1,
+                    flexShrink: 0,
+                }}
+            >
+                ✕
+            </button>
+        </div>
+    );
+}
 
 function App() {
+    const [notification, setNotification] = useState(null);
+
+    useEffect(() => {
+        // Listen for foreground push notifications
+        const unsubscribe = notificationService.onForegroundMessage((payload) => {
+            setNotification({
+                title: payload.notification?.title || 'Order Update',
+                body: payload.notification?.body || 'Your order has been updated!',
+            });
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => setNotification(null), 5000);
+        });
+
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
+    }, []);
+
     return (
         <AuthProvider>
             <CartProvider>
                 <Router>
+                    <style>{`
+                        @keyframes slideInRight {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                        }
+                    `}</style>
+                    <NotificationToast
+                        notification={notification}
+                        onClose={() => setNotification(null)}
+                    />
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/menu" element={<Menu />} />
@@ -86,4 +196,5 @@ function App() {
 }
 
 export default App
+
 
