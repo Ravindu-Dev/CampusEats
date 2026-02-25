@@ -1,0 +1,20 @@
+# Environment variables
+.env
+backend/.env
+
+# Firebase service account key (NEVER commit this!)
+backend/src/main/resources/firebase-service-account.json
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build outputs
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
