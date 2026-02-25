@@ -124,6 +124,12 @@ function App() {
     useEffect(() => {
         // Listen for foreground push notifications
         const unsubscribe = notificationService.onForegroundMessage((payload) => {
+            // Only show in-app toast on user-facing pages, not on canteen/admin dashboards
+            const path = window.location.pathname;
+            if (path.startsWith('/canteen/') || path.startsWith('/admin/')) {
+                return;
+            }
+
             setNotification({
                 title: payload.notification?.title || 'Order Update',
                 body: payload.notification?.body || 'Your order has been updated!',

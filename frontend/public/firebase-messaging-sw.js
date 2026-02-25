@@ -18,8 +18,21 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Handle background messages
-messaging.onBackgroundMessage((payload) => {
+messaging.onBackgroundMessage(async (payload) => {
     console.log('[firebase-messaging-sw.js] Received background message:', payload);
+
+    // Check if any active/focused tab is on a canteen or admin page
+    // If so, suppress the notification (the canteen owner is the one updating the status)
+    const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const isCanteenOrAdminActive = clientList.some((client) => {
+        const url = new URL(client.url);
+        return url.pathname.startsWith('/canteen/') || url.pathname.startsWith('/admin/');
+    });
+
+    if (isCanteenOrAdminActive) {
+        console.log('[firebase-messaging-sw.js] Canteen/admin page active, suppressing notification');
+        return;
+    }
 
     const notificationTitle = payload.notification?.title || 'CampusEats';
     const notificationOptions = {
