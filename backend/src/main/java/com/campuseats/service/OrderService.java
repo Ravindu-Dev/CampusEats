@@ -24,6 +24,7 @@ public class OrderService {
         private final CartRepository cartRepository;
         private final QRCodeService qrCodeService;
         private final PushNotificationService pushNotificationService;
+        private final LoyaltyService loyaltyService;
 
         public List<OrderResponse> createOrder(String userId, CreateOrderRequest request) {
                 // Get user's cart
@@ -50,6 +51,26 @@ public class OrderService {
                         }
                 }
 
+                // Calculate total for all orders (for proportional discount split)
+                double sessionTotal = cart.getItems().stream()
+                                .mapToDouble(item -> item.getPrice() * item.getQuantity())
+                                .sum();
+
+                // Handle loyalty points redemption
+                int pointsToRedeem = 0;
+                double totalDiscount = 0.0;
+                if (request.getPointsToRedeem() != null && request.getPointsToRedeem() > 0) {
+                        pointsToRedeem = request.getPointsToRedeem();
+                        totalDiscount = (double) pointsToRedeem; // Rs. 1 per point
+
+                        // Verify and deduct loyalty points
+                        try {
+                                loyaltyService.redeemPoints(userId, pointsToRedeem);
+                        } catch (Exception e) {
+                                throw new RuntimeException("Failed to redeem points: " + e.getMessage());
+                        }
+                }
+
                 // Group cart items by canteen
                 Map<String, List<CartItem>> itemsByCanteen = groupItemsByCanteen(cart.getItems());
 
@@ -60,10 +81,19 @@ public class OrderService {
                         String canteenId = entry.getKey();
                         List<CartItem> canteenItems = entry.getValue();
 
-                        // Calculate total for this canteen
-                        double canteenTotal = canteenItems.stream()
+                        // Calculate subtotal for this canteen
+                        double canteenSubtotal = canteenItems.stream()
                                         .mapToDouble(item -> item.getPrice() * item.getQuantity())
                                         .sum();
+
+                        // Calculate proportional discount for this order
+                        double canteenDiscount = 0.0;
+                        int canteenPointsRedeemed = 0;
+                        if (totalDiscount > 0 && sessionTotal > 0) {
+                                canteenDiscount = (canteenSubtotal / sessionTotal) * totalDiscount;
+                                canteenPointsRedeemed = (int) Math
+                                                .round((canteenSubtotal / sessionTotal) * pointsToRedeem);
+                        }
 
                         // Create order items for this canteen
                         List<Order.OrderItem> orderItems = canteenItems.stream()
@@ -102,7 +132,9 @@ public class OrderService {
                                 order.setPickupTime(request.getPickupTime());
                         }
 
-                        order.setTotalAmount(canteenTotal);
+                        order.setTotalAmount(canteenSubtotal - canteenDiscount);
+                        order.setDiscountAmount(canteenDiscount);
+                        order.setLoyaltyPointsRedeemed(canteenPointsRedeemed);
                         order.setPaymentStatus("pending");
 
                         Order savedOrder = orderRepository.save(order);
@@ -158,6 +190,15 @@ public class OrderService {
                 if ("succeeded".equals(status)) {
                         String qrCode = qrCodeService.generateQRCode(orderId);
                         order.setQrCodeBase64(qrCode);
+
+                        // Award loyalty points (1 point per Rs. 10 spent)
+                        try {
+                                loyaltyService.earnPoints(order.getUserId(), orderId, order.getTotalAmount());
+                        } catch (Exception e) {
+                                // Don't let loyalty failure affect payment processing
+                                org.slf4j.LoggerFactory.getLogger(OrderService.class)
+                                                .error("Failed to award loyalty points: {}", e.getMessage());
+                        }
                 }
 
                 orderRepository.save(order);

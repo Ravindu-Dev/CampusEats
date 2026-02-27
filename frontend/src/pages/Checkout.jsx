@@ -6,6 +6,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import Navbar from '../components/Navbar';
 import orderService from '../services/orderService';
 import paymentService from '../services/paymentService';
+import loyaltyService from '../services/loyaltyService';
 import PaymentSuccessModal from '../components/PaymentSuccessModal';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -107,6 +108,16 @@ function Checkout() {
     const [preservedCartItems, setPreservedCartItems] = useState(null);
     const [minOrderError, setMinOrderError] = useState('');
 
+    const displayItems = cart?.items || preservedCartItems || [];
+    const displayTotal = subtotal || (order ? (Array.isArray(order) ? order.reduce((s, o) => s + o.totalAmount, 0) : order.totalAmount) : 0);
+
+    // Loyalty points state
+    const [loyaltyAccount, setLoyaltyAccount] = useState(null);
+    const [redeemEnabled, setRedeemEnabled] = useState(false);
+    const [pointsToRedeem, setPointsToRedeem] = useState(0);
+    const loyaltyDiscount = redeemEnabled ? pointsToRedeem : 0; // 1 point = Rs. 1
+    const pointsToEarn = Math.floor((displayTotal - loyaltyDiscount) / 10);
+
     const MINIMUM_ORDER_AMOUNT = 200;
 
     useEffect(() => {
@@ -114,6 +125,20 @@ function Checkout() {
             navigate('/menu');
         }
     }, [cart, loading, showSuccess, navigate]);
+
+    // Fetch loyalty account
+    useEffect(() => {
+        const fetchLoyalty = async () => {
+            try {
+                const account = await loyaltyService.getAccount();
+                setLoyaltyAccount(account);
+                setPointsToRedeem(Math.min(account.totalPoints, Math.floor(subtotal)));
+            } catch (err) {
+                console.error('Error fetching loyalty account:', err);
+            }
+        };
+        fetchLoyalty();
+    }, []);
 
     const validateForm = () => {
         const newErrors = {};
@@ -146,7 +171,11 @@ function Checkout() {
         }
         setIsCreatingOrder(true);
         try {
-            const createdOrders = await orderService.createOrder(formData);
+            const orderData = {
+                ...formData,
+                pointsToRedeem: redeemEnabled ? pointsToRedeem : 0
+            };
+            const createdOrders = await orderService.createOrder(orderData);
             setOrder(createdOrders);
             const combinedTotal = createdOrders.reduce((sum, o) => sum + o.totalAmount, 0);
             const paymentIntent = await paymentService.createPaymentIntent(createdOrders[0].id, combinedTotal);
@@ -185,8 +214,6 @@ function Checkout() {
         },
     };
 
-    const displayItems = cart?.items || preservedCartItems || [];
-    const displayTotal = subtotal || (order ? (Array.isArray(order) ? order.reduce((s, o) => s + o.totalAmount, 0) : order.totalAmount) : 0);
 
     // ── Loading state ──
     if (loading) {
@@ -313,10 +340,67 @@ function Checkout() {
                                 <p>Delivery Fee</p>
                                 <p className="text-green-400 font-bold">FREE</p>
                             </div>
+
+                            {/* Loyalty Points Section */}
+                            {loyaltyAccount && loyaltyAccount.totalPoints > 0 && !showPayment && (
+                                <div className="py-3 border-b border-white/[0.06] border-dashed">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">
+                                                {loyaltyAccount.tier === 'PLATINUM' ? '💎' : loyaltyAccount.tier === 'GOLD' ? '🥇' : loyaltyAccount.tier === 'SILVER' ? '🥈' : '🥉'}
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-bold text-white">Loyalty Points</p>
+                                                <p className="text-xs text-gray-600">{loyaltyAccount.totalPoints} pts available ({loyaltyAccount.tier})</p>
+                                            </div>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked={redeemEnabled} onChange={(e) => setRedeemEnabled(e.target.checked)} className="sr-only peer" />
+                                            <div className="w-9 h-5 bg-white/10 peer-focus:ring-2 peer-focus:ring-orange-500/40 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500 peer-checked:after:bg-white"></div>
+                                        </label>
+                                    </div>
+                                    {redeemEnabled && (
+                                        <div className="mt-3 p-3 bg-orange-500/5 border border-orange-500/15 rounded-xl">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs text-gray-500">Redeem points</span>
+                                                <span className="text-sm font-bold text-orange-400">-Rs.{loyaltyDiscount}</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={Math.min(loyaltyAccount.totalPoints, Math.floor(displayTotal - 1))}
+                                                value={pointsToRedeem}
+                                                onChange={(e) => setPointsToRedeem(parseInt(e.target.value))}
+                                                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                                            />
+                                            <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+                                                <span>0 pts</span>
+                                                <span>{Math.min(loyaltyAccount.totalPoints, Math.floor(displayTotal - 1))} pts</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {loyaltyDiscount > 0 && (
+                                <div className="flex justify-between text-sm font-medium">
+                                    <p className="text-green-400">Loyalty Discount</p>
+                                    <p className="text-green-400 font-bold">-Rs.{loyaltyDiscount.toFixed(2)}</p>
+                                </div>
+                            )}
+
                             <div className="flex justify-between text-xl font-black pt-1">
                                 <p className="text-white">Total</p>
-                                <p className="text-orange-400">Rs.{displayTotal.toFixed(2)}</p>
+                                <p className="text-orange-400">Rs.{(displayTotal - loyaltyDiscount).toFixed(2)}</p>
                             </div>
+
+                            {/* Points to earn info */}
+                            {!showPayment && pointsToEarn > 0 && (
+                                <div className="flex items-center gap-2 pt-2">
+                                    <span className="text-green-400 text-xs">✨</span>
+                                    <p className="text-xs text-green-400/80">You'll earn <span className="font-bold text-green-400">{pointsToEarn} points</span> from this order</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
