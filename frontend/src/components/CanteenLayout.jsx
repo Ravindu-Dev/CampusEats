@@ -7,6 +7,7 @@ const navItems = [
     { path: '/canteen/orders', label: 'Orders', icon: '📝', color: 'indigo' },
     { path: '/canteen/kitchen', label: 'Kitchen', icon: '🍳', color: 'red' },
     { path: '/canteen/menu-management', label: 'Menu', icon: '🍽️', color: 'orange' },
+    { path: '/canteen/combo-management', label: 'Combos', icon: '🎁', color: 'pink' },
     { path: '/canteen/staff', label: 'Staff', icon: '👥', color: 'purple' },
     { path: '/canteen/attendance', label: 'Attendance', icon: '📅', color: 'cyan' },
     { path: '/canteen/payroll', label: 'Payroll', icon: '💰', color: 'emerald' },

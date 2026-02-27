@@ -30,4 +30,6 @@ public class CreateOrderRequest {
     private String pickupDate;
 
     private String pickupTime;
+
+    private Integer pointsToRedeem = 0;
 }

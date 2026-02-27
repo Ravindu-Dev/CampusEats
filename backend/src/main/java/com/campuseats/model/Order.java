@@ -34,6 +34,8 @@ public class Order {
     private String pickupTime;
 
     private Double totalAmount;
+    private Double discountAmount = 0.0;
+    private Integer loyaltyPointsRedeemed = 0;
 
     // Payment status: "pending", "succeeded", "failed"
     private String paymentStatus;

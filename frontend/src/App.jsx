@@ -21,6 +21,7 @@ import PendingApprovals from './pages/admin/PendingApprovals'
 import AllCanteenOwners from './pages/admin/AllCanteenOwners'
 import AllCanteens from './pages/admin/AllCanteens'
 import MenuManagement from './pages/MenuManagement'
+import ComboManagement from './pages/ComboManagement'
 import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
 import CanteenOrders from './pages/CanteenOrders'
@@ -187,6 +188,7 @@ function App() {
                         <Route path="/admin/payroll/config" element={<PayrollConfig />} />
                         <Route path="/admin/payroll/:id" element={<PayrollReview />} />
                         <Route path="/canteen/menu-management" element={<MenuManagement />} />
+                        <Route path="/canteen/combo-management" element={<ComboManagement />} />
                         <Route path="/canteen/orders" element={<CanteenOrders />} />
                         <Route path="/canteen/kitchen" element={<KitchenDashboard />} />
                         <Route path="/checkout" element={<Checkout />} />
