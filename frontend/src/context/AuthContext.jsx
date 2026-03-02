@@ -30,11 +30,19 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const refreshUser = async () => {
+        const currentUser = authService.getCurrentUser();
+        if (currentUser) {
+            setUser(currentUser);
+        }
+    };
+
     const value = {
         user,
         login,
         signup,
         logout,
+        refreshUser,
         loading,
     };
 
