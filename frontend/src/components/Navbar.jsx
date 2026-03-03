@@ -68,8 +68,8 @@ function Navbar({ isHome = false }) {
                                 key={link.path}
                                 to={link.path}
                                 className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 relative group ${isActive(link.path)
-                                        ? 'text-orange-400 bg-white/10'
-                                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                                    ? 'text-orange-400 bg-white/10'
+                                    : 'text-white/70 hover:text-white hover:bg-white/10'
                                     }`}
                             >
                                 {link.name}
@@ -102,9 +102,9 @@ function Navbar({ isHome = false }) {
 
                                 {/* Dashboard */}
                                 <Link
-                                    to="/dashboard"
+                                    to="/profile"
                                     className="p-2.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300"
-                                    aria-label="Dashboard"
+                                    aria-label="Profile"
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -187,8 +187,8 @@ function Navbar({ isHome = false }) {
                             to={link.path}
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all ${isActive(link.path)
-                                    ? 'bg-white/10 text-orange-400'
-                                    : 'text-white/70 hover:bg-white/5 hover:text-white'
+                                ? 'bg-white/10 text-orange-400'
+                                : 'text-white/70 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             {link.name}
