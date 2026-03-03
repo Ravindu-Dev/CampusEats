@@ -35,7 +35,6 @@ public class User {
 
     private String phoneNumber;
     private String address;
-    private String profilePicture;
 
     private Set<String> roles = new HashSet<>();
 

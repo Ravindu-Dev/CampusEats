@@ -3,17 +3,11 @@ import { AuthContext } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
 import orderService from '../services/orderService'
 import reviewService from '../services/reviewService'
-import userService from '../services/userService'
-import { imgbbService } from '../services/imgbbService'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 
 function Dashboard() {
-    const { user, logout, refreshUser } = useContext(AuthContext)
+    const { user, logout } = useContext(AuthContext)
     const navigate = useNavigate()
-    const [activeTab, setActiveTab] = useState('overview')
     const [orders, setOrders] = useState([])
-    const [reviews, setReviews] = useState([])
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState({
         total: 0,
@@ -22,406 +16,264 @@ function Dashboard() {
         favorites: 0
     })
 
-    // Profile Edit State
-    const [profileData, setProfileData] = useState({
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || '',
-        phoneNumber: user?.phoneNumber || '',
-        address: user?.address || '',
-        profilePicture: user?.profilePicture || ''
-    })
-    const [updatingProfile, setUpdatingProfile] = useState(false)
-    const [uploadingImage, setUploadingImage] = useState(false)
-    const [message, setMessage] = useState({ type: '', text: '' })
-
     useEffect(() => {
-        if (user) {
-            setProfileData({
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                phoneNumber: user.phoneNumber || '',
-                address: user.address || '',
-                profilePicture: user.profilePicture || ''
-            })
-        }
-        fetchData()
-    }, [user])
+        fetchOrders()
+        fetchReviews()
+    }, [])
 
-    const fetchData = async () => {
+    const fetchOrders = async () => {
         try {
             setLoading(true)
-            const [ordersData, reviewsData] = await Promise.all([
-                orderService.getUserOrders(),
-                reviewService.getMyReviews()
-            ])
-
-            const sortedOrders = ordersData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            const data = await orderService.getUserOrders()
+            // Sort by most recent first
+            const sortedOrders = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             setOrders(sortedOrders)
-            setReviews(reviewsData)
 
-            setStats({
-                total: ordersData.length,
-                completed: ordersData.filter(o => o.paymentStatus === 'succeeded').length,
-                reviews: reviewsData.length,
-                favorites: 0 // Placeholder
-            })
+            // Calculate stats
+            setStats(prevStats => ({
+                ...prevStats,
+                total: data.length,
+                completed: data.filter(o => o.paymentStatus === 'succeeded').length
+            }))
         } catch (err) {
-            console.error('Error fetching dashboard data:', err)
+            console.error('Error fetching orders:', err)
         } finally {
             setLoading(false)
         }
     }
 
-    const getGreeting = () => {
-        const hour = new Date().getHours()
-        if (hour < 12) return 'Good morning'
-        if (hour < 18) return 'Good afternoon'
-        return 'Good evening'
-    }
-
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault()
+    const fetchReviews = async () => {
         try {
-            setUpdatingProfile(true)
-            setMessage({ type: '', text: '' })
-            const updatedUser = await userService.updateUserProfile(profileData)
-            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }))
-            await refreshUser()
-            setMessage({ type: 'success', text: 'Profile updated successfully!' })
+            const data = await reviewService.getMyReviews()
+            setStats(prevStats => ({
+                ...prevStats,
+                reviews: data.length
+            }))
         } catch (err) {
-            console.error('Error updating profile:', err)
-            setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
-        } finally {
-            setUpdatingProfile(false)
-        }
-    }
-
-    const handleImageUpload = async (e) => {
-        const file = e.target.files[0]
-        if (!file) return
-
-        try {
-            setUploadingImage(true)
-            const imageUrl = await imgbbService.uploadImage(file)
-            setProfileData(prev => ({ ...prev, profilePicture: imageUrl }))
-
-            // Auto-save the image update
-            const updatedUser = await userService.updateUserProfile({ ...profileData, profilePicture: imageUrl })
-            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }))
-            await refreshUser()
-            setMessage({ type: 'success', text: 'Profile picture updated!' })
-        } catch (err) {
-            console.error('Error uploading image:', err)
-            setMessage({ type: 'error', text: 'Failed to upload image.' })
-        } finally {
-            setUploadingImage(false)
+            console.error('Error fetching reviews:', err)
         }
     }
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
-            year: 'numeric'
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         })
     }
 
-    const tabs = [
-        { id: 'overview', label: 'Overview', icon: '📊' },
-        { id: 'orders', label: 'My Orders', icon: '🛍️' },
-        { id: 'reviews', label: 'My Reviews', icon: '⭐' },
-        { id: 'profile', label: 'Edit Profile', icon: '👤' }
-    ]
+    const handleLogout = () => {
+        logout()
+        navigate('/login')
+    }
 
     return (
-        <div className="min-h-screen bg-[#080808] text-white">
-            <Navbar />
-
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
-                {/* Header Section */}
-                <div className="mb-10 animate-fade-in">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="flex items-center gap-6">
-                            <div className="relative group">
-                                <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-orange-500/50 transition-all duration-500 shadow-2xl">
-                                    {user?.profilePicture ? (
-                                        <img src={user.profilePicture} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center text-3xl font-bold">
-                                            {user?.username?.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
-                                </div>
-                                <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-500 transition-colors shadow-lg border-2 border-[#080808]">
-                                    <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                </label>
+        <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50">
+            {/* Top Navigation */}
+            <nav className="bg-white shadow-md sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between h-16 items-center">
+                        <Link to="/" className="flex items-center space-x-2">
+                            <div className="text-2xl">🍔</div>
+                            <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+                                CampusEats
+                            </span>
+                        </Link>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden md:flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg">
+                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span className="text-gray-700 font-medium">{user?.username}</span>
                             </div>
-                            <div>
-                                <h1 className="text-4xl font-black tracking-tight mb-2">
-                                    {getGreeting()}, <span className="text-orange-500">{user?.firstName || user?.username}!</span>
-                                </h1>
-                                <p className="text-gray-500 font-medium">Welcome back to your CampusEats dashboard.</p>
+                            <button
+                                onClick={handleLogout}
+                                className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg hover:from-red-700 hover:to-orange-700 transition font-semibold shadow-md"
+                            >
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            {/* Main Content */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Welcome Section */}
+                <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl shadow-xl p-8 text-white mb-8">
+                    <h1 className="text-4xl font-bold mb-2">Welcome back, {user?.firstName || user?.username}!</h1>
+                    <p className="text-lg opacity-90">Ready to order some delicious food?</p>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid md:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
                             </div>
                         </div>
-                        <Link to="/menu" className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl font-bold hover:bg-orange-600 hover:border-orange-500 transition-all duration-300 group">
-                            <svg className="w-5 h-5 text-orange-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</p>
+                        <p className="text-gray-600 text-sm">Total Orders</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.completed}</p>
+                        <p className="text-gray-600 text-sm">Completed</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.reviews}</p>
+                        <p className="text-gray-600 text-sm">Reviews</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center">
+                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{stats.favorites}</p>
+                        <p className="text-gray-600 text-sm">Favorites</p>
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                    <Link to="/menu" className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                        <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
-                            Browse Menu
-                        </Link>
-                    </div>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Browse Menu</h3>
+                        <p className="text-gray-600">Explore delicious food from campus canteens</p>
+                    </Link>
+
+                    <Link to="/orders" className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">My Orders</h3>
+                        <p className="text-gray-600">Track your order history and status</p>
+                    </Link>
+
+                    <Link to="/my-reviews" className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1">
+                        <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">My Reviews</h3>
+                        <p className="text-gray-600">View your rating history</p>
+                    </Link>
                 </div>
 
-                {/* Main Tabs Logic */}
-                <div className="flex gap-4 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold whitespace-nowrap transition-all duration-300 ${activeTab === tab.id
-                                ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20'
-                                : 'bg-white/5 text-gray-400 border border-white/5 hover:border-white/20 hover:text-white'}`}
-                        >
-                            <span>{tab.icon}</span>
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="bg-[#111] border border-white/[0.08] rounded-3xl p-1 shadow-2xl overflow-hidden min-h-[500px]">
-                    <div className="p-6 md:p-8">
-                        {activeTab === 'overview' && (
-                            <div className="animate-fade-in-up">
-                                {/* Stats Cards */}
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                                    {[
-                                        { label: 'Total Orders', value: stats.total, icon: '🛍️', color: 'blue' },
-                                        { label: 'Completed', value: stats.completed, icon: '✅', color: 'green' },
-                                        { label: 'Reviews', value: stats.reviews, icon: '⭐', color: 'yellow' },
-                                        { label: 'Favorites', value: stats.favorites, icon: '❤️', color: 'red' }
-                                    ].map((stat, i) => (
-                                        <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all">
-                                            <div className="text-2xl mb-2">{stat.icon}</div>
-                                            <div className="text-3xl font-black mb-1">{stat.value}</div>
-                                            <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">{stat.label}</div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-2xl font-black">Recent Activity</h2>
-                                    <button onClick={() => setActiveTab('orders')} className="text-orange-500 text-sm font-bold hover:underline">View All</button>
-                                </div>
-
-                                {loading ? (
-                                    <div className="flex justify-center py-20">
-                                        <div className="w-10 h-10 border-2 border-white/10 border-t-orange-500 rounded-full animate-spin" />
-                                    </div>
-                                ) : orders.length === 0 ? (
-                                    <div className="text-center py-20 bg-white/[0.02] rounded-2xl border border-dashed border-white/10">
-                                        <p className="text-gray-500 font-medium">No recent activity found.</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {orders.slice(0, 3).map(order => (
-                                            <div key={order.id} className="group bg-white/5 border border-white/5 rounded-2xl p-5 hover:bg-white/[0.08] transition-all">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <div className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-tighter">Order #{order.id.substring(0, 8)}</div>
-                                                        <div className="text-lg font-bold mb-1">{order.orderItems?.[0]?.name || 'Unknown Item'} {order.orderItems?.length > 1 ? `+${order.orderItems.length - 1} more` : ''}</div>
-                                                        <div className="text-xs text-gray-600 font-medium">{formatDate(order.createdAt)} • {order.canteenName || 'Campus Canteen'}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-xl font-black text-white mb-2">Rs.{order.totalAmount?.toFixed(2)}</div>
-                                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${order.paymentStatus === 'succeeded' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                                            {order.paymentStatus}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'orders' && (
-                            <div className="animate-fade-in-up">
-                                <h2 className="text-2xl font-black mb-6">Order History</h2>
-                                {orders.length === 0 ? (
-                                    <div className="text-center py-20">
-                                        <p className="text-gray-500">You haven't placed any orders yet.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid gap-6">
-                                        {orders.map(order => (
-                                            <div key={order.id} className="bg-white/5 border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all group">
-                                                <div className="flex flex-col md:flex-row justify-between gap-6">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-3 mb-4">
-                                                            <span className="text-xs font-black px-2 py-1 bg-white/10 rounded-md text-gray-400">#{order.id.substring(0, 8)}</span>
-                                                            <span className="text-xs text-gray-500 font-bold">{formatDate(order.createdAt)}</span>
-                                                        </div>
-                                                        <div className="space-y-3">
-                                                            {order.orderItems?.map((item, i) => (
-                                                                <div key={i} className="flex justify-between items-center text-sm">
-                                                                    <span className="text-gray-300"><span className="font-bold text-orange-500">{item.quantity}x</span> {item.name}</span>
-                                                                    <span className="text-gray-500">Rs.{(item.price * item.quantity).toFixed(2)}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                        <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-                                                            <span className="text-sm font-bold text-gray-500 uppercase">Total Amount</span>
-                                                            <span className="text-xl font-black text-orange-500">Rs.{order.totalAmount?.toFixed(2)}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="md:w-48 flex flex-col justify-between items-end">
-                                                        <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 ${order.paymentStatus === 'succeeded' ? 'bg-green-600 text-white' : 'bg-orange-600 text-white'}`}>
-                                                            {order.paymentStatus}
-                                                        </span>
-                                                        {order.orderStatus !== 'COMPLETED' && (
-                                                            <Link to={`/orders/track/${order.id}`} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-center text-sm font-bold hover:bg-white/10 transition-all">Track Order</Link>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'reviews' && (
-                            <div className="animate-fade-in-up">
-                                <h2 className="text-2xl font-black mb-6">Your Reviews</h2>
-                                {reviews.length === 0 ? (
-                                    <div className="text-center py-20">
-                                        <p className="text-gray-500">You haven't written any reviews yet.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid gap-6">
-                                        {reviews.map(review => (
-                                            <div key={review.id} className="bg-white/5 border border-white/5 rounded-2xl p-6">
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div>
-                                                        <h3 className="font-bold text-lg mb-1">{review.canteenName}</h3>
-                                                        <div className="flex gap-1 mb-2">
-                                                            {[1, 2, 3, 4, 5].map(s => (
-                                                                <span key={s} className={`text-sm ${s <= review.rating ? 'text-yellow-500' : 'text-gray-700'}`}>★</span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-xs text-gray-600 font-bold">{formatDate(review.createdAt)}</span>
-                                                </div>
-                                                <p className="text-gray-400 text-sm italic leading-relaxed">"{review.comment || 'No comment provided'}"</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'profile' && (
-                            <div className="animate-fade-in-up max-w-2xl mx-auto">
-                                <h2 className="text-2xl font-black mb-8">Profile Settings</h2>
-
-                                {message.text && (
-                                    <div className={`p-4 rounded-xl mb-6 text-sm font-bold text-center border ${message.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
-                                        {message.text}
-                                    </div>
-                                )}
-
-                                <form onSubmit={handleProfileUpdate} className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-gray-500">First Name</label>
-                                            <input
-                                                type="text"
-                                                value={profileData.firstName}
-                                                onChange={e => setProfileData({ ...profileData, firstName: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500/50 transition-all font-medium"
-                                                placeholder="Enter first name"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-gray-500">Last Name</label>
-                                            <input
-                                                type="text"
-                                                value={profileData.lastName}
-                                                onChange={e => setProfileData({ ...profileData, lastName: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500/50 transition-all font-medium"
-                                                placeholder="Enter last name"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-gray-500">Phone Number</label>
-                                        <input
-                                            type="tel"
-                                            value={profileData.phoneNumber}
-                                            onChange={e => setProfileData({ ...profileData, phoneNumber: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500/50 transition-all font-medium"
-                                            placeholder="+94 7X XXX XXXX"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-gray-500">Default Address</label>
-                                        <textarea
-                                            value={profileData.address}
-                                            onChange={e => setProfileData({ ...profileData, address: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500/50 transition-all font-medium min-h-[100px]"
-                                            placeholder="Enter your address"
-                                        />
-                                    </div>
-
-                                    <div className="pt-4">
-                                        <button
-                                            type="submit"
-                                            disabled={updatingProfile}
-                                            className="w-full py-4 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl font-black uppercase tracking-[0.2em] shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all disabled:opacity-50"
-                                        >
-                                            {updatingProfile ? 'Saving Changes...' : 'Update Profile'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                {/* Recent Activity */}
+                <div className="bg-white rounded-2xl shadow-xl p-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Recent Activity</h2>
+                        {orders.length > 0 && (
+                            <Link to="/orders" className="text-green-600 hover:text-green-700 font-semibold flex items-center">
+                                View All
+                                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </Link>
                         )}
                     </div>
+
+                    {loading ? (
+                        <div className="flex justify-center items-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-green-600"></div>
+                        </div>
+                    ) : orders.length === 0 ? (
+                        <div className="text-center py-12">
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+                                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                            </div>
+                            <p className="text-gray-600 text-lg mb-4">No orders yet</p>
+                            <p className="text-gray-500 mb-6">Start exploring our menu and place your first order!</p>
+                            <Link to="/menu" className="inline-block px-8 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-md">
+                                Browse Menu
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {orders.slice(0, 3).map((order) => (
+                                <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <p className="font-semibold text-gray-900">Order #{order.id.substring(0, 8)}</p>
+                                            <p className="text-sm text-gray-500">{formatDate(order.createdAt)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-gray-900">Rs.{order.totalAmount?.toFixed(2)}</p>
+                                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${order.paymentStatus === 'succeeded' ? 'bg-green-100 text-green-800' :
+                                                order.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }`}>
+                                                {order.paymentStatus?.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Food Items */}
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-semibold text-gray-700 flex items-center">
+                                            <svg className="w-4 h-4 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            Items ({order.orderItems?.length || 0}):
+                                        </p>
+                                        <div className="pl-5 space-y-1">
+                                            {order.orderItems && order.orderItems.length > 0 ? (
+                                                order.orderItems.map((item, index) => (
+                                                    <div key={index} className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-gray-700">{item.name}</span>
+                                                            <span className="text-gray-500">x{item.quantity}</span>
+                                                            <span className="text-xs text-gray-500">({item.canteenName})</span>
+                                                        </div>
+                                                        <span className="text-gray-900 font-medium">Rs.{(item.price * item.quantity).toFixed(2)}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-sm text-gray-500">No items</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </main>
-
-            <Footer />
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .animate-fade-in {
-                    animation: fadeIn 0.8s ease-out forwards;
-                }
-                .animate-fade-in-up {
-                    animation: fadeInUp 0.6s ease-out forwards;
-                }
-                .scrollbar-hide::-webkit-scrollbar {
-                    display: none;
-                }
-                .scrollbar-hide {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-            `}} />
         </div>
     )
 }
