@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
@@ -7,6 +7,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
+import UserProfile from './pages/UserProfile'
 import CanteenLogin from './pages/CanteenLogin'
 import CanteenRegister from './pages/CanteenRegister'
 import CanteenDashboard from './pages/CanteenDashboard'
@@ -167,7 +168,8 @@ function App() {
                         <Route path="/about" element={<About />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<Signup />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
+                        <Route path="/profile" element={<UserProfile />} />
                         <Route path="/orders" element={<Orders />} />
                         <Route path="/my-reviews" element={<MyReviews />} />
                         <Route path="/canteen/login" element={<CanteenLogin />} />

@@ -43,7 +43,14 @@ public class AuthController {
         User user = userRepository.findByUsername(loginRequest.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return ResponseEntity.ok(new JwtResponse(jwt, user.getUsername(), user.getEmail()));
+        return ResponseEntity.ok(new JwtResponse(
+                jwt,
+                user.getUsername(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getPhoneNumber(),
+                user.getProfilePhotoUrl(),
+                user.getCreatedAt() != null ? user.getCreatedAt().toString() : null));
     }
 
     @PostMapping("/signup")

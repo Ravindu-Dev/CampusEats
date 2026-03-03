@@ -19,7 +19,7 @@ function PaymentSuccessModal({ onClose, orders = [] }) {
 
     const handleViewOrders = () => {
         setShow(false);
-        setTimeout(() => { onClose(); navigate('/dashboard'); }, 300);
+        setTimeout(() => { onClose(); navigate('/profile'); }, 300);
     };
 
     const nextQR = () => setCurrentQRIndex((prev) => (prev + 1) % orders.length);
