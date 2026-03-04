@@ -34,6 +34,10 @@ function UserProfile() {
     const [reviewModalOpen, setReviewModalOpen] = useState(false)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [validationErrors, setValidationErrors] = useState({})
+    const [orderFilter, setOrderFilter] = useState('all')
+    const [reviewFilter, setReviewFilter] = useState('all')
+    const [ordersToShow, setOrdersToShow] = useState(5)
+    const [reviewsToShow, setReviewsToShow] = useState(5)
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -497,32 +501,34 @@ function UserProfile() {
                     {/* ─── Right Column ─── */}
                     <div className="lg:col-span-8 space-y-6">
 
-                        {/* Profile Completion */}
-                        <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Profile Completion
-                                </h3>
-                                <span className={`text-sm font-bold ${completion === 100 ? 'text-emerald-400' : 'text-orange-400'}`}>
-                                    {completion}%
-                                </span>
+                        {/* Profile Completion — only on profile tab */}
+                        {activeTab === 'profile' && (
+                            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Profile Completion
+                                    </h3>
+                                    <span className={`text-sm font-bold ${completion === 100 ? 'text-emerald-400' : 'text-orange-400'}`}>
+                                        {completion}%
+                                    </span>
+                                </div>
+                                <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-700 ease-out ${completion === 100
+                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                                            : 'bg-gradient-to-r from-orange-500 to-red-500'
+                                            }`}
+                                        style={{ width: `${completion}%` }}
+                                    />
+                                </div>
+                                {completion < 100 && (
+                                    <p className="text-white/30 text-xs mt-2">Complete your profile to unlock all features</p>
+                                )}
                             </div>
-                            <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all duration-700 ease-out ${completion === 100
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                                        : 'bg-gradient-to-r from-orange-500 to-red-500'
-                                        }`}
-                                    style={{ width: `${completion}%` }}
-                                />
-                            </div>
-                            {completion < 100 && (
-                                <p className="text-white/30 text-xs mt-2">Complete your profile to unlock all features</p>
-                            )}
-                        </div>
+                        )}
 
                         {/* ── PROFILE TAB ── */}
                         {activeTab === 'profile' && (
@@ -769,135 +775,222 @@ function UserProfile() {
                                             Browse Menu
                                         </a>
                                     </div>
-                                ) : (
-                                    orders.map(order => (
-                                        <div key={order.id} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-white/[0.1] transition-colors">
-                                            {/* Order Header */}
-                                            <div className="bg-gradient-to-r from-orange-600/10 to-red-600/10 border-b border-white/[0.06] px-6 py-4">
-                                                <div className="flex justify-between items-start flex-wrap gap-3">
-                                                    <div>
-                                                        <p className="text-white/40 text-xs font-semibold uppercase tracking-wider">Order ID</p>
-                                                        <p className="font-mono font-bold text-white text-sm mt-0.5">{order.id}</p>
-                                                        <p className="text-white/30 text-xs mt-1">{formatDateTime(order.createdAt)}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getPaymentStatusColor(order.paymentStatus)}`}>
-                                                            {order.paymentStatus?.toUpperCase() || 'PENDING'}
-                                                        </span>
-                                                        <p className="text-xl font-black text-white mt-1">Rs.{order.totalAmount?.toFixed(2)}</p>
-                                                    </div>
-                                                </div>
+                                ) : (() => {
+                                    const filteredOrders = orders.filter(order => {
+                                        if (orderFilter === 'active') return order.orderStatus && order.orderStatus !== 'COMPLETED'
+                                        if (orderFilter === 'completed') return order.orderStatus === 'COMPLETED'
+                                        return true
+                                    })
+                                    const visibleOrders = filteredOrders.slice(0, ordersToShow)
+                                    return (
+                                        <>
+                                            {/* Filter Tabs */}
+                                            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-1.5 flex gap-1">
+                                                {[
+                                                    { key: 'all', label: 'All', count: orders.length },
+                                                    { key: 'active', label: 'Active', count: orders.filter(o => o.orderStatus && o.orderStatus !== 'COMPLETED').length },
+                                                    { key: 'completed', label: 'Completed', count: orders.filter(o => o.orderStatus === 'COMPLETED').length },
+                                                ].map(f => (
+                                                    <button
+                                                        key={f.key}
+                                                        onClick={() => { setOrderFilter(f.key); setOrdersToShow(5) }}
+                                                        className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${orderFilter === f.key
+                                                            ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
+                                                            : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
+                                                            }`}
+                                                    >
+                                                        {f.label}
+                                                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${orderFilter === f.key ? 'bg-orange-500/20 text-orange-400' : 'bg-white/[0.05] text-white/30'
+                                                            }`}>{f.count}</span>
+                                                    </button>
+                                                ))}
                                             </div>
 
-                                            {/* Order Items */}
-                                            <div className="p-6">
-                                                <h4 className="text-white/60 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                    </svg>
-                                                    Items ({order.orderItems?.length || 0})
-                                                </h4>
-                                                <div className="space-y-3">
-                                                    {order.orderItems && order.orderItems.length > 0 ? (
-                                                        order.orderItems.map((item, idx) => (
-                                                            <div key={idx} className="flex items-center gap-4 bg-white/[0.02] rounded-xl p-3 hover:bg-white/[0.04] transition-colors">
-                                                                <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-white/5">
-                                                                    {item.imageUrl ? (
-                                                                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center text-white/10">
-                                                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                            </svg>
-                                                                        </div>
-                                                                    )}
+                                            {filteredOrders.length === 0 ? (
+                                                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 text-center">
+                                                    <p className="text-white/30 text-sm">No {orderFilter === 'active' ? 'active' : 'completed'} orders found</p>
+                                                </div>
+                                            ) : (
+                                                visibleOrders.map(order => (
+                                                    <div key={order.id} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-white/[0.1] transition-colors">
+                                                        {/* Order Header */}
+                                                        <div className="bg-gradient-to-r from-orange-600/10 to-red-600/10 border-b border-white/[0.06] px-6 py-4">
+                                                            <div className="flex justify-between items-start flex-wrap gap-3">
+                                                                <div>
+                                                                    <p className="text-white/40 text-xs font-semibold uppercase tracking-wider">Order ID</p>
+                                                                    <p className="font-mono font-bold text-white text-sm mt-0.5">{order.id}</p>
+                                                                    <p className="text-white/30 text-xs mt-1">{formatDateTime(order.createdAt)}</p>
                                                                 </div>
-                                                                <div className="flex-grow min-w-0">
-                                                                    <p className="text-white font-semibold text-sm truncate">{item.name}</p>
-                                                                    <p className="text-white/30 text-xs">{item.canteenName} · Qty: {item.quantity}</p>
+                                                                <div className="text-right">
+                                                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getPaymentStatusColor(order.paymentStatus)}`}>
+                                                                        {order.paymentStatus?.toUpperCase() || 'PENDING'}
+                                                                    </span>
+                                                                    <p className="text-xl font-black text-white mt-1">Rs.{order.totalAmount?.toFixed(2)}</p>
                                                                 </div>
-                                                                <p className="text-white font-bold text-sm whitespace-nowrap">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                                                             </div>
-                                                        ))
-                                                    ) : (
-                                                        <p className="text-white/30 text-sm text-center py-3">No items</p>
-                                                    )}
-                                                </div>
+                                                        </div>
 
-                                                {/* Pickup Details */}
-                                                {(order.pickupDate || order.pickupTime) && (
-                                                    <div className="mt-4 bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
-                                                        <h4 className="text-white/60 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                                                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                            Pickup Details
-                                                        </h4>
-                                                        <div className="flex gap-6">
-                                                            {order.pickupDate && (
-                                                                <div>
-                                                                    <p className="text-white/30 text-xs">Date</p>
-                                                                    <p className="text-white font-semibold text-sm">{order.pickupDate}</p>
+                                                        {/* Order Items */}
+                                                        <div className="p-6">
+                                                            <h4 className="text-white/60 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                                </svg>
+                                                                Items ({order.orderItems?.length || 0})
+                                                            </h4>
+                                                            <div className="space-y-3">
+                                                                {order.orderItems && order.orderItems.length > 0 ? (
+                                                                    order.orderItems.map((item, idx) => (
+                                                                        <div key={idx} className="flex items-center gap-4 bg-white/[0.02] rounded-xl p-3 hover:bg-white/[0.04] transition-colors">
+                                                                            <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-white/5">
+                                                                                {item.imageUrl ? (
+                                                                                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center text-white/10">
+                                                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-grow min-w-0">
+                                                                                <p className="text-white font-semibold text-sm truncate">{item.name}</p>
+                                                                                <p className="text-white/30 text-xs">{item.canteenName} · Qty: {item.quantity}</p>
+                                                                            </div>
+                                                                            <p className="text-white font-bold text-sm whitespace-nowrap">Rs.{(item.price * item.quantity).toFixed(2)}</p>
+                                                                        </div>
+                                                                    ))
+                                                                ) : (
+                                                                    <p className="text-white/30 text-sm text-center py-3">No items</p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Pickup Details */}
+                                                            {(order.pickupDate || order.pickupTime) && (
+                                                                <div className="mt-4 bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+                                                                    <h4 className="text-white/60 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                                                                        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                        </svg>
+                                                                        Pickup Details
+                                                                    </h4>
+                                                                    <div className="flex gap-6">
+                                                                        {order.pickupDate && (
+                                                                            <div>
+                                                                                <p className="text-white/30 text-xs">Date</p>
+                                                                                <p className="text-white font-semibold text-sm">{order.pickupDate}</p>
+                                                                            </div>
+                                                                        )}
+                                                                        {order.pickupTime && (
+                                                                            <div>
+                                                                                <p className="text-white/30 text-xs">Time</p>
+                                                                                <p className="text-white font-semibold text-sm">{order.pickupTime}</p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             )}
-                                                            {order.pickupTime && (
-                                                                <div>
-                                                                    <p className="text-white/30 text-xs">Time</p>
-                                                                    <p className="text-white font-semibold text-sm">{order.pickupTime}</p>
+
+                                                            {/* QR Code - Collapsible */}
+                                                            {order.paymentStatus?.toLowerCase() === 'succeeded' && order.qrCodeBase64 && (
+                                                                <div className="mt-4">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const el = document.getElementById(`qr-${order.id}`)
+                                                                            if (el) el.classList.toggle('hidden')
+                                                                            const icon = document.getElementById(`qr-icon-${order.id}`)
+                                                                            if (icon) icon.classList.toggle('rotate-180')
+                                                                        }}
+                                                                        className="w-full flex items-center justify-between bg-orange-500/[0.06] border border-orange-500/15 hover:border-orange-500/30 rounded-xl px-5 py-3.5 transition-all group"
+                                                                    >
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                                                                                <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                                                                </svg>
+                                                                            </div>
+                                                                            <div className="text-left">
+                                                                                <p className="text-white font-bold text-sm">Pickup QR Code</p>
+                                                                                <p className="text-white/30 text-xs">Show this at the canteen for quick pickup</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <svg id={`qr-icon-${order.id}`} className="w-5 h-5 text-white/30 group-hover:text-orange-400 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                        </svg>
+                                                                    </button>
+                                                                    <div id={`qr-${order.id}`} className="hidden mt-3 bg-orange-500/[0.04] border border-orange-500/10 rounded-xl p-5 animate-in">
+                                                                        <QRCodeDisplay qrCodeBase64={order.qrCodeBase64} orderId={order.id} size={180} />
+                                                                    </div>
                                                                 </div>
                                                             )}
+
+                                                            {/* Track / Review */}
+                                                            <div className="flex gap-3 mt-4">
+                                                                {order.orderStatus && order.orderStatus !== 'COMPLETED' && (
+                                                                    <a href={`/orders/track/${order.id}`}
+                                                                        className="flex-1 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-bold text-sm text-center hover:shadow-lg hover:shadow-orange-500/20 transition-all flex items-center justify-center gap-2">
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                        </svg>
+                                                                        Track Order
+                                                                    </a>
+                                                                )}
+                                                                {order.orderStatus === 'COMPLETED' && (
+                                                                    <>
+                                                                        {order.hasReview ? (
+                                                                            <div className="flex-1 px-5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-center flex items-center justify-center gap-2">
+                                                                                <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                                </svg>
+                                                                                <span className="text-white/50 font-bold text-sm">Reviewed</span>
+                                                                            </div>
+                                                                        ) : canReview(order) ? (
+                                                                            <button
+                                                                                onClick={() => { setSelectedOrder(order); setReviewModalOpen(true) }}
+                                                                                className="flex-1 px-5 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-orange-500/20 transition-all flex items-center justify-center gap-2">
+                                                                                ⭐ Write a Review
+                                                                            </button>
+                                                                        ) : null}
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                )}
+                                                ))
+                                            )}
 
-                                                {/* QR Code */}
-                                                {order.paymentStatus?.toLowerCase() === 'succeeded' && order.qrCodeBase64 && (
-                                                    <div className="mt-4 bg-orange-500/5 border border-orange-500/20 rounded-xl p-5">
-                                                        <h4 className="text-white font-bold text-sm flex items-center gap-2 mb-3">
-                                                            <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                            {/* Show More / Show Less */}
+                                            {filteredOrders.length > 5 && (
+                                                <div className="flex justify-center gap-3 pt-2">
+                                                    {ordersToShow < filteredOrders.length && (
+                                                        <button
+                                                            onClick={() => setOrdersToShow(prev => prev + 5)}
+                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                                             </svg>
-                                                            Your Pickup QR Code
-                                                        </h4>
-                                                        <p className="text-white/30 text-xs mb-3">📱 Show this to canteen staff for quick pickup</p>
-                                                        <div className="bg-white rounded-xl p-3 inline-block">
-                                                            <QRCodeDisplay qrCodeBase64={order.qrCodeBase64} orderId={order.id} size={180} />
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Track / Review */}
-                                                <div className="flex gap-3 mt-4">
-                                                    {order.orderStatus && order.orderStatus !== 'COMPLETED' && (
-                                                        <a href={`/orders/track/${order.id}`}
-                                                            className="flex-1 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm text-center hover:shadow-lg hover:shadow-blue-500/20 transition-all">
-                                                            📍 Track Order
-                                                        </a>
+                                                            Show More ({filteredOrders.length - ordersToShow} remaining)
+                                                        </button>
                                                     )}
-                                                    {order.orderStatus === 'COMPLETED' && (
-                                                        <>
-                                                            {order.hasReview ? (
-                                                                <div className="flex-1 px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-                                                                    <span className="text-emerald-400 font-bold text-sm">✅ Reviewed</span>
-                                                                </div>
-                                                            ) : canReview(order) ? (
-                                                                <button
-                                                                    onClick={() => { setSelectedOrder(order); setReviewModalOpen(true) }}
-                                                                    className="flex-1 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-amber-500/20 transition-all">
-                                                                    ⭐ Write a Review
-                                                                </button>
-                                                            ) : null}
-                                                        </>
+                                                    {ordersToShow > 5 && (
+                                                        <button
+                                                            onClick={() => setOrdersToShow(5)}
+                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all"
+                                                        >
+                                                            Show Less
+                                                        </button>
                                                     )}
                                                 </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
+                                            )}
+                                        </>
+                                    )
+                                })()}
                             </div>
                         )}
 
@@ -919,55 +1012,120 @@ function UserProfile() {
                                         <h3 className="text-white font-bold text-lg mb-2">No reviews yet</h3>
                                         <p className="text-white/40 text-sm mb-6">Complete an order and share your experience!</p>
                                     </div>
-                                ) : (
-                                    reviews.map(review => (
-                                        <div key={review.id} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-white/[0.1] transition-colors">
-                                            {/* Review Header */}
-                                            <div className="bg-gradient-to-r from-amber-600/10 to-orange-600/10 border-b border-white/[0.06] px-6 py-4">
-                                                <div className="flex justify-between items-start flex-wrap gap-3">
-                                                    <div>
-                                                        <h4 className="text-white font-bold text-sm">{review.canteenName}</h4>
-                                                        <p className="text-white/30 text-xs mt-1">{formatDate(review.createdAt)}</p>
-                                                    </div>
-                                                    <div className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
-                                                        {renderStars(review.rating)}
-                                                    </div>
-                                                </div>
+                                ) : (() => {
+                                    const filteredReviews = reviews.filter(r => {
+                                        if (reviewFilter === 'all') return true
+                                        return r.rating === parseInt(reviewFilter)
+                                    })
+                                    const visibleReviews = filteredReviews.slice(0, reviewsToShow)
+                                    return (
+                                        <>
+                                            {/* Rating Filter Tabs */}
+                                            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-1.5 flex gap-1">
+                                                {[
+                                                    { key: 'all', label: 'All', count: reviews.length },
+                                                    ...([5, 4, 3, 2, 1].map(r => ({
+                                                        key: String(r),
+                                                        label: `${r}★`,
+                                                        count: reviews.filter(rv => rv.rating === r).length
+                                                    })))
+                                                ].filter(f => f.key === 'all' || f.count > 0).map(f => (
+                                                    <button
+                                                        key={f.key}
+                                                        onClick={() => { setReviewFilter(f.key); setReviewsToShow(5) }}
+                                                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${reviewFilter === f.key
+                                                            ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
+                                                            : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
+                                                            }`}
+                                                    >
+                                                        {f.label}
+                                                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${reviewFilter === f.key ? 'bg-orange-500/20 text-orange-400' : 'bg-white/[0.05] text-white/30'
+                                                            }`}>{f.count}</span>
+                                                    </button>
+                                                ))}
                                             </div>
 
-                                            {/* Review Content */}
-                                            <div className="p-6">
-                                                {review.orderItems && review.orderItems.length > 0 && (
-                                                    <div className="mb-4">
-                                                        <p className="text-white/40 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                                            </svg>
-                                                            Items Ordered
-                                                        </p>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {review.orderItems.map((item, idx) => (
-                                                                <span key={idx} className="px-3 py-1 bg-orange-500/10 border border-orange-500/20 text-orange-400 rounded-full text-xs font-bold">
-                                                                    {item}
-                                                                </span>
-                                                            ))}
+                                            {filteredReviews.length === 0 ? (
+                                                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 text-center">
+                                                    <p className="text-white/30 text-sm">No {reviewFilter}★ reviews found</p>
+                                                </div>
+                                            ) : (
+                                                visibleReviews.map(review => (
+                                                    <div key={review.id} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-white/[0.1] transition-colors">
+                                                        {/* Review Header */}
+                                                        <div className="bg-gradient-to-r from-amber-600/10 to-orange-600/10 border-b border-white/[0.06] px-6 py-4">
+                                                            <div className="flex justify-between items-start flex-wrap gap-3">
+                                                                <div>
+                                                                    <h4 className="text-white font-bold text-sm">{review.canteenName}</h4>
+                                                                    <p className="text-white/30 text-xs mt-1">{formatDate(review.createdAt)}</p>
+                                                                </div>
+                                                                <div className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                                                                    {renderStars(review.rating)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Review Content */}
+                                                        <div className="p-6">
+                                                            {review.orderItems && review.orderItems.length > 0 && (
+                                                                <div className="mb-4">
+                                                                    <p className="text-white/40 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                                        </svg>
+                                                                        Items Ordered
+                                                                    </p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {review.orderItems.map((item, idx) => (
+                                                                            <span key={idx} className="px-3 py-1 bg-orange-500/10 border border-orange-500/20 text-orange-400 rounded-full text-xs font-bold">
+                                                                                {item}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {review.comment ? (
+                                                                <div className="bg-white/[0.03] rounded-xl p-4">
+                                                                    <p className="text-white/40 text-xs font-bold uppercase tracking-wider mb-2">Your Review</p>
+                                                                    <p className="text-white/70 text-sm leading-relaxed">{review.comment}</p>
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-white/30 text-sm italic">No written review provided</p>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                )}
+                                                ))
+                                            )}
 
-                                                {review.comment ? (
-                                                    <div className="bg-white/[0.03] rounded-xl p-4">
-                                                        <p className="text-white/40 text-xs font-bold uppercase tracking-wider mb-2">Your Review</p>
-                                                        <p className="text-white/70 text-sm leading-relaxed">{review.comment}</p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-white/30 text-sm italic">No written review provided</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
+                                            {/* Show More / Show Less */}
+                                            {filteredReviews.length > 5 && (
+                                                <div className="flex justify-center gap-3 pt-2">
+                                                    {reviewsToShow < filteredReviews.length && (
+                                                        <button
+                                                            onClick={() => setReviewsToShow(prev => prev + 5)}
+                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                            Show More ({filteredReviews.length - reviewsToShow} remaining)
+                                                        </button>
+                                                    )}
+                                                    {reviewsToShow > 5 && (
+                                                        <button
+                                                            onClick={() => setReviewsToShow(5)}
+                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all"
+                                                        >
+                                                            Show Less
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </>
+                                    )
+                                })()}
                             </div>
                         )}
                     </div>
