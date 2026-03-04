@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect, useRef } from 'react'
 import { AuthContext } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import orderService from '../services/orderService'
@@ -13,9 +13,13 @@ import QRCodeDisplay from '../components/QRCodeDisplay'
 function UserProfile() {
     const { user, logout, setUser } = useContext(AuthContext)
     const navigate = useNavigate()
+    const location = useLocation()
     const fileInputRef = useRef(null)
 
-    const [activeTab, setActiveTab] = useState('profile')
+    const [activeTab, setActiveTab] = useState(() => {
+        const params = new URLSearchParams(location.search)
+        return params.get('tab') || 'profile'
+    })
     const [profile, setProfile] = useState(null)
     const [orders, setOrders] = useState([])
     const [reviews, setReviews] = useState([])
