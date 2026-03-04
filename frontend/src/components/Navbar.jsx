@@ -100,15 +100,23 @@ function Navbar({ isHome = false }) {
                                     )}
                                 </button>
 
-                                {/* Dashboard */}
+                                {/* Profile */}
                                 <Link
                                     to="/profile"
-                                    className="p-2.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300"
+                                    className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300"
                                     aria-label="Profile"
                                 >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
+                                    {user.profilePhotoUrl ? (
+                                        <img
+                                            src={user.profilePhotoUrl}
+                                            alt="Profile"
+                                            className="w-8 h-8 rounded-full object-cover ring-2 ring-white/20 hover:ring-orange-500/50 transition-all duration-300"
+                                        />
+                                    ) : (
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    )}
                                 </Link>
 
                                 <div className="h-6 w-px bg-white/20" />
