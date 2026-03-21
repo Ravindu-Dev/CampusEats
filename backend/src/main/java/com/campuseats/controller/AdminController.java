@@ -181,4 +181,30 @@ public class AdminController {
                     .body("Error: " + e.getMessage());
         }
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.badRequest().body("Missing or invalid Authorization header");
+            }
+            String expiredToken = authHeader.substring(7);
+            String email = tokenProvider.getUsernameFromExpiredToken(expiredToken);
+
+            Admin admin = adminRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+            String newToken = tokenProvider.generateTokenFromUsername(email);
+
+            AdminResponse response = new AdminResponse(
+                    newToken,
+                    admin.getEmail(),
+                    admin.getName(),
+                    "ADMIN");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token refresh failed");
+        }
+    }
 }

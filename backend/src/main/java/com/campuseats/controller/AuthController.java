@@ -53,6 +53,33 @@ public class AuthController {
                 user.getCreatedAt() != null ? user.getCreatedAt().toString() : null));
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.badRequest().body("Missing or invalid Authorization header");
+            }
+            String expiredToken = authHeader.substring(7);
+            String username = tokenProvider.getUsernameFromExpiredToken(expiredToken);
+
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String newToken = tokenProvider.generateTokenFromUsername(username);
+
+            return ResponseEntity.ok(new JwtResponse(
+                    newToken,
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getFirstName(),
+                    user.getPhoneNumber(),
+                    user.getProfilePhotoUrl(),
+                    user.getCreatedAt() != null ? user.getCreatedAt().toString() : null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token refresh failed");
+        }
+    }
+
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest) {
         if (userRepository.existsByUsername(signupRequest.getUsername())) {

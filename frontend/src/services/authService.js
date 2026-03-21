@@ -35,11 +35,26 @@ const getCurrentUser = () => {
     return JSON.parse(localStorage.getItem('user'));
 };
 
+const refreshToken = async () => {
+    const user = getCurrentUser();
+    if (!user || !user.token) {
+        throw new Error('No token available');
+    }
+    const response = await axios.post(API_URL + 'refresh', {}, {
+        headers: { Authorization: `Bearer ${user.token}` },
+    });
+    if (response.data.token) {
+        localStorage.setItem('user', JSON.stringify(response.data));
+    }
+    return response.data;
+};
+
 const authService = {
     signup,
     login,
     logout,
     getCurrentUser,
+    refreshToken,
 };
 
 export default authService;
