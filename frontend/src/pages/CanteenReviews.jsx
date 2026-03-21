@@ -9,6 +9,7 @@ function CanteenReviews() {
     const [reviews, setReviews] = useState([])
     const [canteen, setCanteen] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [lightboxImage, setLightboxImage] = useState(null)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -89,64 +90,111 @@ function CanteenReviews() {
             ) : (
                 <div className="grid gap-6 md:grid-cols-2">
                     {reviews.map((review) => (
-                        <div key={review.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }} className="rounded-2xl shadow-lg p-6 hover:bg-[rgba(255,255,255,0.03)] transition duration-300">
-                            <div className="flex justify-between items-start mb-5">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner">
-                                        {review.userName.charAt(0).toUpperCase()}
+                        <div key={review.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }} className="rounded-2xl shadow-lg overflow-hidden hover:bg-[rgba(255,255,255,0.03)] transition duration-300">
+                            <div className="p-6">
+                                <div className="flex justify-between items-start mb-5">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                                            {review.userName.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-gray-200">{review.userName}</h3>
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                {new Date(review.createdAt).toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric'
+                                                })}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-200">{review.userName}</h3>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            {new Date(review.createdAt).toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            })}
-                                        </p>
+                                    <div className="flex bg-[rgba(255,255,255,0.05)] px-3 py-1.5 rounded-lg border border-[rgba(255,255,255,0.05)]">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <svg
+                                                key={star}
+                                                className={`w-4 h-4 mx-0.5 ${star <= review.rating
+                                                    ? 'text-yellow-400 fill-current'
+                                                    : 'text-gray-700'
+                                                    }`}
+                                                fill={star <= review.rating ? 'currentColor' : 'none'}
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                                />
+                                            </svg>
+                                        ))}
                                     </div>
                                 </div>
-                                <div className="flex bg-[rgba(255,255,255,0.05)] px-3 py-1.5 rounded-lg border border-[rgba(255,255,255,0.05)]">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <svg
-                                            key={star}
-                                            className={`w-4 h-4 mx-0.5 ${star <= review.rating
-                                                ? 'text-yellow-400 fill-current'
-                                                : 'text-gray-700'
-                                                }`}
-                                            fill={star <= review.rating ? 'currentColor' : 'none'}
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
+
+                                {/* Food Image */}
+                                {review.imageUrl && (
+                                    <div className="mb-5">
+                                        <div
+                                            className="relative rounded-xl overflow-hidden border border-[rgba(255,255,255,0.06)] cursor-pointer group"
+                                            onClick={() => setLightboxImage(review.imageUrl)}
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                            <img
+                                                src={review.imageUrl}
+                                                alt="Food"
+                                                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
                                             />
-                                        </svg>
-                                    ))}
-                                </div>
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                <svg className="w-7 h-7 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {review.comment && (
+                                    <div style={{ background: 'rgba(255,255,255,0.02)', borderLeft: '2px solid rgba(255,255,255,0.1)' }} className="p-4 rounded-r-lg rounded-b-lg mb-5">
+                                        <p className="text-gray-400 italic text-sm leading-relaxed">"{review.comment}"</p>
+                                    </div>
+                                )}
+
+                                {review.orderItems && review.orderItems.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 items-center border-t border-[rgba(255,255,255,0.05)] pt-4">
+                                        <span className="text-xs uppercase font-bold text-gray-500 tracking-wider mr-1">Ordered:</span>
+                                        {review.orderItems.map((item, idx) => (
+                                            <span key={idx} style={{ background: 'rgba(255,255,255,0.05)' }} className="text-xs text-gray-300 px-2.5 py-1 rounded-full font-medium border border-[rgba(255,255,255,0.05)]">
+                                                {item}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-
-                            {review.comment && (
-                                <div style={{ background: 'rgba(255,255,255,0.02)', borderLeft: '2px solid rgba(255,255,255,0.1)' }} className="p-4 rounded-r-lg rounded-b-lg mb-5">
-                                    <p className="text-gray-400 italic text-sm leading-relaxed">"{review.comment}"</p>
-                                </div>
-                            )}
-
-                            {review.orderItems && review.orderItems.length > 0 && (
-                                <div className="flex flex-wrap gap-2 items-center border-t border-[rgba(255,255,255,0.05)] pt-4">
-                                    <span className="text-xs uppercase font-bold text-gray-500 tracking-wider mr-1">Ordered:</span>
-                                    {review.orderItems.map((item, idx) => (
-                                        <span key={idx} style={{ background: 'rgba(255,255,255,0.05)' }} className="text-xs text-gray-300 px-2.5 py-1 rounded-full font-medium border border-[rgba(255,255,255,0.05)]">
-                                            {item}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Image Lightbox */}
+            {lightboxImage && (
+                <div
+                    className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 cursor-pointer"
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh]">
+                        <img
+                            src={lightboxImage}
+                            alt="Food photo"
+                            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+                        />
+                        <button
+                            onClick={() => setLightboxImage(null)}
+                            className="absolute -top-3 -right-3 w-10 h-10 bg-white/10 border border-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             )}
         </CanteenLayout>

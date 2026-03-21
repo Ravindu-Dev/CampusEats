@@ -1,6 +1,7 @@
 package com.campuseats.controller;
 
 import com.campuseats.dto.CreateReviewRequest;
+import com.campuseats.dto.UpdateReviewRequest;
 import com.campuseats.dto.ReviewResponse;
 import com.campuseats.model.User;
 import com.campuseats.repository.UserRepository;
@@ -38,6 +39,28 @@ public class ReviewController {
         try {
             ReviewResponse review = reviewService.createReview(request, getCurrentUserId());
             return ResponseEntity.status(HttpStatus.CREATED).body(review);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> updateReview(@PathVariable String id, @Valid @RequestBody UpdateReviewRequest request) {
+        try {
+            ReviewResponse review = reviewService.updateReview(id, request, getCurrentUserId());
+            return ResponseEntity.ok(review);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> deleteReview(@PathVariable String id) {
+        try {
+            reviewService.deleteReview(id, getCurrentUserId());
+            return ResponseEntity.ok().body("Review deleted successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

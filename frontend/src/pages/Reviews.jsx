@@ -9,6 +9,7 @@ function Reviews() {
     const [error, setError] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
     const [filterRating, setFilterRating] = useState(0)
+    const [lightboxImage, setLightboxImage] = useState(null)
 
     useEffect(() => { fetchReviews() }, [])
 
@@ -30,12 +31,12 @@ function Reviews() {
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     }
 
-    const renderStars = (rating) => (
+    const renderStars = (rating, size = 'w-3.5 h-3.5') => (
         <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
                 <svg
                     key={star}
-                    className={`w-5 h-5 ${star <= rating ? 'text-yellow-400' : 'text-white/10'}`}
+                    className={`${size} ${star <= rating ? 'text-amber-400' : 'text-white/10'}`}
                     fill={star <= rating ? 'currentColor' : 'none'}
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -47,6 +48,8 @@ function Reviews() {
             ))}
         </div>
     )
+
+    const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent']
 
     const filteredReviews = reviews.filter(review => {
         const matchesSearch = searchTerm === '' ||
@@ -152,7 +155,7 @@ function Reviews() {
                     </div>
                 )}
 
-                {/* Reviews list */}
+                {/* Reviews grid */}
                 {!loading && !error && (
                     <>
                         {filteredReviews.length === 0 ? (
@@ -168,41 +171,82 @@ function Reviews() {
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-5">
-                                <p className="text-gray-600 text-sm font-medium ml-1">
+                            <>
+                                <p className="text-gray-600 text-sm font-medium ml-1 mb-5">
                                     Showing <span className="text-orange-500 font-bold">{filteredReviews.length}</span> reviews
                                 </p>
 
-                                {filteredReviews.map((review, index) => (
-                                    <div
-                                        key={review.id}
-                                        className="bg-[#111] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-orange-500/25 hover:shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all duration-300"
-                                        style={{ animationDelay: `${index * 50}ms` }}
-                                    >
-                                        <div className="flex flex-col md:flex-row">
-                                            {/* Left — rating panel */}
-                                            <div className="bg-[#1a1a1a] p-6 md:w-56 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-white/[0.06]">
-                                                <div className="text-5xl font-black text-white mb-2">{review.rating.toFixed(1)}</div>
-                                                <div className="mb-3">{renderStars(review.rating)}</div>
-                                                <div className="text-xs font-bold text-gray-600 uppercase tracking-widest">Overall Rating</div>
-                                            </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    {filteredReviews.map((review) => (
+                                        <div
+                                            key={review.id}
+                                            className="group bg-[#111] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-orange-500/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all duration-300 flex flex-col"
+                                        >
+                                            {/* Food Image */}
+                                            {review.imageUrl && (
+                                                <div
+                                                    className="relative overflow-hidden cursor-pointer"
+                                                    onClick={() => setLightboxImage(review.imageUrl)}
+                                                >
+                                                    <img
+                                                        src={review.imageUrl}
+                                                        alt="Food"
+                                                        className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent opacity-60" />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                        <svg className="w-7 h-7 text-white opacity-0 group-hover:opacity-80 transition-opacity drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                        </svg>
+                                                    </div>
+                                                    {/* Rating badge overlay */}
+                                                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                                                        <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                                        </svg>
+                                                        <span className="text-white text-xs font-black">{review.rating}.0</span>
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                            {/* Right — content */}
-                                            <div className="p-6 md:p-8 flex-1">
-                                                <div className="mb-4">
-                                                    <h3 className="text-xl font-black text-white mb-1">{review.canteenName}</h3>
-                                                    <div className="flex items-center text-sm text-gray-500">
-                                                        <span className="font-bold text-orange-500">{review.userName}</span>
-                                                        <span className="mx-2 text-gray-700">•</span>
-                                                        <span>{formatDate(review.createdAt)}</span>
+                                            {/* Card body */}
+                                            <div className="p-5 flex flex-col flex-1">
+                                                {/* Header: avatar + info + rating */}
+                                                <div className="flex items-start justify-between gap-3 mb-3">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg shadow-orange-500/20">
+                                                            {review.userName.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h3 className="text-white font-bold text-sm truncate">{review.userName}</h3>
+                                                            <p className="text-white/30 text-xs">{formatDate(review.createdAt)}</p>
+                                                        </div>
+                                                    </div>
+                                                    {/* Rating — only show here if no image (image cards have overlay badge) */}
+                                                    {!review.imageUrl && (
+                                                        <div className="bg-white/[0.04] border border-white/[0.06] px-2.5 py-1 rounded-lg flex items-center gap-1.5 flex-shrink-0">
+                                                            <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                                            </svg>
+                                                            <span className="text-white text-xs font-black">{review.rating}.0</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Canteen + Stars */}
+                                                <div className="mb-3">
+                                                    <p className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-1.5">{review.canteenName}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        {renderStars(review.rating)}
+                                                        <span className="text-white/25 text-xs font-medium">{ratingLabels[review.rating]}</span>
                                                     </div>
                                                 </div>
 
                                                 {/* Order items */}
                                                 {review.orderItems && review.orderItems.length > 0 && (
-                                                    <div className="mb-5 flex flex-wrap gap-2">
+                                                    <div className="mb-3 flex flex-wrap gap-1.5">
                                                         {review.orderItems.map((item, i) => (
-                                                            <span key={i} className="px-3 py-1 bg-orange-500/15 border border-orange-500/20 text-orange-400 text-xs font-bold rounded-lg uppercase tracking-wider">
+                                                            <span key={i} className="px-2 py-0.5 bg-white/[0.04] border border-white/[0.06] text-white/50 text-[11px] font-semibold rounded-md">
                                                                 {item}
                                                             </span>
                                                         ))}
@@ -210,26 +254,50 @@ function Reviews() {
                                                 )}
 
                                                 {/* Comment */}
-                                                {review.comment ? (
-                                                    <div className="relative pl-4 border-l-4 border-orange-600/40">
-                                                        <p className="text-gray-300 leading-relaxed italic text-base">
+                                                <div className="flex-1">
+                                                    {review.comment ? (
+                                                        <p className="text-white/50 text-sm leading-relaxed line-clamp-3">
                                                             "{review.comment}"
                                                         </p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-gray-700 italic text-sm">No written review provided.</p>
-                                                )}
+                                                    ) : (
+                                                        <p className="text-white/15 italic text-xs">No written review</p>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </>
                 )}
             </div>
 
             <Footer />
+
+            {/* Image Lightbox */}
+            {lightboxImage && (
+                <div
+                    className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 cursor-pointer"
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh]">
+                        <img
+                            src={lightboxImage}
+                            alt="Food photo"
+                            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+                        />
+                        <button
+                            onClick={() => setLightboxImage(null)}
+                            className="absolute -top-3 -right-3 w-10 h-10 bg-white/10 border border-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -20,6 +20,7 @@ public class ReviewResponse {
     private String canteenName;
     private Integer rating;
     private String comment;
+    private String imageUrl;
     private List<String> orderItems;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

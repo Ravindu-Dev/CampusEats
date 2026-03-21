@@ -1,6 +1,7 @@
 package com.campuseats.service;
 
 import com.campuseats.dto.CreateReviewRequest;
+import com.campuseats.dto.UpdateReviewRequest;
 import com.campuseats.dto.ReviewResponse;
 import com.campuseats.model.Canteen;
 import com.campuseats.model.Order;
@@ -72,6 +73,7 @@ public class ReviewService {
         review.setCanteenName(canteen.getCanteenName());
         review.setRating(request.getRating());
         review.setComment(request.getComment());
+        review.setImageUrl(request.getImageUrl());
         review.setOrderItems(orderItemNames);
 
         Review savedReview = reviewRepository.save(review);
@@ -84,6 +86,63 @@ public class ReviewService {
         updateCanteenRating(request.getCanteenId());
 
         return convertToResponse(savedReview);
+    }
+
+    @Transactional
+    public ReviewResponse updateReview(String reviewId, UpdateReviewRequest request, String userId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found"));
+
+        // Verify ownership
+        if (!review.getUserId().equals(userId)) {
+            throw new RuntimeException("You can only edit your own reviews");
+        }
+
+        // Update fields if provided
+        if (request.getRating() != null) {
+            review.setRating(request.getRating());
+        }
+        if (request.getComment() != null) {
+            review.setComment(request.getComment().trim().isEmpty() ? null : request.getComment().trim());
+        }
+        if (request.getImageUrl() != null) {
+            review.setImageUrl(request.getImageUrl().trim().isEmpty() ? null : request.getImageUrl().trim());
+        }
+
+        Review savedReview = reviewRepository.save(review);
+
+        // Recalculate canteen rating if rating changed
+        if (request.getRating() != null) {
+            updateCanteenRating(review.getCanteenId());
+        }
+
+        return convertToResponse(savedReview);
+    }
+
+    @Transactional
+    public void deleteReview(String reviewId, String userId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found"));
+
+        // Verify ownership
+        if (!review.getUserId().equals(userId)) {
+            throw new RuntimeException("You can only delete your own reviews");
+        }
+
+        String canteenId = review.getCanteenId();
+        String orderId = review.getOrderId();
+
+        // Delete the review
+        reviewRepository.delete(review);
+
+        // Reset order's hasReview flag so user can re-review if desired
+        orderRepository.findById(orderId).ifPresent(order -> {
+            order.setHasReview(false);
+            orderRepository.save(order);
+        });
+
+        // Recalculate canteen rating
+        updateCanteenRating(canteenId);
     }
 
     public List<ReviewResponse> getUserReviews(String userId) {
@@ -145,6 +204,7 @@ public class ReviewService {
                 review.getCanteenName(),
                 review.getRating(),
                 review.getComment(),
+                review.getImageUrl(),
                 review.getOrderItems(),
                 review.getCreatedAt(),
                 review.getUpdatedAt());
