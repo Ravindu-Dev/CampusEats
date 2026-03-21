@@ -47,6 +47,26 @@ public class JwtTokenProvider {
         return claims.getSubject();
     }
 
+    public String generateTokenFromUsername(String username) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String getUsernameFromExpiredToken(String token) {
+        try {
+            return getUsernameFromToken(token);
+        } catch (ExpiredJwtException ex) {
+            return ex.getClaims().getSubject();
+        }
+    }
+
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder()

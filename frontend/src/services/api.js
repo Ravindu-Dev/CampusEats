@@ -19,14 +19,78 @@ api.interceptors.request.use(
     }
 );
 
-// Handle 401 errors
+// Track whether a token refresh is already in progress
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
+// Handle 401 errors — attempt token refresh before logging out
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            authService.logout();
-            window.location.href = '/login';
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response && error.response.status === 401 && !originalRequest._retry) {
+            // Don't attempt refresh for login or refresh requests themselves
+            if (originalRequest.url === '/auth/refresh' || originalRequest.url === '/auth/login') {
+                authService.logout();
+                window.location.href = '/login';
+                return Promise.reject(error);
+            }
+
+            if (isRefreshing) {
+                // Queue this request until the refresh completes
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then((token) => {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                    return api(originalRequest);
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const user = authService.getCurrentUser();
+                if (!user || !user.token) {
+                    throw new Error('No token available');
+                }
+
+                const refreshResponse = await axios.post('/api/auth/refresh', {}, {
+                    headers: { Authorization: `Bearer ${user.token}` },
+                });
+
+                const newToken = refreshResponse.data.token;
+                // Update stored user data with new token
+                const updatedUser = { ...refreshResponse.data };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+
+                processQueue(null, newToken);
+
+                // Retry the original request with the new token
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                authService.logout();
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
+
         return Promise.reject(error);
     }
 );
