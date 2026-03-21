@@ -32,10 +32,26 @@ const initializeAdmin = async () => {
     return response.data
 }
 
+const refreshToken = async () => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) {
+        throw new Error('No token available')
+    }
+    const response = await axios.post(`${API_URL}/refresh`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data.token) {
+        localStorage.setItem('adminToken', response.data.token)
+        localStorage.setItem('adminUser', JSON.stringify(response.data))
+    }
+    return response.data
+}
+
 export default {
     login,
     logout,
     getCurrentAdmin,
     getAuthHeader,
     initializeAdmin,
+    refreshToken,
 }

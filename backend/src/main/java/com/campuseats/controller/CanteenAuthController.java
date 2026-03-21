@@ -188,4 +188,46 @@ public class CanteenAuthController {
                     .body("Error: Invalid email or password");
         }
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.badRequest().body("Missing or invalid Authorization header");
+            }
+            String expiredToken = authHeader.substring(7);
+            String email = tokenProvider.getUsernameFromExpiredToken(expiredToken);
+
+            CanteenOwner owner = canteenOwnerRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Canteen owner not found"));
+
+            String newToken = tokenProvider.generateTokenFromUsername(email);
+
+            // Get canteen details
+            Canteen canteen = null;
+            String canteenName = null;
+            String canteenStatus = null;
+
+            if (owner.getCanteenId() != null) {
+                canteen = canteenRepository.findById(owner.getCanteenId()).orElse(null);
+                if (canteen != null) {
+                    canteenName = canteen.getCanteenName();
+                    canteenStatus = canteen.getStatus();
+                }
+            }
+
+            CanteenOwnerResponse response = new CanteenOwnerResponse(
+                    newToken,
+                    owner.getEmail(),
+                    owner.getOwnerName(),
+                    owner.getCanteenId(),
+                    canteenName,
+                    canteenStatus,
+                    owner.getApprovalStatus());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token refresh failed");
+        }
+    }
 }
