@@ -76,14 +76,15 @@ export default function AdminLayout({ children, pendingCount = 0, pageTitle, pag
             {/* ── Sidebar ── */}
             <aside style={{
                 width: sidebarCollapsed ? '72px' : '240px',
-                minHeight: '100vh',
+                height: '100vh',
                 background: 'linear-gradient(180deg, #111111 0%, #0d0d0d 100%)',
                 borderRight: '1px solid rgba(255,255,255,0.06)',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)',
-                position: 'sticky',
+                position: 'fixed',
                 top: 0,
+                left: 0,
                 flexShrink: 0,
                 zIndex: 40,
             }}>
@@ -290,7 +291,7 @@ export default function AdminLayout({ children, pendingCount = 0, pageTitle, pag
             </aside>
 
             {/* ── Main Content ── */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh', marginLeft: sidebarCollapsed ? '72px' : '240px', transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)' }}>
 
                 {/* Top Bar */}
                 <header style={{

@@ -55,7 +55,7 @@ function PayrollConfig() {
         <AdminLayout pageTitle="Payroll Configuration" pageSubtitle="Configure platform-wide payroll policies and rates">
             <Link to="/admin/payroll" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '13px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '20px' }}>← Back to Payroll</Link>
 
-            <div style={{ maxWidth: '700px' }}>
+            <div style={{ maxWidth: '700px', margin: '0 auto' }}>
                 {/* Pay Period */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
                     <h3 style={{ color: 'white', fontSize: '15px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>📅 Pay Period</h3>
