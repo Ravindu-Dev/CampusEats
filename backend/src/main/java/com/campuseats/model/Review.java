@@ -39,6 +39,8 @@ public class Review {
 
     private String comment;
 
+    private String imageUrl; // imgBB-hosted food image URL
+
     private List<String> orderItems = new ArrayList<>(); // Names of items ordered
 
     @CreatedDate

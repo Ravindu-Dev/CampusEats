@@ -8,6 +8,18 @@ const reviewService = {
         return response.data
     },
 
+    // Update an existing review (protected)
+    updateReview: async (id, reviewData) => {
+        const response = await api.put(`/reviews/${id}`, reviewData)
+        return response.data
+    },
+
+    // Delete a review (protected)
+    deleteReview: async (id) => {
+        const response = await api.delete(`/reviews/${id}`)
+        return response.data
+    },
+
     // Get current user's reviews (protected, uses api with interceptors)
     getMyReviews: async () => {
         const response = await api.get('/reviews/my-reviews')
