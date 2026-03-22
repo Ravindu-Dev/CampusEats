@@ -143,6 +143,7 @@ function Checkout() {
     const validateForm = () => {
         const newErrors = {};
         if (!formData.customerName.trim()) newErrors.customerName = 'Name is required';
+        else if (!/^[a-zA-Z\s]+$/.test(formData.customerName.trim())) newErrors.customerName = 'Name can only contain letters and spaces';
         if (!formData.customerEmail.trim()) newErrors.customerEmail = 'Email is required';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customerEmail)) newErrors.customerEmail = 'Invalid email format';
         if (!formData.customerPhone.trim()) newErrors.customerPhone = 'Phone number is required';
@@ -150,6 +151,16 @@ function Checkout() {
         if (orderType === 'LATER') {
             if (!formData.pickupDate) newErrors.pickupDate = 'Pickup date is required';
             if (!formData.pickupTime) newErrors.pickupTime = 'Pickup time is required';
+            else if (formData.pickupDate && formData.pickupTime) {
+                const today = new Date().toISOString().split('T')[0];
+                if (formData.pickupDate === today) {
+                    const now = new Date();
+                    const [hours, minutes] = formData.pickupTime.split(':').map(Number);
+                    if (hours < now.getHours() || (hours === now.getHours() && minutes <= now.getMinutes())) {
+                        newErrors.pickupTime = 'Pickup time cannot be in the past';
+                    }
+                }
+            }
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -157,6 +168,8 @@ function Checkout() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        if (name === 'customerName' && value !== '' && !/^[a-zA-Z\s]*$/.test(value)) return;
+        if (name === 'customerPhone' && value !== '' && !/^[0-9]*$/.test(value)) return;
         setFormData(prev => ({ ...prev, [name]: value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
@@ -463,7 +476,7 @@ function Checkout() {
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email Address</label>
                                         <input
-                                            type="email"
+                                            type="text"
                                             name="customerEmail"
                                             value={formData.customerEmail}
                                             onChange={handleInputChange}
