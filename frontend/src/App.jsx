@@ -40,6 +40,7 @@ import AdminPayroll from './pages/admin/AdminPayroll'
 import PayrollConfig from './pages/admin/PayrollConfig'
 import PayrollReview from './pages/admin/PayrollReview'
 import notificationService from './services/notificationService'
+import Chatbot from './components/Chatbot'
 
 // In-app notification toast for foreground push notifications
 function NotificationToast({ notification, onClose }) {
@@ -199,6 +200,7 @@ function App() {
                         <Route path="/terms" element={<Terms />} />
                     </Routes>
                     <Cart />
+                    <Chatbot />
                 </Router>
             </CartProvider>
         </AuthProvider>

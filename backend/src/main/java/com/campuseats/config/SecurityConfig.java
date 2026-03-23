@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/canteen-auth/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/chatbot/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/menu-items/**").permitAll()
                         .requestMatchers("/api/canteens/**").permitAll()
                         .requestMatchers("/api/staff/**").permitAll()
