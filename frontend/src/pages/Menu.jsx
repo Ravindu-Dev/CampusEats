@@ -51,6 +51,8 @@ function Menu() {
     const [loyaltyAccount, setLoyaltyAccount] = useState(null)
     const [addingCombo, setAddingCombo] = useState({})
     const [showLoyaltyBadge, setShowLoyaltyBadge] = useState(false)
+    const [selectedCombo, setSelectedCombo] = useState(null)
+    const [selectedItem, setSelectedItem] = useState(null)
 
     const TIER_CONFIG = {
         BRONZE: { color: '#CD7F32', bg: 'rgba(205,127,50,0.15)', border: 'rgba(205,127,50,0.3)', icon: '🥉' },
@@ -307,7 +309,7 @@ function Menu() {
                                 {recommendedCombos.map(combo => (
                                     <div key={combo.id} className="flex-shrink-0 w-[360px] snap-start bg-white/[0.03] border border-white/[0.07] rounded-xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col h-[320px]">
                                         {/* Combo Image */}
-                                        <div className="h-52 relative overflow-hidden">
+                                        <div className="h-52 relative overflow-hidden cursor-pointer group" onClick={() => setSelectedCombo(combo)}>
                                             {combo.imageUrl ? (
                                                 <img src={combo.imageUrl} alt={combo.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
                                             ) : (
@@ -382,7 +384,7 @@ function Menu() {
                                 {allCombos.map(combo => (
                                     <div key={combo.id} className="flex-shrink-0 w-[300px] snap-start bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden hover:border-orange-500/20 transition-all group flex flex-col h-[240px]">
                                         {/* Combo Image */}
-                                        <div className="h-44 relative overflow-hidden bg-white/5">
+                                        <div className="h-44 relative overflow-hidden bg-white/5 cursor-pointer group" onClick={() => setSelectedCombo(combo)}>
                                             {combo.imageUrl ? (
                                                 <img src={combo.imageUrl} alt={combo.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
                                             ) : (
@@ -537,7 +539,7 @@ function Menu() {
                             const canteen = canteens[item.canteenId]
                             return (
                                 <div key={item.id} className="group bg-[#111] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-all duration-300" style={{ animationDelay: `${index * 40}ms` }}>
-                                    <div className="relative h-52 overflow-hidden">
+                                    <div className="relative h-52 overflow-hidden cursor-pointer group" onClick={() => setSelectedItem(item)}>
                                         {item.imageUrl ? (
                                             <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                                         ) : (
@@ -588,6 +590,159 @@ function Menu() {
                     </div>
                 )}
             </div>
+
+            {/* Glassmorphism Food Item Detail Modal */}
+            {selectedItem && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#080808]/80 backdrop-blur-md transition-all duration-500 animate-in fade-in" onClick={() => setSelectedItem(null)}>
+                    <div className="relative w-full max-w-2xl bg-white/[0.03] border border-white/[0.1] backdrop-blur-2xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in duration-300 flex flex-col sm:flex-row max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        {/* Close Button */}
+                        <button onClick={() => setSelectedItem(null)} className="absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white hover:bg-white/20 hover:scale-110 transition-all text-lg shadow-xl" title="Close">✕</button>
+
+                        {/* Modal Image Section */}
+                        <div className="w-full sm:w-1/2 h-64 sm:h-auto relative bg-[#111]">
+                            {selectedItem.imageUrl ? (
+                                <img src={selectedItem.imageUrl} alt={selectedItem.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-8xl opacity-10">🍽️</div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                            <div className="absolute top-6 left-6 flex flex-col gap-2">
+                                <span className="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 text-white rounded-lg text-[10px] font-black uppercase tracking-widest self-start">{selectedItem.category}</span>
+                                {selectedItem.vegetarian && (
+                                    <div className="bg-green-500/90 backdrop-blur-sm p-1.5 rounded-lg self-start">
+                                        <div className="border border-white p-0.5 rounded-sm"><div className="w-2 h-2 bg-white rounded-full" /></div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="absolute bottom-8 left-8 pr-8 text-left">
+                                <h2 className="text-3xl font-black text-white leading-tight tracking-tighter">{selectedItem.name}</h2>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                    <p className="text-orange-400 font-bold text-sm uppercase tracking-wide truncate max-w-[200px]">{canteens[selectedItem.canteenId]?.canteenName || 'Campus Canteen'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Details Section */}
+                        <div className="w-full sm:w-1/2 p-10 flex flex-col bg-[#0d0d0d]/40 text-left">
+                            <div className="flex-grow">
+                                <h3 className="text-white/30 text-[10px] font-black uppercase tracking-[0.3em] mb-4 border-b border-white/5 pb-2">Description</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed font-medium mb-8 italic">
+                                    {selectedItem.description || "Freshly prepared with premium campus-sourced ingredients. A highly recommended choice for a satisfying meal."}
+                                </p>
+
+                                {canteens[selectedItem.canteenId]?.rating > 0 && (
+                                    <div className="mb-8">
+                                        <h3 className="text-white/30 text-[10px] font-black uppercase tracking-[0.3em] mb-4 border-b border-white/5 pb-2">Restaurant Trust</h3>
+                                        <div className="flex items-center gap-2">
+                                            {[...Array(5)].map((_, i) => (
+                                                <svg key={i} className={`w-4 h-4 ${i < Math.round(canteens[selectedItem.canteenId].rating) ? 'text-yellow-400 fill-current' : 'text-white/10 fill-current'}`} viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                </svg>
+                                            ))}
+                                            <span className="text-xs font-black text-white ml-1">{canteens[selectedItem.canteenId].rating.toFixed(1)} Rating</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 shadow-inner mb-8">
+                                    <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mb-1">Price per serving</p>
+                                    <div className="flex items-end gap-1">
+                                        <span className="text-sm font-bold text-gray-500 mb-1">Rs.</span>
+                                        <span className="text-4xl font-black text-white tracking-tighter">{selectedItem.price}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onClick={() => { handleAddToCart(selectedItem); setSelectedItem(null); }} disabled={addingToCart[selectedItem.id]}
+                                className={`w-full py-5 rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all duration-500 shadow-2xl group/btn overflow-hidden ${addingToCart[selectedItem.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 via-orange-500 to-red-600 text-white hover:scale-[1.03] hover:shadow-orange-500/40'}`}>
+                                <span className="relative z-10 flex items-center gap-3">
+                                    {addingToCart[selectedItem.id] ? 'Processing Order…' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>Add to My Order</>}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Glassmorphism Combo Detail Modal */}
+            {selectedCombo && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#080808]/80 backdrop-blur-md transition-all duration-500 animate-in fade-in" onClick={() => setSelectedCombo(null)}>
+                    <div className="relative w-full max-w-2xl bg-white/[0.03] border border-white/[0.1] backdrop-blur-2xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in duration-300 flex flex-col sm:flex-row max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        {/* Close Button */}
+                        <button onClick={() => setSelectedCombo(null)} className="absolute top-6 right-6 z-20 w-10 h-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white hover:bg-white/20 hover:scale-110 transition-all text-lg shadow-xl" title="Close">✕</button>
+
+                        {/* Modal Image Section */}
+                        <div className="w-full sm:w-1/2 h-64 sm:h-auto relative bg-[#111]">
+                            {selectedCombo.imageUrl ? (
+                                <img src={selectedCombo.imageUrl} alt={selectedCombo.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-8xl opacity-10">🎁</div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                            <div className="absolute bottom-8 left-8 pr-8">
+                                <span className="px-3 py-1 bg-orange-500/90 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Combo Deal Details</span>
+                                <h2 className="text-3xl font-black text-white mt-3 leading-tight tracking-tighter">{selectedCombo.name}</h2>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                                    <p className="text-orange-400 font-bold text-sm uppercase tracking-wide">{selectedCombo.canteenName}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Details Section */}
+                        <div className="w-full sm:w-1/2 p-8 flex flex-col bg-[#0d0d0d]/40">
+                            <div className="flex-grow overflow-y-auto custom-scrollbar pr-4 mb-8">
+                                <div className="mb-8">
+                                    <h3 className="text-white/30 text-[10px] font-black uppercase tracking-[0.3em] mb-5 border-b border-white/5 pb-2">Included in this bundle</h3>
+                                    <div className="space-y-4">
+                                        {selectedCombo.items.map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-4 group/item">
+                                                <div className="w-11 h-11 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-xl group-hover/item:scale-110 group-hover/item:bg-orange-500/10 group-hover/item:border-orange-500/20 transition-all duration-300">🍜</div>
+                                                <div>
+                                                    <p className="text-sm font-black text-white mb-0.5 group-hover/item:text-orange-300 transition-colors uppercase tracking-tight">{item.name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-bold text-orange-500/80 bg-orange-500/10 px-1.5 py-0.5 rounded">x{item.quantity}</span>
+                                                        <span className="text-[10px] text-gray-500 font-medium italic">portion weight standardized</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 shadow-inner">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">A-la-carte total</span>
+                                        <span className="text-sm text-gray-400 line-through font-bold">Rs. {selectedCombo.originalPrice}</span>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <p className="text-[10px] text-orange-500 font-black uppercase tracking-widest mb-1">Exclusive Combo Offer</p>
+                                            <span className="text-3xl font-black text-white tracking-tighter">Rs. {selectedCombo.comboPrice}</span>
+                                        </div>
+                                        {selectedCombo.discountPercent > 0 && (
+                                            <div className="bg-green-500/90 text-white px-3 py-1.5 rounded-xl text-xs font-black shadow-[0_0_15px_rgba(34,197,94,0.3)] rotate-3">
+                                                -{selectedCombo.discountPercent}%
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onClick={() => { handleAddComboToCart(selectedCombo); setSelectedCombo(null); }} disabled={addingCombo[selectedCombo.id]}
+                                className={`w-full py-5 rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all duration-500 shadow-2xl relative group/btn overflow-hidden ${addingCombo[selectedCombo.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 via-orange-500 to-red-600 text-white hover:scale-[1.03] hover:shadow-orange-500/40'}`}>
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
+                                <span className="relative z-10 flex items-center gap-3">
+                                    {addingCombo[selectedCombo.id] ? 'Synchronizing with Cart…' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>Activate Special Offer</>}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <Footer />
         </div>
