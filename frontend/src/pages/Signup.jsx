@@ -17,6 +17,16 @@ function Signup() {
     const { signup } = useContext(AuthContext)
     const navigate = useNavigate()
 
+    const validatePassword = (pass) => {
+        return {
+            length: pass.length >= 8,
+            uppercase: /[A-Z]/.test(pass),
+            lowercase: /[a-z]/.test(pass),
+            number: /[0-9]/.test(pass),
+            special: /[!@#$%^&*(),.?":{}|<> ]/.test(pass),
+        }
+    }
+
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
     /* Trap Enter key so the browser never triggers an implicit form submit */
@@ -28,13 +38,24 @@ function Signup() {
             if (!formData.firstName.trim() || !formData.lastName.trim()) {
                 return setError('Please fill in your first and last name.')
             }
+            const nameRegex = /^[A-Za-z]+$/
+            if (!nameRegex.test(formData.firstName.trim())) {
+                return setError('First name can only contain letters.')
+            }
+            if (!nameRegex.test(formData.lastName.trim())) {
+                return setError('Last name can only contain letters.')
+            }
         }
         if (step === 2) {
             if (!formData.username.trim() || !formData.email.trim() || !formData.password) {
                 return setError('Please fill in all account fields.')
             }
-            if (formData.password.length < 6) {
-                return setError('Password must be at least 6 characters.')
+            if (!formData.email.includes('@')) {
+                return setError('Please enter a valid email address with @ symbol.')
+            }
+            const requirements = validatePassword(formData.password)
+            if (!requirements.length || !requirements.uppercase || !requirements.lowercase || !requirements.number || !requirements.special) {
+                return setError('Password does not meet all requirements.')
             }
         }
         if (step < STEPS.length) {
@@ -204,7 +225,7 @@ function Signup() {
                                         <input
                                             type={showPassword ? 'text' : 'password'} name="password"
                                             value={formData.password} onChange={handleChange} onKeyDown={trapEnter}
-                                            className={`${inputCls} pr-12`} placeholder="Min. 6 characters"
+                                            className={`${inputCls} pr-12`} placeholder="Min. 8 characters"
                                         />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)}
                                             className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-600 hover:text-gray-400 transition">
@@ -214,6 +235,33 @@ function Signup() {
                                                     : "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} />
                                             </svg>
                                         </button>
+                                    </div>
+
+                                    {/* Password Checklist */}
+                                    <div className="mt-3 grid grid-cols-2 gap-2">
+                                        {[
+                                            { key: 'length', label: '8+ Characters' },
+                                            { key: 'uppercase', label: 'Upper Case' },
+                                            { key: 'lowercase', label: 'Lower Case' },
+                                            { key: 'number', label: 'Numbers' },
+                                            { key: 'special', label: 'Special Char' },
+                                        ].map(req => {
+                                            const isMet = validatePassword(formData.password)[req.key]
+                                            return (
+                                                <div key={req.key} className="flex items-center gap-2">
+                                                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all duration-300 ${isMet ? 'bg-orange-500 border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-white/[0.03] border-white/[0.1]'}`}>
+                                                        {isMet && (
+                                                            <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                    <span className={`text-[11px] font-bold transition-colors ${isMet ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                        {req.label}
+                                                    </span>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             </div>
