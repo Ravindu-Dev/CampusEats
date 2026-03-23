@@ -243,7 +243,7 @@ public class OrderService {
         private OrderResponse convertToResponseForCanteen(Order order, String canteenId) {
                 // Filter order items to only include items from this canteen
                 List<OrderResponse.OrderItemDTO> itemDTOs = order.getOrderItems().stream()
-                                .filter(item -> item.getCanteenId().equals(canteenId))
+                                .filter(item -> item.getCanteenId() != null && item.getCanteenId().equals(canteenId))
                                 .map(item -> new OrderResponse.OrderItemDTO(
                                                 item.getMenuItemId(),
                                                 item.getName(),
@@ -288,7 +288,7 @@ public class OrderService {
 
                 // Verify that the order belongs to this canteen
                 boolean belongsToCanteen = order.getOrderItems().stream()
-                                .anyMatch(item -> item.getCanteenId().equals(canteenId));
+                                .anyMatch(item -> item.getCanteenId() != null && item.getCanteenId().equals(canteenId));
 
                 if (!belongsToCanteen) {
                         throw new RuntimeException("Unauthorized: Order does not belong to this canteen");

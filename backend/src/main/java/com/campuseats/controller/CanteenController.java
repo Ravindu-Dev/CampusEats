@@ -3,6 +3,7 @@ package com.campuseats.controller;
 import com.campuseats.model.Canteen;
 import com.campuseats.service.CanteenService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/canteens")
 @RequiredArgsConstructor
+@Slf4j
 public class CanteenController {
 
     private final CanteenService canteenService;
@@ -23,29 +25,35 @@ public class CanteenController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCanteenById(@PathVariable String id) {
+    public ResponseEntity<?> getCanteenById(@PathVariable("id") String id) {
+        log.info("Fetching canteen with ID: {}", id);
         try {
             Canteen canteen = canteenService.getCanteenById(id);
+            log.info("Canteen found: {}", canteen.getCanteenName());
             return ResponseEntity.ok(canteen);
         } catch (Exception e) {
+            log.error("Canteen not found with ID: {}. Error: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Error: " + e.getMessage());
         }
     }
 
     @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<?> getCanteenByOwnerId(@PathVariable String ownerId) {
+    public ResponseEntity<?> getCanteenByOwnerId(@PathVariable("ownerId") String ownerId) {
+        log.info("Fetching canteen for owner ID: {}", ownerId);
         try {
             Canteen canteen = canteenService.getCanteenByOwnerId(ownerId);
+            log.info("Canteen found: {} for owner: {}", canteen.getCanteenName(), ownerId);
             return ResponseEntity.ok(canteen);
         } catch (Exception e) {
+            log.error("Canteen not found for owner ID: {}. Error: {}", ownerId, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Error: " + e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCanteen(@PathVariable String id, @RequestBody Canteen canteenDetails) {
+    public ResponseEntity<?> updateCanteen(@PathVariable("id") String id, @RequestBody Canteen canteenDetails) {
         try {
             Canteen updatedCanteen = canteenService.updateCanteen(id, canteenDetails);
             return ResponseEntity.ok(updatedCanteen);
@@ -56,7 +64,7 @@ public class CanteenController {
     }
 
     @PostMapping("/{id}/upload-logo")
-    public ResponseEntity<?> uploadLogo(@PathVariable String id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadLogo(@PathVariable("id") String id, @RequestParam("file") MultipartFile file) {
         try {
             String filePath = canteenService.uploadFile(file, id, "logo");
             // Update canteen with logo path
@@ -71,7 +79,7 @@ public class CanteenController {
     }
 
     @PostMapping("/{id}/upload-banner")
-    public ResponseEntity<?> uploadBanner(@PathVariable String id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadBanner(@PathVariable("id") String id, @RequestParam("file") MultipartFile file) {
         try {
             String filePath = canteenService.uploadFile(file, id, "banner");
             // Update canteen with banner path
@@ -86,7 +94,7 @@ public class CanteenController {
     }
 
     @PostMapping("/{id}/upload-gallery")
-    public ResponseEntity<?> uploadGallery(@PathVariable String id, @RequestParam("files") List<MultipartFile> files) {
+    public ResponseEntity<?> uploadGallery(@PathVariable("id") String id, @RequestParam("files") List<MultipartFile> files) {
         try {
             List<String> filePaths = canteenService.uploadMultipleFiles(files, id, "gallery");
             // Update canteen with gallery paths
@@ -101,7 +109,7 @@ public class CanteenController {
     }
 
     @PostMapping("/{id}/upload-documents")
-    public ResponseEntity<?> uploadDocuments(@PathVariable String id,
+    public ResponseEntity<?> uploadDocuments(@PathVariable("id") String id,
             @RequestParam("files") List<MultipartFile> files) {
         try {
             List<String> filePaths = canteenService.uploadMultipleFiles(files, id, "document");
@@ -117,7 +125,7 @@ public class CanteenController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<?> updateStatus(@PathVariable String id, @RequestParam String status) {
+    public ResponseEntity<?> updateStatus(@PathVariable("id") String id, @RequestParam("status") String status) {
         try {
             Canteen canteen = canteenService.updateStatus(id, status);
             return ResponseEntity.ok(canteen);

@@ -51,14 +51,14 @@ public class OrderController {
 
     @GetMapping("/{orderId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<OrderResponse> getOrderById(@PathVariable String orderId) {
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable("orderId") String orderId) {
         OrderResponse order = orderService.getOrderById(orderId, getCurrentUserId());
         return ResponseEntity.ok(order);
     }
 
     @GetMapping("/canteen/{canteenId}")
     @PreAuthorize("hasRole('CANTEEN_OWNER')")
-    public ResponseEntity<List<OrderResponse>> getCanteenOrders(@PathVariable String canteenId) {
+    public ResponseEntity<List<OrderResponse>> getCanteenOrders(@PathVariable("canteenId") String canteenId) {
         // In a real app, verify that the current user owns this canteen
         List<OrderResponse> orders = orderService.getCanteenOrders(canteenId);
         return ResponseEntity.ok(orders);
@@ -67,9 +67,9 @@ public class OrderController {
     @PatchMapping("/{orderId}/status")
     @PreAuthorize("hasRole('CANTEEN_OWNER')")
     public ResponseEntity<OrderResponse> updateOrderStatus(
-            @PathVariable String orderId,
+            @PathVariable("orderId") String orderId,
             @Valid @RequestBody com.campuseats.dto.OrderStatusUpdateRequest request,
-            @RequestParam String canteenId) {
+            @RequestParam("canteenId") String canteenId) {
         try {
             OrderResponse updatedOrder = orderService.updateOrderStatus(orderId, request.getStatus(), canteenId);
             return ResponseEntity.ok(updatedOrder);
@@ -79,7 +79,7 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}/status")
-    public ResponseEntity<OrderResponse> getOrderStatus(@PathVariable String orderId) {
+    public ResponseEntity<OrderResponse> getOrderStatus(@PathVariable("orderId") String orderId) {
         try {
             // This endpoint is public so both users and canteen owners can check status
             OrderResponse order = orderService.getOrderById(orderId, null);
