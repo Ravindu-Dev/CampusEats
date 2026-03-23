@@ -16,25 +16,38 @@ function CanteenDashboard() {
 
     useEffect(() => {
         const owner = canteenAuthService.getCurrentCanteenOwner()
+        console.log('Current Canteen Owner:', owner)
         if (!owner) {
             navigate('/canteen/login')
             return
         }
-
         setCanteenOwner(owner)
 
         const fetchData = async () => {
             try {
                 if (owner.canteenId) {
+                    console.log('Fetching data for canteen ID:', owner.canteenId)
                     const [canteenData, ordersData, menuData] = await Promise.all([
-                        canteenService.getCanteenById(owner.canteenId).catch(() => null),
-                        orderService.getCanteenOrders(owner.canteenId).catch(() => []),
-                        menuItemService.getMenuItems(owner.canteenId).catch(() => [])
+                        canteenService.getCanteenById(owner.canteenId).catch(err => {
+                            console.error('Error fetching canteen:', err)
+                            return null
+                        }),
+                        orderService.getCanteenOrders(owner.canteenId).catch(err => {
+                            console.error('Error fetching orders:', err)
+                            return []
+                        }),
+                        menuItemService.getMenuItems(owner.canteenId).catch(err => {
+                            console.error('Error fetching menu items:', err)
+                            return []
+                        })
                     ])
 
+                    console.log('Fetched Data:', { canteen: canteenData, ordersCount: ordersData?.length })
                     setCanteen(canteenData)
                     setOrders(ordersData || [])
                     setMenuItems(menuData || [])
+                } else {
+                    console.warn('Owner object is missing canteenId:', owner)
                 }
             } catch (err) {
                 console.error('Error fetching dashboard data:', err)
@@ -253,8 +266,20 @@ function CanteenDashboard() {
                         </div>
                     </div>
                 ) : (
-                    <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <p className="text-gray-400">Loading canteen details...</p>
+                    <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+                        {!canteenOwner?.canteenId ? (
+                            <>
+                                <div className="text-4xl mb-4">⚠️</div>
+                                <p className="text-white font-bold mb-2">Canteen configuration missing</p>
+                                <p className="text-gray-400 text-sm max-w-md text-center">Your account is not correctly linked to a canteen. Please contact support to resolve this linkage issue.</p>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-10 h-10 border-2 border-white/10 border-t-orange-500 rounded-full animate-spin mb-4" />
+                                <p className="text-gray-400">Loading canteen details...</p>
+                                <p className="text-gray-600 text-xs mt-2">Canteen ID: {canteenOwner?.canteenId}</p>
+                            </>
+                        )}
                     </div>
                 )}
 

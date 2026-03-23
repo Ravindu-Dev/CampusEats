@@ -23,7 +23,7 @@ public class MenuItemController {
     }
 
     @GetMapping("/canteen/{canteenId}")
-    public ResponseEntity<List<MenuItem>> getMenuItemsByCanteen(@PathVariable String canteenId) {
+    public ResponseEntity<List<MenuItem>> getMenuItemsByCanteen(@PathVariable("canteenId") String canteenId) {
         return ResponseEntity.ok(menuItemRepository.findByCanteenId(canteenId));
     }
 
@@ -34,7 +34,7 @@ public class MenuItemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateMenuItem(@PathVariable String id, @RequestBody MenuItem menuItemDetails) {
+    public ResponseEntity<?> updateMenuItem(@PathVariable("id") String id, @RequestBody MenuItem menuItemDetails) {
         return menuItemRepository.findById(id)
                 .map(menuItem -> {
                     menuItem.setName(menuItemDetails.getName());
@@ -51,7 +51,7 @@ public class MenuItemController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MenuItem> getMenuItemById(@PathVariable String id) {
+    public ResponseEntity<MenuItem> getMenuItemById(@PathVariable("id") String id) {
         if (id == null)
             return ResponseEntity.badRequest().build();
         return menuItemRepository.findById(id)
@@ -60,7 +60,7 @@ public class MenuItemController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMenuItem(@PathVariable String id) {
+    public ResponseEntity<?> deleteMenuItem(@PathVariable("id") String id) {
         return menuItemRepository.findById(id)
                 .map(menuItem -> {
                     menuItemRepository.delete(menuItem);
