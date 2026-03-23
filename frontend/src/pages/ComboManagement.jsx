@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { menuItemService } from '../services/menuItemService'
 import comboDealService from '../services/comboDealService'
+import { imgbbService } from '../services/imgbbService'
 import canteenAuthService from '../services/canteenAuthService'
 import CanteenLayout from '../components/CanteenLayout'
 
@@ -12,6 +13,7 @@ function ComboManagement() {
     const [canteenOwner, setCanteenOwner] = useState(null)
     const [showForm, setShowForm] = useState(false)
     const [editingDeal, setEditingDeal] = useState(null)
+    const [uploading, setUploading] = useState(false)
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(null)
     const [selectedItems, setSelectedItems] = useState([])
@@ -62,6 +64,24 @@ function ComboManagement() {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }))
+    }
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        setUploading(true)
+        setError(null)
+        try {
+            const url = await imgbbService.uploadImage(file)
+            setFormData(prev => ({ ...prev, imageUrl: url }))
+            setSuccess('Image uploaded successfully!')
+        } catch (err) {
+            console.error('Upload error:', err)
+            setError('Failed to upload image. Please check your network or API key.')
+        } finally {
+            setUploading(false)
+        }
     }
 
     const toggleItemSelection = (item) => {
@@ -250,6 +270,50 @@ function ComboManagement() {
                                 </select>
                             </div>
                             <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-400 mb-1.5">Combo Image</label>
+                                <div className="flex flex-col gap-4">
+                                    {formData.imageUrl && (
+                                        <div className="relative w-full h-48 bg-white/5 rounded-xl overflow-hidden border border-white/10 group">
+                                            <img src={formData.imageUrl} alt="Combo Preview" className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                                                    className="bg-red-600 text-white p-2 rounded-lg font-bold flex items-center gap-2 hover:bg-red-500 transition shadow-xl"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    Remove Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {!formData.imageUrl && (
+                                        <div className="flex items-center justify-center w-full">
+                                            <label style={{ background: 'rgba(255,255,255,0.02)', border: '2px dashed rgba(255,255,255,0.1)' }} className={`w-full flex flex-col items-center px-4 py-10 rounded-xl cursor-pointer hover:border-orange-500 hover:bg-white/[0.04] transition-all group ${uploading ? 'opacity-50 cursor-wait' : ''}`}>
+                                                {uploading ? (
+                                                    <div className="flex flex-col items-center gap-3">
+                                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                                                        <span className="text-sm text-gray-400">Uploading your image...</span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+                                                            <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                        <span className="text-sm font-bold text-gray-300 group-hover:text-white">Click to upload combo image</span>
+                                                        <span className="text-xs text-gray-500 mt-1">PNG, JPG or JPEG (Max. 5MB)</span>
+                                                    </>
+                                                )}
+                                                <input type="file" className="hidden" onChange={handleImageUpload} disabled={uploading} accept="image/*" />
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-400 mb-1.5">Description</label>
                                 <textarea
                                     name="description"
@@ -415,21 +479,34 @@ function ComboManagement() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {comboDeals.map(deal => (
                         <div key={deal.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }} className="rounded-2xl overflow-hidden group hover:bg-[rgba(255,255,255,0.04)] transition duration-300">
-                            {/* Header with discount badge */}
-                            <div className="relative p-5 pb-0">
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${deal.active ? 'bg-green-500/15 text-green-400 border border-green-500/20' : 'bg-red-500/15 text-red-400 border border-red-500/20'}`}>
-                                        {deal.active ? '● Active' : '● Inactive'}
+                            {/* Combo Image */}
+                            <div className="h-40 relative overflow-hidden bg-white/5">
+                                {deal.imageUrl ? (
+                                    <img src={deal.imageUrl} alt={deal.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-700">
+                                        <span className="text-4xl mb-1">🎁</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">No Image Provided</span>
+                                    </div>
+                                )}
+                                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
+                                <div className="absolute top-3 left-3">
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${deal.active ? 'bg-green-500/80 text-white' : 'bg-red-500/80 text-white'}`}>
+                                        {deal.active ? 'Active' : 'Inactive'}
                                     </span>
-                                    {deal.discountPercent > 0 && (
-                                        <span className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-3 py-1 rounded-full text-xs font-black shadow-lg">
-                                            {deal.discountPercent}% OFF
-                                        </span>
-                                    )}
                                 </div>
-                                <h3 className="text-xl font-black text-white mb-1">{deal.name}</h3>
-                                <p className="text-xs text-gray-500 mb-2">{deal.category}</p>
-                                {deal.description && <p className="text-sm text-gray-400 line-clamp-2 mb-4">{deal.description}</p>}
+                                {deal.discountPercent > 0 && (
+                                    <div className="absolute top-3 right-3 bg-orange-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-black shadow-lg">
+                                        {deal.discountPercent}% OFF
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Header details */}
+                            <div className="p-5 pb-0">
+                                <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">{deal.category}</p>
+                                <h3 className="text-xl font-black text-white mb-1 line-clamp-1">{deal.name}</h3>
+                                {deal.description && <p className="text-sm text-gray-500 line-clamp-1 mb-4 italic">"{deal.description}"</p>}
                             </div>
 
                             {/* Items list */}

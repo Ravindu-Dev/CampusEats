@@ -12,6 +12,23 @@ import axios from 'axios'
 
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages']
 
+const SCROLLBAR_STYLE = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(249, 115, 22, 0.3);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(249, 115, 22, 0.6);
+  }
+`
+
 function Menu() {
     const { user } = useContext(AuthContext)
     const { addToCart } = useCart()
@@ -83,6 +100,11 @@ function Menu() {
     }
 
     useEffect(() => {
+        // Inject custom scrollbar style
+        const styleTag = document.createElement('style')
+        styleTag.innerHTML = SCROLLBAR_STYLE
+        document.head.appendChild(styleTag)
+
         const fetchData = async () => {
             try {
                 let canteenData = []
@@ -155,7 +177,11 @@ function Menu() {
             }
         }
         fetchData()
-    }, [])
+
+        return () => {
+            document.head.removeChild(styleTag)
+        }
+    }, [user])
 
     const filteredItems = menuItems.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -279,32 +305,44 @@ function Menu() {
 
                             <div ref={recommendedScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
                                 {recommendedCombos.map(combo => (
-                                    <div key={combo.id} className="flex-shrink-0 w-[360px] snap-start bg-white/[0.03] border border-white/[0.07] rounded-xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col">
-                                        <div className="p-4 flex flex-col h-full">
-                                            <div className="flex-grow">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20">🔥 {combo.recommendationReason}</span>
-                                                    {combo.discountPercent > 0 && (
-                                                        <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black">{combo.discountPercent}% OFF</span>
-                                                    )}
+                                    <div key={combo.id} className="flex-shrink-0 w-[360px] snap-start bg-white/[0.03] border border-white/[0.07] rounded-xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col h-[320px]">
+                                        {/* Combo Image */}
+                                        <div className="h-52 relative overflow-hidden">
+                                            {combo.imageUrl ? (
+                                                <img src={combo.imageUrl} alt={combo.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                                            ) : (
+                                                <div className="w-full h-full bg-white/[0.03] flex items-center justify-center text-4xl opacity-20">🎁</div>
+                                            )}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                                            <div className="absolute top-3 left-3">
+                                                <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-orange-500/90 text-white shadow-lg uppercase tracking-tighter">🔥 {combo.recommendationReason}</span>
+                                            </div>
+                                            {combo.discountPercent > 0 && (
+                                                <div className="absolute top-3 right-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-black shadow-lg">
+                                                    {combo.discountPercent}% OFF
                                                 </div>
-                                                <h3 className="text-base font-black text-white mb-1 group-hover:text-orange-300 transition-colors line-clamp-1">{combo.name}</h3>
-                                                <p className="text-xs text-gray-500 mb-2">{combo.canteenName}</p>
-                                                <div className="space-y-1 mb-3">
+                                            )}
+                                        </div>
+                                        <div className="p-2 flex flex-col flex-grow">
+                                            <div className="flex-grow">
+                                                <h3 className="text-sm font-black text-white mb-0.5 group-hover:text-orange-300 transition-colors line-clamp-1">{combo.name}</h3>
+                                                <p className="text-[9px] text-gray-500 mb-1">{combo.canteenName}</p>
+                                                <div className="space-y-1 overflow-y-auto max-h-16 custom-scrollbar pr-1">
                                                     {combo.items.map((item, idx) => (
-                                                        <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
-                                                            <span className="text-orange-500/60">•</span>{item.quantity}x {item.name}
+                                                        <div key={idx} className="flex items-start gap-1.5 text-[10px] text-gray-400 leading-tight">
+                                                            <span className="text-orange-500/60 font-black mt-0.5">•</span>
+                                                            <span className="flex-1">{item.quantity}x {item.name}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between pt-3 border-t border-white/[0.05] mt-auto">
+                                            <div className="flex items-center justify-between pt-1.5 border-t border-white/[0.05] mt-auto">
                                                 <div>
                                                     <span className="text-xs text-gray-600 line-through mr-2">Rs. {combo.originalPrice}</span>
-                                                    <span className="text-lg font-black text-orange-400">Rs. {combo.comboPrice}</span>
+                                                    <span className="text-sm font-black text-orange-400">Rs. {combo.comboPrice}</span>
                                                 </div>
                                                 <button onClick={() => handleAddComboToCart(combo)} disabled={addingCombo[combo.id]}
-                                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${addingCombo[combo.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-[0_0_15px_rgba(234,88,12,0.35)] active:scale-95'}`}>
+                                                    className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${addingCombo[combo.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white active:scale-95'}`}>
                                                     {addingCombo[combo.id] ? 'Adding…' : '+ Add Combo'}
                                                 </button>
                                             </div>
@@ -342,25 +380,36 @@ function Menu() {
 
                             <div ref={allCombosScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
                                 {allCombos.map(combo => (
-                                    <div key={combo.id} className="flex-shrink-0 w-[300px] snap-start bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden hover:border-orange-500/20 transition-all group flex flex-col">
-                                        <div className="p-4 flex flex-col h-full">
-                                            <div className="flex-grow">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{combo.category || 'Combo'}</span>
-                                                    {combo.discountPercent > 0 && (
-                                                        <span className="bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full text-[10px] font-black">{combo.discountPercent}% OFF</span>
-                                                    )}
+                                    <div key={combo.id} className="flex-shrink-0 w-[300px] snap-start bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden hover:border-orange-500/20 transition-all group flex flex-col h-[240px]">
+                                        {/* Combo Image */}
+                                        <div className="h-44 relative overflow-hidden bg-white/5">
+                                            {combo.imageUrl ? (
+                                                <img src={combo.imageUrl} alt={combo.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-3xl opacity-20">🎁</div>
+                                            )}
+                                            {combo.discountPercent > 0 && (
+                                                <div className="absolute top-2 right-2 bg-red-500/90 text-white px-2 py-0.5 rounded text-[10px] font-black">
+                                                    {combo.discountPercent}% OFF
                                                 </div>
-                                                <h3 className="text-sm font-black text-white mb-0.5 group-hover:text-orange-300 transition-colors line-clamp-1">{combo.name}</h3>
-                                                <p className="text-xs text-gray-600 mb-2">{combo.canteenName}</p>
-                                                <div className="space-y-0.5 mb-3">
-                                                    {combo.items.slice(0, 3).map((item, idx) => (
-                                                        <p key={idx} className="text-xs text-gray-500">{item.quantity}x {item.name}</p>
+                                            )}
+                                        </div>
+                                        <div className="p-2 flex flex-col flex-grow">
+                                            <div className="flex-grow">
+                                                <div className="flex items-center justify-between mb-0.5">
+                                                    <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">{combo.category || 'Combo'}</span>
+                                                </div>
+                                                <h3 className="text-xs font-black text-white mb-0.5 group-hover:text-orange-300 transition-colors line-clamp-1">{combo.name}</h3>
+                                                <div className="space-y-0.5 mt-0.5 overflow-y-auto max-h-12 custom-scrollbar pr-1">
+                                                    {combo.items.map((item, idx) => (
+                                                        <p key={idx} className="text-[9px] text-gray-500 flex items-start gap-1 leading-tight">
+                                                            <span className="text-orange-500/60 font-black opacity-50 mt-0.5">•</span>
+                                                            <span className="flex-1">{item.quantity}x {item.name}</span>
+                                                        </p>
                                                     ))}
-                                                    {combo.items.length > 3 && <p className="text-xs text-gray-600">+{combo.items.length - 3} more items</p>}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between pt-2 border-t border-white/[0.04] mt-auto">
+                                            <div className="flex items-center justify-between pt-1 border-t border-white/[0.03] mt-auto">
                                                 <div>
                                                     <span className="text-xs text-gray-600 line-through mr-1">Rs.{combo.originalPrice}</span>
                                                     <span className="text-base font-black text-orange-400">Rs.{combo.comboPrice}</span>
