@@ -25,6 +25,8 @@ function Menu() {
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [selectedRestaurant, setSelectedRestaurant] = useState(null)
     const scrollContainerRef = useRef(null)
+    const recommendedScrollRef = useRef(null)
+    const allCombosScrollRef = useRef(null)
 
     // Combo deals & loyalty state
     const [recommendedCombos, setRecommendedCombos] = useState([])
@@ -40,11 +42,11 @@ function Menu() {
         PLATINUM: { color: '#E5E4E2', bg: 'rgba(229,228,226,0.2)', border: 'rgba(229,228,226,0.4)', icon: '💎' },
     }
 
-    const scroll = (direction) => {
-        if (scrollContainerRef.current) {
+    const scroll = (ref, direction) => {
+        if (ref.current) {
             const scrollAmount = 300
-            scrollContainerRef.current.scrollTo({
-                left: scrollContainerRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount),
+            ref.current.scrollTo({
+                left: ref.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount),
                 behavior: 'smooth'
             })
         }
@@ -259,7 +261,7 @@ function Menu() {
                 {/* Recommended Combos (logged-in users) */}
                 {user && recommendedCombos.length > 0 && (
                     <div className="mb-8">
-                        <div className="bg-gradient-to-br from-[#111] to-[#0d0d0d] border border-orange-500/20 rounded-2xl p-6 shadow-xl">
+                        <div className="bg-gradient-to-br from-[#111] to-[#0d0d0d] border border-orange-500/20 rounded-2xl p-6 shadow-xl relative group/recommended">
                             <div className="flex items-center gap-3 mb-5">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center text-lg shadow-lg shadow-orange-500/20">🎯</div>
                                 <div>
@@ -267,32 +269,42 @@ function Menu() {
                                     <p className="text-xs text-gray-500">Personalized combo deals based on your ordering habits</p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            
+                            <button onClick={() => scroll(recommendedScrollRef, 'left')} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/recommended:opacity-100 shadow-xl" aria-label="Scroll left">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <button onClick={() => scroll(recommendedScrollRef, 'right')} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/recommended:opacity-100 shadow-xl" aria-label="Scroll right">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+
+                            <div ref={recommendedScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
                                 {recommendedCombos.map(combo => (
-                                    <div key={combo.id} className="bg-white/[0.03] border border-white/[0.07] rounded-xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 group">
-                                        <div className="p-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20">🔥 {combo.recommendationReason}</span>
-                                                {combo.discountPercent > 0 && (
-                                                    <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black">{combo.discountPercent}% OFF</span>
-                                                )}
+                                    <div key={combo.id} className="flex-shrink-0 w-[360px] snap-start bg-white/[0.03] border border-white/[0.07] rounded-xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col">
+                                        <div className="p-4 flex flex-col h-full">
+                                            <div className="flex-grow">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20">🔥 {combo.recommendationReason}</span>
+                                                    {combo.discountPercent > 0 && (
+                                                        <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black">{combo.discountPercent}% OFF</span>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-base font-black text-white mb-1 group-hover:text-orange-300 transition-colors line-clamp-1">{combo.name}</h3>
+                                                <p className="text-xs text-gray-500 mb-2">{combo.canteenName}</p>
+                                                <div className="space-y-1 mb-3">
+                                                    {combo.items.map((item, idx) => (
+                                                        <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
+                                                            <span className="text-orange-500/60">•</span>{item.quantity}x {item.name}
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                            <h3 className="text-base font-black text-white mb-1 group-hover:text-orange-300 transition-colors">{combo.name}</h3>
-                                            <p className="text-xs text-gray-500 mb-2">{combo.canteenName}</p>
-                                            <div className="space-y-1 mb-3">
-                                                {combo.items.map((item, idx) => (
-                                                    <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
-                                                        <span className="text-orange-500/60">•</span>{item.quantity}x {item.name}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="flex items-center justify-between pt-3 border-t border-white/[0.05]">
+                                            <div className="flex items-center justify-between pt-3 border-t border-white/[0.05] mt-auto">
                                                 <div>
                                                     <span className="text-xs text-gray-600 line-through mr-2">Rs. {combo.originalPrice}</span>
                                                     <span className="text-lg font-black text-orange-400">Rs. {combo.comboPrice}</span>
                                                 </div>
                                                 <button onClick={() => handleAddComboToCart(combo)} disabled={addingCombo[combo.id]}
-                                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${addingCombo[combo.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-[0_0_15px_rgba(234,88,12,0.3)] active:scale-95'}`}>
+                                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${addingCombo[combo.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-[0_0_15px_rgba(234,88,12,0.35)] active:scale-95'}`}>
                                                     {addingCombo[combo.id] ? 'Adding…' : '+ Add Combo'}
                                                 </button>
                                             </div>
@@ -307,7 +319,7 @@ function Menu() {
                 {/* All Combo Deals (visible to everyone) */}
                 {allCombos.length > 0 && (
                     <div className="mb-8">
-                        <div className="bg-[#111] border border-white/[0.07] rounded-2xl p-6 shadow-xl">
+                        <div className="bg-[#111] border border-white/[0.07] rounded-2xl p-6 shadow-xl relative group/combos">
                             <div className="flex items-center gap-3 mb-5">
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">🎁</div>
                                 <div>
@@ -320,25 +332,35 @@ function Menu() {
                                     </button>
                                 )}
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+                            <button onClick={() => scroll(allCombosScrollRef, 'left')} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/combos:opacity-100 shadow-xl" aria-label="Scroll left">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <button onClick={() => scroll(allCombosScrollRef, 'right')} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/combos:opacity-100 shadow-xl" aria-label="Scroll right">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+
+                            <div ref={allCombosScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
                                 {allCombos.map(combo => (
-                                    <div key={combo.id} className="bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden hover:border-orange-500/20 transition-all group">
-                                        <div className="p-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{combo.category || 'Combo'}</span>
-                                                {combo.discountPercent > 0 && (
-                                                    <span className="bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full text-[10px] font-black">{combo.discountPercent}% OFF</span>
-                                                )}
+                                    <div key={combo.id} className="flex-shrink-0 w-[300px] snap-start bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden hover:border-orange-500/20 transition-all group flex flex-col">
+                                        <div className="p-4 flex flex-col h-full">
+                                            <div className="flex-grow">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{combo.category || 'Combo'}</span>
+                                                    {combo.discountPercent > 0 && (
+                                                        <span className="bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full text-[10px] font-black">{combo.discountPercent}% OFF</span>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-sm font-black text-white mb-0.5 group-hover:text-orange-300 transition-colors line-clamp-1">{combo.name}</h3>
+                                                <p className="text-xs text-gray-600 mb-2">{combo.canteenName}</p>
+                                                <div className="space-y-0.5 mb-3">
+                                                    {combo.items.slice(0, 3).map((item, idx) => (
+                                                        <p key={idx} className="text-xs text-gray-500">{item.quantity}x {item.name}</p>
+                                                    ))}
+                                                    {combo.items.length > 3 && <p className="text-xs text-gray-600">+{combo.items.length - 3} more items</p>}
+                                                </div>
                                             </div>
-                                            <h3 className="text-sm font-black text-white mb-0.5 group-hover:text-orange-300 transition-colors line-clamp-1">{combo.name}</h3>
-                                            <p className="text-xs text-gray-600 mb-2">{combo.canteenName}</p>
-                                            <div className="space-y-0.5 mb-3">
-                                                {combo.items.slice(0, 3).map((item, idx) => (
-                                                    <p key={idx} className="text-xs text-gray-500">{item.quantity}x {item.name}</p>
-                                                ))}
-                                                {combo.items.length > 3 && <p className="text-xs text-gray-600">+{combo.items.length - 3} more items</p>}
-                                            </div>
-                                            <div className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
+                                            <div className="flex items-center justify-between pt-2 border-t border-white/[0.04] mt-auto">
                                                 <div>
                                                     <span className="text-xs text-gray-600 line-through mr-1">Rs.{combo.originalPrice}</span>
                                                     <span className="text-base font-black text-orange-400">Rs.{combo.comboPrice}</span>
@@ -368,10 +390,10 @@ function Menu() {
                     </div>
 
                     <div className="relative group/scroll">
-                        <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/scroll:opacity-100" aria-label="Scroll left">
+                        <button onClick={() => scroll(scrollContainerRef, 'left')} className="absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/scroll:opacity-100" aria-label="Scroll left">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </button>
-                        <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/scroll:opacity-100" aria-label="Scroll right">
+                        <button onClick={() => scroll(scrollContainerRef, 'right')} className="absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-20 w-9 h-9 bg-[#1a1a1a] border border-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all opacity-0 group-hover/scroll:opacity-100" aria-label="Scroll right">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
 
