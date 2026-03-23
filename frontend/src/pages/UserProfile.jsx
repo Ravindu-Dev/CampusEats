@@ -123,8 +123,8 @@ function UserProfile() {
             errors.firstName = 'First name must be at least 2 characters'
         } else if (formData.firstName.trim().length > 50) {
             errors.firstName = 'First name must be less than 50 characters'
-        } else if (!/^[a-zA-Z\s]+$/.test(formData.firstName.trim())) {
-            errors.firstName = 'First name can only contain letters'
+        } else if (!/^[a-zA-Z]+$/.test(formData.firstName.trim())) {
+            errors.firstName = 'First name can only contain letters (no spaces or special characters)'
         }
         // Last Name
         if (!formData.lastName.trim()) {
@@ -133,17 +133,18 @@ function UserProfile() {
             errors.lastName = 'Last name must be at least 2 characters'
         } else if (formData.lastName.trim().length > 50) {
             errors.lastName = 'Last name must be less than 50 characters'
-        } else if (!/^[a-zA-Z\s]+$/.test(formData.lastName.trim())) {
-            errors.lastName = 'Last name can only contain letters'
+        } else if (!/^[a-zA-Z]+$/.test(formData.lastName.trim())) {
+            errors.lastName = 'Last name can only contain letters (no spaces or special characters)'
         }
         // Phone Number
-        if (formData.phoneNumber.trim()) {
-            const digitsOnly = formData.phoneNumber.replace(/[\s\-\(\)\+]/g, '')
-            if (digitsOnly.length < 9 || digitsOnly.length > 15) {
-                errors.phoneNumber = 'Phone number must be 9-15 digits'
-            } else if (!/^[\d\s\-\(\)\+]+$/.test(formData.phoneNumber.trim())) {
-                errors.phoneNumber = 'Invalid phone number format'
+        if (formData.phoneNumber) {
+            if (!/^\d+$/.test(formData.phoneNumber)) {
+                errors.phoneNumber = 'Phone number can only contain numbers'
+            } else if (formData.phoneNumber.length !== 10) {
+                errors.phoneNumber = 'Phone number must be exactly 10 digits'
             }
+        } else {
+            errors.phoneNumber = 'Phone number is required'
         }
         // Address
         if (formData.address.trim()) {
