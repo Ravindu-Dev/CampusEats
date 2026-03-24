@@ -4,6 +4,7 @@ import adminAuthService from '../../services/adminAuthService'
 import canteenOwnerService from '../../services/canteenOwnerService'
 import canteenAdminService from '../../services/canteenAdminService'
 import AdminLayout from './AdminLayout'
+import AdminAnalytics from './AdminAnalytics'
 
 function StatCard({ label, value, icon, color, subtitle }) {
     return (
@@ -155,15 +156,13 @@ function AdminDashboard() {
                     color="#eab308"
                     subtitle={pendingCount > 0 ? `${pendingCount} awaiting review` : 'All clear'}
                 />
-                <StatCard label="Total Orders" value="—" icon="📦" color="#8b5cf6" subtitle="Coming soon" />
-            </div>
-
-            {/* Section label */}
-            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '14px' }}>
-                Quick Actions
+                <StatCard label="Total Orders" value="—" icon="📦" color="#8b5cf6" subtitle="See analytics below" />
             </div>
 
             {/* Quick Actions */}
+            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '14px' }}>
+                Quick Actions
+            </div>
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -193,16 +192,25 @@ function AdminDashboard() {
                     badge={pendingCount > 0 ? `${pendingCount} pending` : null}
                 />
                 <QuickAction
-                    icon="📊"
-                    label="Analytics"
-                    description="Platform statistics and performance"
+                    icon="💸"
+                    label="Payroll Config"
+                    description="Manage global payroll configuration"
                     gradient="linear-gradient(135deg, #3b82f6, #6366f1)"
-                    onClick={() => { }}
+                    onClick={() => navigate('/admin/payroll/config')}
                 />
             </div>
 
+            {/* Admin Analytics Component embedded right here */}
+            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '14px', marginTop: '28px' }}>
+                Platform Analytics
+            </div>
+            
+            <div style={{ margin: '0 -24px' }}>
+                <AdminAnalytics />
+            </div>
+
             {/* System Health */}
-            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '14px' }}>
+            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '14px', marginTop: '28px' }}>
                 System Health
             </div>
             <div style={{
