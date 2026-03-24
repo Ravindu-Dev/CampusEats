@@ -111,7 +111,7 @@ public class AdminController {
     }
 
     @PostMapping("/canteen-owners/{id}/approve")
-    public ResponseEntity<?> approveCanteenOwner(@PathVariable String id) {
+    public ResponseEntity<?> approveCanteenOwner(@PathVariable("id") String id) {
         try {
             // Get current admin from security context
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -135,7 +135,7 @@ public class AdminController {
     }
 
     @PostMapping("/canteen-owners/{id}/reject")
-    public ResponseEntity<?> rejectCanteenOwner(@PathVariable String id,
+    public ResponseEntity<?> rejectCanteenOwner(@PathVariable("id") String id,
             @RequestBody CanteenOwnerApprovalRequest request) {
         try {
             // Get current admin from security context

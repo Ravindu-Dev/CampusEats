@@ -40,7 +40,7 @@ public class PayrollController {
 
     @PutMapping("/config")
     public ResponseEntity<?> updateConfig(@RequestBody PayrollConfigRequest request,
-            @RequestParam(required = false) String adminId) {
+            @RequestParam(value = "adminId", required = false) String adminId) {
         try {
             PayrollConfig config = payrollService.updateConfig(request, adminId);
             return ResponseEntity.ok(config);
@@ -69,9 +69,9 @@ public class PayrollController {
     // ───── Status Workflow ─────
 
     @PutMapping("/{id}/submit")
-    public ResponseEntity<?> submitPayroll(@PathVariable String id,
+    public ResponseEntity<?> submitPayroll(@PathVariable("id") String id,
             @RequestBody(required = false) PayrollActionRequest request,
-            @RequestParam(required = false) String submittedBy) {
+            @RequestParam(value = "submittedBy", required = false) String submittedBy) {
         try {
             Payroll payroll = payrollService.submitPayroll(id, submittedBy, request);
             return ResponseEntity.ok(payroll);
@@ -85,9 +85,9 @@ public class PayrollController {
     }
 
     @PutMapping("/{id}/approve")
-    public ResponseEntity<?> approvePayroll(@PathVariable String id,
+    public ResponseEntity<?> approvePayroll(@PathVariable("id") String id,
             @RequestBody(required = false) PayrollActionRequest request,
-            @RequestParam(required = false) String reviewedBy) {
+            @RequestParam(value = "reviewedBy", required = false) String reviewedBy) {
         try {
             Payroll payroll = payrollService.approvePayroll(id, reviewedBy, request);
             return ResponseEntity.ok(payroll);
@@ -101,9 +101,9 @@ public class PayrollController {
     }
 
     @PutMapping("/{id}/reject")
-    public ResponseEntity<?> rejectPayroll(@PathVariable String id,
+    public ResponseEntity<?> rejectPayroll(@PathVariable("id") String id,
             @RequestBody(required = false) PayrollActionRequest request,
-            @RequestParam(required = false) String reviewedBy) {
+            @RequestParam(value = "reviewedBy", required = false) String reviewedBy) {
         try {
             Payroll payroll = payrollService.rejectPayroll(id, reviewedBy, request);
             return ResponseEntity.ok(payroll);
@@ -119,7 +119,7 @@ public class PayrollController {
     // ───── Queries ─────
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getPayrollById(@PathVariable String id) {
+    public ResponseEntity<?> getPayrollById(@PathVariable("id") String id) {
         try {
             Payroll payroll = payrollService.getPayrollById(id);
             return ResponseEntity.ok(payroll);
@@ -133,7 +133,7 @@ public class PayrollController {
     }
 
     @GetMapping("/canteen/{canteenId}")
-    public ResponseEntity<?> getPayrollsByCanteen(@PathVariable String canteenId) {
+    public ResponseEntity<?> getPayrollsByCanteen(@PathVariable("canteenId") String canteenId) {
         try {
             List<Payroll> payrolls = payrollService.getPayrollsByCanteen(canteenId);
             return ResponseEntity.ok(payrolls);
@@ -179,8 +179,8 @@ public class PayrollController {
     // ───── PDF Payslip Download ─────
 
     @GetMapping("/{payrollId}/payslip/{staffId}/pdf")
-    public ResponseEntity<?> downloadPayslipPdf(@PathVariable String payrollId,
-            @PathVariable String staffId) {
+    public ResponseEntity<?> downloadPayslipPdf(@PathVariable("payrollId") String payrollId,
+            @PathVariable("staffId") String staffId) {
         try {
             Payroll payroll = payrollService.getPayrollById(payrollId);
 

@@ -47,7 +47,7 @@ public class CartController {
     @PutMapping("/items/{menuItemId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Cart> updateCartItemQuantity(
-            @PathVariable String menuItemId,
+            @PathVariable("menuItemId") String menuItemId,
             @RequestBody UpdateCartItemRequest request) {
         return ResponseEntity.ok(cartService.updateCartItemQuantity(
                 getCurrentUserId(),
@@ -57,7 +57,7 @@ public class CartController {
 
     @DeleteMapping("/items/{menuItemId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Cart> removeItemFromCart(@PathVariable String menuItemId) {
+    public ResponseEntity<Cart> removeItemFromCart(@PathVariable("menuItemId") String menuItemId) {
         return ResponseEntity.ok(cartService.removeItemFromCart(getCurrentUserId(), menuItemId));
     }
 

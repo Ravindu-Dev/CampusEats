@@ -155,6 +155,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
+                    <parameters>true</parameters>
                     <source>17</source>
                     <target>17</target>
                     <annotationProcessorPaths>

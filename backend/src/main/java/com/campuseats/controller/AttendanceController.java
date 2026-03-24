@@ -41,9 +41,9 @@ public class AttendanceController {
 
     @GetMapping("/canteen/{canteenId}")
     public ResponseEntity<?> getAttendanceByCanteen(
-            @PathVariable String canteenId,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
+            @PathVariable("canteenId") String canteenId,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
         try {
             List<AttendanceResponse> responses = attendanceService.getAttendanceByCanteen(
                     canteenId, startDate, endDate);
@@ -56,8 +56,8 @@ public class AttendanceController {
 
     @GetMapping("/canteen/{canteenId}/date/{date}")
     public ResponseEntity<?> getAttendanceByCanteenAndDate(
-            @PathVariable String canteenId,
-            @PathVariable String date) {
+            @PathVariable("canteenId") String canteenId,
+            @PathVariable("date") String date) {
         try {
             List<AttendanceResponse> responses = attendanceService.getAttendanceByCanteenAndDate(
                     canteenId, date);
@@ -70,9 +70,9 @@ public class AttendanceController {
 
     @GetMapping("/staff/{staffId}")
     public ResponseEntity<?> getAttendanceByStaff(
-            @PathVariable String staffId,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
+            @PathVariable("staffId") String staffId,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
         try {
             List<AttendanceResponse> responses = attendanceService.getAttendanceByStaff(
                     staffId, startDate, endDate);
