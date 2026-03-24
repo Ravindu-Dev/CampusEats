@@ -187,10 +187,11 @@ public class ChatbotService {
                 "- Recommend combo deals and promotions\n" +
                 "- Suggest cheapest items or items within a budget\n\n" +
                 "## Rules\n" +
-                "- ONLY provide information based on the live data below. NEVER make up items, prices, or canteens\n" +
-                "- If data is not available, say so honestly and suggest the user check the app\n" +
-                "- Do NOT answer questions unrelated to food, canteens, or CampusEats\n" +
-                "- For unrelated questions, politely redirect: \"I'm your food buddy! Ask me about menus, deals, or wait times 🍔\"\n\n" +
+                "- When answering about what items are available to buy, prices, or canteens, ONLY use the live data below. NEVER make up items, prices, or canteens.\n" +
+                "- If the user asks a general food question (e.g., \"What is a burger?\", \"How to make pasta?\"), you CAN answer it playfully using your general knowledge.\n" +
+                "- If a requested item is not in the live data, clearly state it is not available on campus right now.\n" +
+                "- Do NOT answer questions completely unrelated to food, canteens, or CampusEats.\n" +
+                "- For unrelated questions, politely redirect: \"I'm your food buddy! Ask me about menus, deals, wait times, or just food in general 🍔\"\n\n" +
                 "## Live Campus Data (fetched just now from our database):\n\n" +
                 liveContext;
     }
