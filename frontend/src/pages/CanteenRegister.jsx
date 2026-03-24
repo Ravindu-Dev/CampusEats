@@ -16,6 +16,7 @@ function CanteenRegister() {
     const [uploading, setUploading] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
     const [error, setError] = useState('')
+    const [errors, setErrors] = useState({})
     const navigate = useNavigate()
 
     const [formData, setFormData] = useState({
@@ -36,11 +37,16 @@ function CanteenRegister() {
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target
         setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
+        if (errors[name]) setErrors(prev => { const n = { ...prev }; delete n[name]; return n })
+        if (name === 'deliveryAvailable' || name === 'pickupAvailable') {
+            setErrors(prev => { const n = { ...prev }; delete n.serviceOptions; return n })
+        }
     }
 
     const handleCheckboxArray = (name, value) => {
         const cur = formData[name] || []
         setFormData({ ...formData, [name]: cur.includes(value) ? cur.filter(i => i !== value) : [...cur, value] })
+        if (errors[name]) setErrors(prev => { const n = { ...prev }; delete n[name]; return n })
     }
 
     const handleLogoUpload = async (e) => {
@@ -51,6 +57,7 @@ function CanteenRegister() {
         try {
             const url = await imgbbService.uploadImage(file)
             setFormData(prev => ({ ...prev, logoUrl: url }))
+            if (errors.logoUrl) setErrors(prev => { const n = { ...prev }; delete n.logoUrl; return n })
         } catch {
             setError('Failed to upload logo. Please try again.')
         } finally {
@@ -59,23 +66,55 @@ function CanteenRegister() {
     }
 
     const validate = () => {
+        const errs = {}
+
         if (step === 1) {
-            if (!formData.ownerName || !formData.email || !formData.password || !formData.phoneNumber) return setError('Please fill in all required fields.') || false
-            if (formData.password !== formData.confirmPassword) return setError('Passwords do not match.') || false
-            if (formData.password.length < 6) return setError('Password must be at least 6 characters.') || false
+            if (!formData.ownerName.trim()) errs.ownerName = 'Owner name is required.'
+            if (!formData.email.trim()) errs.email = 'Email is required.'
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) errs.email = 'Please enter a valid email address.'
+            if (!formData.password) errs.password = 'Password is required.'
+            else if (formData.password.length < 6) errs.password = 'Password must be at least 6 characters.'
+            if (!formData.confirmPassword) errs.confirmPassword = 'Please confirm your password.'
+            else if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.'
+            if (!formData.phoneNumber.trim()) errs.phoneNumber = 'Phone number is required.'
+            else if (!/^(\+94|0)\d{9}$/.test(formData.phoneNumber.replace(/\s/g, ''))) errs.phoneNumber = 'Enter a valid phone number (e.g., +94 77 000 0000).'
+            if (formData.alternativeContactNumber.trim() && !/^(\+94|0)\d{9}$/.test(formData.alternativeContactNumber.replace(/\s/g, '')))
+                errs.alternativeContactNumber = 'Enter a valid phone number.'
         }
+
         if (step === 2) {
-            if (!formData.canteenName || !formData.location || !formData.description) return setError('Please fill in Canteen Name, Location, and Description.') || false
-            if (!formData.logoUrl) return setError('Please upload a canteen logo.') || false
+            if (!formData.canteenName.trim()) errs.canteenName = 'Canteen name is required.'
+            else if (formData.canteenName.trim().length < 3) errs.canteenName = 'Canteen name must be at least 3 characters.'
+            if (!formData.logoUrl) errs.logoUrl = 'Please upload a canteen logo.'
+            if (!formData.location.trim()) errs.location = 'Location is required.'
+            if (!formData.description.trim()) errs.description = 'Description is required.'
+            else if (formData.description.trim().length < 10) errs.description = 'Description must be at least 10 characters.'
+            if (formData.seatingCapacity && (isNaN(formData.seatingCapacity) || Number(formData.seatingCapacity) < 1))
+                errs.seatingCapacity = 'Seating capacity must be a positive number.'
         }
+
         if (step === 3) {
-            if (!formData.openingTime || !formData.closingTime) return setError('Please provide opening and closing times.') || false
+            if (!formData.openingTime) errs.openingTime = 'Opening time is required.'
+            if (!formData.closingTime) errs.closingTime = 'Closing time is required.'
+            if (formData.openingTime && formData.closingTime && formData.openingTime >= formData.closingTime)
+                errs.closingTime = 'Closing time must be after opening time.'
+            if (formData.operatingDays.length === 0) errs.operatingDays = 'Select at least one operating day.'
+            if (formData.averagePreparationTime !== '' && Number(formData.averagePreparationTime) < 1)
+                errs.averagePreparationTime = 'Preparation time must be at least 1 minute.'
+            if (!formData.deliveryAvailable && !formData.pickupAvailable)
+                errs.serviceOptions = 'Select at least one: Delivery or Pickup.'
+        }
+
+        setErrors(errs)
+        if (Object.keys(errs).length > 0) {
+            setError('Please fix the highlighted errors below.')
+            return false
         }
         return true
     }
 
-    const nextStep = () => { setError(''); if (validate()) setStep(s => s + 1) }
-    const prevStep = () => { setError(''); setStep(s => s - 1) }
+    const nextStep = () => { setError(''); setErrors({}); if (validate()) setStep(s => s + 1) }
+    const prevStep = () => { setError(''); setErrors({}); setStep(s => s - 1) }
 
     const handleSubmit = async () => {
         setError('')
@@ -96,7 +135,19 @@ function CanteenRegister() {
     const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
     const inputCls = "w-full px-4 py-3 bg-[#0d0d0d] border border-white/[0.08] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition placeholder-gray-600 text-sm"
+    const inputErrCls = "w-full px-4 py-3 bg-[#0d0d0d] border border-red-500/50 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition placeholder-gray-600 text-sm"
     const labelCls = "block text-sm font-bold text-gray-400 mb-2"
+
+    const getInputCls = (name) => errors[name] ? inputErrCls : inputCls
+
+    const fieldError = (name) => errors[name] ? (
+        <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
+            <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors[name]}
+        </p>
+    ) : null
 
     return (
         <>
@@ -165,30 +216,36 @@ function CanteenRegister() {
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className={labelCls}>Owner Name *</label>
-                                            <input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} required className={inputCls} placeholder="Your full name" />
+                                            <input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} required className={getInputCls('ownerName')} placeholder="Your full name" />
+                                            {fieldError('ownerName')}
                                         </div>
                                         <div>
                                             <label className={labelCls}>Phone Number *</label>
-                                            <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className={inputCls} placeholder="+94 77 000 0000" />
+                                            <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className={getInputCls('phoneNumber')} placeholder="+94 77 000 0000" />
+                                            {fieldError('phoneNumber')}
                                         </div>
                                     </div>
                                     <div>
                                         <label className={labelCls}>Email *</label>
-                                        <input type="email" name="email" value={formData.email} onChange={handleChange} required className={inputCls} placeholder="owner@canteen.com" />
+                                        <input type="email" name="email" value={formData.email} onChange={handleChange} required className={getInputCls('email')} placeholder="owner@canteen.com" />
+                                        {fieldError('email')}
                                     </div>
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className={labelCls}>Password *</label>
-                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6" className={inputCls} placeholder="Min. 6 characters" />
+                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6" className={getInputCls('password')} placeholder="Min. 6 characters" />
+                                            {fieldError('password')}
                                         </div>
                                         <div>
                                             <label className={labelCls}>Confirm Password *</label>
-                                            <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required className={inputCls} placeholder="Repeat password" />
+                                            <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required className={getInputCls('confirmPassword')} placeholder="Repeat password" />
+                                            {fieldError('confirmPassword')}
                                         </div>
                                     </div>
                                     <div>
                                         <label className={labelCls}>Alternative Contact <span className="text-gray-600 font-normal">(Optional)</span></label>
-                                        <input type="tel" name="alternativeContactNumber" value={formData.alternativeContactNumber} onChange={handleChange} className={inputCls} placeholder="+94 77 000 0000" />
+                                        <input type="tel" name="alternativeContactNumber" value={formData.alternativeContactNumber} onChange={handleChange} className={getInputCls('alternativeContactNumber')} placeholder="+94 77 000 0000" />
+                                        {fieldError('alternativeContactNumber')}
                                     </div>
                                 </div>
                             )}
@@ -199,13 +256,14 @@ function CanteenRegister() {
                                     <h3 className="text-lg font-black text-white border-b border-white/[0.07] pb-3 mb-5">🏪 Canteen Information</h3>
                                     <div>
                                         <label className={labelCls}>Canteen Name *</label>
-                                        <input type="text" name="canteenName" value={formData.canteenName} onChange={handleChange} required className={inputCls} placeholder="e.g., The Campus Kitchen" />
+                                        <input type="text" name="canteenName" value={formData.canteenName} onChange={handleChange} required className={getInputCls('canteenName')} placeholder="e.g., The Campus Kitchen" />
+                                        {fieldError('canteenName')}
                                     </div>
 
                                     {/* Logo Upload */}
                                     <div>
                                         <label className={labelCls}>Canteen Logo *</label>
-                                        <div className="flex items-start gap-4">
+                                        <div className={`flex items-start gap-4 ${errors.logoUrl ? 'ring-1 ring-red-500/40 rounded-2xl p-1' : ''}`}>
                                             {formData.logoUrl && (
                                                 <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-white/[0.1] flex-shrink-0">
                                                     <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
@@ -213,7 +271,7 @@ function CanteenRegister() {
                                                         className="absolute top-1 right-1 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs hover:bg-red-700">×</button>
                                                 </div>
                                             )}
-                                            <label className={`flex-1 flex flex-col items-center justify-center px-4 py-8 bg-[#0d0d0d] rounded-2xl border-2 border-dashed border-white/[0.1] cursor-pointer hover:border-orange-500/50 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            <label className={`flex-1 flex flex-col items-center justify-center px-4 py-8 bg-[#0d0d0d] rounded-2xl border-2 border-dashed ${errors.logoUrl ? 'border-red-500/50' : 'border-white/[0.1]'} cursor-pointer hover:border-orange-500/50 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                                 {uploading ? (
                                                     <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
                                                 ) : (
@@ -228,6 +286,7 @@ function CanteenRegister() {
                                                 <input type="file" className="hidden" onChange={handleLogoUpload} disabled={uploading} accept="image/*" />
                                             </label>
                                         </div>
+                                        {fieldError('logoUrl')}
                                     </div>
 
                                     <div className="grid md:grid-cols-2 gap-4">
@@ -237,7 +296,8 @@ function CanteenRegister() {
                                         </div>
                                         <div>
                                             <label className={labelCls}>Building/Location *</label>
-                                            <input type="text" name="location" value={formData.location} onChange={handleChange} required className={inputCls} placeholder="e.g., Block A" />
+                                            <input type="text" name="location" value={formData.location} onChange={handleChange} required className={getInputCls('location')} placeholder="e.g., Block A" />
+                                            {fieldError('location')}
                                         </div>
                                     </div>
 
@@ -252,14 +312,16 @@ function CanteenRegister() {
                                         </div>
                                         <div>
                                             <label className={labelCls}>Seating Capacity</label>
-                                            <input type="number" name="seatingCapacity" value={formData.seatingCapacity} onChange={handleChange} className={inputCls} placeholder="e.g., 50" />
+                                            <input type="number" name="seatingCapacity" value={formData.seatingCapacity} onChange={handleChange} className={getInputCls('seatingCapacity')} placeholder="e.g., 50" />
+                                            {fieldError('seatingCapacity')}
                                         </div>
                                     </div>
 
                                     <div>
                                         <label className={labelCls}>Description *</label>
                                         <textarea name="description" value={formData.description} onChange={handleChange} required rows="3" placeholder="Describe your canteen..."
-                                            className={`${inputCls} resize-none`} />
+                                            className={`${getInputCls('description')} resize-none`} />
+                                        {fieldError('description')}
                                     </div>
 
                                     <div>
@@ -287,11 +349,13 @@ function CanteenRegister() {
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className={labelCls}>Opening Time *</label>
-                                            <input type="time" name="openingTime" value={formData.openingTime} onChange={handleChange} required className={inputCls} style={{ colorScheme: 'dark' }} />
+                                            <input type="time" name="openingTime" value={formData.openingTime} onChange={handleChange} required className={getInputCls('openingTime')} style={{ colorScheme: 'dark' }} />
+                                            {fieldError('openingTime')}
                                         </div>
                                         <div>
                                             <label className={labelCls}>Closing Time *</label>
-                                            <input type="time" name="closingTime" value={formData.closingTime} onChange={handleChange} required className={inputCls} style={{ colorScheme: 'dark' }} />
+                                            <input type="time" name="closingTime" value={formData.closingTime} onChange={handleChange} required className={getInputCls('closingTime')} style={{ colorScheme: 'dark' }} />
+                                            {fieldError('closingTime')}
                                         </div>
                                     </div>
 
@@ -305,27 +369,32 @@ function CanteenRegister() {
                                                 </label>
                                             ))}
                                         </div>
+                                        {fieldError('operatingDays')}
                                     </div>
 
                                     <div>
                                         <label className={labelCls}>Avg. Preparation Time <span className="text-gray-600 font-normal">(minutes)</span></label>
-                                        <input type="number" name="averagePreparationTime" value={formData.averagePreparationTime} onChange={handleChange} className={`${inputCls} w-40`} />
+                                        <input type="number" name="averagePreparationTime" value={formData.averagePreparationTime} onChange={handleChange} className={`${getInputCls('averagePreparationTime')} w-40`} />
+                                        {fieldError('averagePreparationTime')}
                                     </div>
 
-                                    <div className="flex flex-col sm:flex-row gap-4 bg-[#0d0d0d] border border-white/[0.07] p-5 rounded-2xl">
-                                        {[
-                                            { name: 'deliveryAvailable', label: 'Delivery Available', icon: '🛵' },
-                                            { name: 'pickupAvailable', label: 'Pickup Available', icon: '🏃' },
-                                        ].map(opt => (
-                                            <label key={opt.name} className={`flex items-center gap-3 cursor-pointer flex-1 p-3 rounded-xl border transition-all ${formData[opt.name] ? 'bg-orange-500/10 border-orange-500/30' : 'border-transparent hover:bg-white/[0.03]'}`}>
-                                                <input type="checkbox" name={opt.name} checked={formData[opt.name]} onChange={handleChange} className="hidden" />
-                                                <span className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData[opt.name] ? 'bg-orange-500 border-orange-500' : 'border-white/20'}`}>
-                                                    {formData[opt.name] && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                                                </span>
-                                                <span className="text-lg">{opt.icon}</span>
-                                                <span className="text-white font-bold text-sm">{opt.label}</span>
-                                            </label>
-                                        ))}
+                                    <div>
+                                        <div className="flex flex-col sm:flex-row gap-4 bg-[#0d0d0d] border border-white/[0.07] p-5 rounded-2xl">
+                                            {[
+                                                { name: 'deliveryAvailable', label: 'Delivery Available', icon: '🛵' },
+                                                { name: 'pickupAvailable', label: 'Pickup Available', icon: '🏃' },
+                                            ].map(opt => (
+                                                <label key={opt.name} className={`flex items-center gap-3 cursor-pointer flex-1 p-3 rounded-xl border transition-all ${formData[opt.name] ? 'bg-orange-500/10 border-orange-500/30' : 'border-transparent hover:bg-white/[0.03]'}`}>
+                                                    <input type="checkbox" name={opt.name} checked={formData[opt.name]} onChange={handleChange} className="hidden" />
+                                                    <span className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData[opt.name] ? 'bg-orange-500 border-orange-500' : 'border-white/20'}`}>
+                                                        {formData[opt.name] && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                                    </span>
+                                                    <span className="text-lg">{opt.icon}</span>
+                                                    <span className="text-white font-bold text-sm">{opt.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {fieldError('serviceOptions')}
                                     </div>
                                 </div>
                             )}
