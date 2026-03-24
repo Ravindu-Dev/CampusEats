@@ -19,6 +19,7 @@ function StaffManagement() {
     const [editingStaff, setEditingStaff] = useState(null)
     const [formData, setFormData] = useState({ ...emptyStaff })
     const [saving, setSaving] = useState(false)
+    const [errors, setErrors] = useState({})
     const [searchQuery, setSearchQuery] = useState('')
     const [filterStatus, setFilterStatus] = useState('ALL')
     const navigate = useNavigate()
@@ -40,7 +41,29 @@ function StaffManagement() {
         fetchData()
     }, [navigate])
 
+    const validateForm = () => {
+        const newErrors = {}
+        if (!formData.staffName || formData.staffName.trim().length < 3) {
+            newErrors.staffName = 'Name must be at least 3 characters'
+        }
+        if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
+            newErrors.phone = 'Phone number must be exactly 10 digits'
+        }
+        if (formData.nicNumber) {
+            const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/
+            if (!nicRegex.test(formData.nicNumber)) {
+                newErrors.nicNumber = 'Invalid NIC format (e.g., 123456789V or 12 digits)'
+            }
+        }
+        if (!formData.payRate || parseFloat(formData.payRate) <= 0) {
+            newErrors.payRate = 'Pay rate must be a positive number'
+        }
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
+
     const handleSave = async () => {
+        if (!validateForm()) return
         setSaving(true)
         try {
             const data = { ...formData, canteenId: canteen?.id }
@@ -54,6 +77,7 @@ function StaffManagement() {
             setShowModal(false)
             setEditingStaff(null)
             setFormData({ ...emptyStaff })
+            setErrors({})
         } catch (err) { alert('Error saving staff: ' + err.message) }
         finally { setSaving(false) }
     }
@@ -75,6 +99,7 @@ function StaffManagement() {
 
     const openEdit = (s) => {
         setEditingStaff(s)
+        setErrors({})
         setFormData({ staffName: s.staffName, role: s.role, phone: s.phone || '', nicNumber: s.nicNumber || '', employmentType: s.employmentType, payType: s.payType, payRate: s.payRate, bankName: s.bankName || '', accountNumber: s.accountNumber || '', bankBranch: s.bankBranch || '', joinDate: s.joinDate || '' })
         setShowModal(true)
     }
@@ -112,7 +137,7 @@ function StaffManagement() {
         </div>
     )
 
-    const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '14px', outline: 'none' }
+    const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '14px', outline: 'none', colorScheme: 'dark' }
 
     return (
         <CanteenLayout pageTitle="Staff Management" pageSubtitle={`Manage your team — ${activeCount} active staff members`}>
@@ -125,12 +150,12 @@ function StaffManagement() {
                 </div>
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                     style={{ ...inputStyle, width: 'auto', minWidth: '140px', cursor: 'pointer' }}>
-                    <option value="ALL">All Status</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="TERMINATED">Terminated</option>
+                    <option value="ALL" style={{ background: '#1a1a1a', color: 'white' }}>All Status</option>
+                    <option value="ACTIVE" style={{ background: '#1a1a1a', color: 'white' }}>Active</option>
+                    <option value="INACTIVE" style={{ background: '#1a1a1a', color: 'white' }}>Inactive</option>
+                    <option value="TERMINATED" style={{ background: '#1a1a1a', color: 'white' }}>Terminated</option>
                 </select>
-                <button onClick={() => { setEditingStaff(null); setFormData({ ...emptyStaff }); setShowModal(true) }}
+                <button onClick={() => { setEditingStaff(null); setFormData({ ...emptyStaff }); setErrors({}); setShowModal(true) }}
                     style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(168,85,247,0.3)' }}
                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
@@ -148,7 +173,7 @@ function StaffManagement() {
                 ))}
             </div>
 
-            {/* Staff Grid */}
+            {/* Staff Table */}
             {filteredStaff.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '80px 20px', color: 'rgba(255,255,255,0.2)' }}>
                     <p style={{ fontSize: '48px', marginBottom: '16px' }}>👥</p>
@@ -156,44 +181,146 @@ function StaffManagement() {
                     <p style={{ fontSize: '14px', marginTop: '8px' }}>Click "Add Staff" to register your first team member</p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-                    {filteredStaff.map(s => {
-                        const statusStyle = getStatusStyle(s.status)
-                        return (
-                            <div key={s.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px', transition: 'all 0.3s' }}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(168,85,247,0.3)'}
-                                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(168,85,247,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>
-                                            {getRoleEmoji(s.role)}
-                                        </div>
-                                        <div>
-                                            <p style={{ color: 'white', fontWeight: 700, fontSize: '15px' }}>{s.staffName}</p>
-                                            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontWeight: 600 }}>{s.role} • {s.employmentType?.replace('_', ' ')}</p>
-                                        </div>
-                                    </div>
-                                    <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: statusStyle.bg, color: statusStyle.text, border: `1px solid ${statusStyle.border}`, letterSpacing: '0.5px' }}>
-                                        {s.status}
-                                    </span>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-                                    <div><p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Pay Type</p><p style={{ color: 'white', fontSize: '13px', fontWeight: 600 }}>{s.payType}</p></div>
-                                    <div><p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Pay Rate</p><p style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700 }}>Rs.{s.payRate?.toFixed(2)}</p></div>
-                                    {s.phone && <div><p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Phone</p><p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{s.phone}</p></div>}
-                                    {s.joinDate && <div><p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Joined</p><p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{s.joinDate}</p></div>}
-                                </div>
-                                <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <button onClick={() => openEdit(s)} style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-                                    {s.status === 'ACTIVE' ? (
-                                        <button onClick={() => handleDelete(s.id)} style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', color: '#f87171', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Deactivate</button>
-                                    ) : (
-                                        <button onClick={() => handleReactivate(s.id)} style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.05)', color: '#4ade80', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Reactivate</button>
-                                    )}
-                                </div>
-                            </div>
-                        )
-                    })}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', overflow: 'hidden' }}>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                    {['Name', 'Role', 'Employment', 'Pay', 'Phone', 'Joined', 'Status', 'Actions'].map(header => (
+                                        <th key={header} style={{
+                                            padding: '14px 16px',
+                                            textAlign: 'left',
+                                            color: 'rgba(255,255,255,0.35)',
+                                            fontSize: '11px',
+                                            fontWeight: 700,
+                                            letterSpacing: '0.8px',
+                                            textTransform: 'uppercase',
+                                            background: 'rgba(255,255,255,0.02)',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            {header}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredStaff.map((s, index) => {
+                                    const statusStyle = getStatusStyle(s.status)
+                                    return (
+                                        <tr key={s.id}
+                                            style={{
+                                                borderBottom: index < filteredStaff.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(168,85,247,0.04)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                            {/* Name */}
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{
+                                                        width: '38px', height: '38px', borderRadius: '10px',
+                                                        background: 'rgba(168,85,247,0.1)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '18px', flexShrink: 0
+                                                    }}>
+                                                        {getRoleEmoji(s.role)}
+                                                    </div>
+                                                    <div>
+                                                        <p style={{ color: 'white', fontWeight: 700, fontSize: '14px', margin: 0 }}>{s.staffName}</p>
+                                                        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: '2px 0 0' }}>{s.nicNumber || '—'}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            {/* Role */}
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <span style={{
+                                                    padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                                                    background: 'rgba(168,85,247,0.08)', color: '#c084fc',
+                                                    border: '1px solid rgba(168,85,247,0.15)', whiteSpace: 'nowrap'
+                                                }}>
+                                                    {s.role}
+                                                </span>
+                                            </td>
+
+                                            {/* Employment Type */}
+                                            <td style={{ padding: '14px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                                                {s.employmentType?.replace('_', ' ')}
+                                            </td>
+
+                                            {/* Pay */}
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <p style={{ color: '#4ade80', fontSize: '13px', fontWeight: 700, margin: 0 }}>Rs.{s.payRate?.toFixed(2)}</p>
+                                                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontWeight: 600, margin: '2px 0 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.payType}</p>
+                                            </td>
+
+                                            {/* Phone */}
+                                            <td style={{ padding: '14px 16px', color: 'rgba(255,255,255,0.5)', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                                                {s.phone || '—'}
+                                            </td>
+
+                                            {/* Join Date */}
+                                            <td style={{ padding: '14px 16px', color: 'rgba(255,255,255,0.4)', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                                                {s.joinDate || '—'}
+                                            </td>
+
+                                            {/* Status */}
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <span style={{
+                                                    padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700,
+                                                    background: statusStyle.bg, color: statusStyle.text,
+                                                    border: `1px solid ${statusStyle.border}`, letterSpacing: '0.5px',
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {s.status}
+                                                </span>
+                                            </td>
+
+                                            {/* Actions */}
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                                    <button onClick={() => openEdit(s)} style={{
+                                                        padding: '6px 14px', borderRadius: '8px',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.6)',
+                                                        fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                                                        transition: 'all 0.2s', whiteSpace: 'nowrap'
+                                                    }}
+                                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'white' }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
+                                                    >Edit</button>
+                                                    {s.status === 'ACTIVE' ? (
+                                                        <button onClick={() => handleDelete(s.id)} style={{
+                                                            padding: '6px 14px', borderRadius: '8px',
+                                                            border: '1px solid rgba(239,68,68,0.2)',
+                                                            background: 'rgba(239,68,68,0.05)', color: '#f87171',
+                                                            fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                                                            transition: 'all 0.2s', whiteSpace: 'nowrap'
+                                                        }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)' }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.05)' }}
+                                                        >Deactivate</button>
+                                                    ) : (
+                                                        <button onClick={() => handleReactivate(s.id)} style={{
+                                                            padding: '6px 14px', borderRadius: '8px',
+                                                            border: '1px solid rgba(34,197,94,0.2)',
+                                                            background: 'rgba(34,197,94,0.05)', color: '#4ade80',
+                                                            fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                                                            transition: 'all 0.2s', whiteSpace: 'nowrap'
+                                                        }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.12)' }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(34,197,94,0.05)' }}
+                                                        >Reactivate</button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
@@ -209,19 +336,20 @@ function StaffManagement() {
                         <div style={{ display: 'grid', gap: '16px' }}>
                             <div>
                                 <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Staff Name *</label>
-                                <input type="text" value={formData.staffName} onChange={e => setFormData({ ...formData, staffName: e.target.value })} style={inputStyle} placeholder="Full name" />
+                                <input type="text" value={formData.staffName} onChange={e => {setFormData({ ...formData, staffName: e.target.value }); if(errors.staffName) setErrors({...errors, staffName: null})}} style={{...inputStyle, borderColor: errors.staffName ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="Full name" />
+                                {errors.staffName && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.staffName}</p>}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
                                     <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Role *</label>
                                     <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-                                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                        {ROLES.map(r => <option key={r} value={r} style={{ background: '#1a1a1a', color: 'white' }}>{r}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Employment Type</label>
                                     <select value={formData.employmentType} onChange={e => setFormData({ ...formData, employmentType: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-                                        {EMPLOYMENT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+                                        {EMPLOYMENT_TYPES.map(t => <option key={t} value={t} style={{ background: '#1a1a1a', color: 'white' }}>{t.replace('_', ' ')}</option>)}
                                     </select>
                                 </div>
                             </div>
@@ -229,22 +357,25 @@ function StaffManagement() {
                                 <div>
                                     <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Pay Type *</label>
                                     <select value={formData.payType} onChange={e => setFormData({ ...formData, payType: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-                                        {PAY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                        {PAY_TYPES.map(t => <option key={t} value={t} style={{ background: '#1a1a1a', color: 'white' }}>{t}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Pay Rate (LKR) *</label>
-                                    <input type="number" value={formData.payRate} onChange={e => setFormData({ ...formData, payRate: e.target.value })} style={inputStyle} placeholder="0.00" />
+                                    <input type="number" value={formData.payRate} onChange={e => {setFormData({ ...formData, payRate: e.target.value }); if(errors.payRate) setErrors({...errors, payRate: null})}} style={{...inputStyle, borderColor: errors.payRate ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="0.00" />
+                                    {errors.payRate && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.payRate}</p>}
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
                                     <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Phone</label>
-                                    <input type="text" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={inputStyle} placeholder="07X XXX XXXX" />
+                                    <input type="text" value={formData.phone} onChange={e => {setFormData({ ...formData, phone: e.target.value }); if(errors.phone) setErrors({...errors, phone: null})}} style={{...inputStyle, borderColor: errors.phone ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="07X XXX XXXX" />
+                                    {errors.phone && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.phone}</p>}
                                 </div>
                                 <div>
                                     <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>NIC Number</label>
-                                    <input type="text" value={formData.nicNumber} onChange={e => setFormData({ ...formData, nicNumber: e.target.value })} style={inputStyle} placeholder="National ID" />
+                                    <input type="text" value={formData.nicNumber} onChange={e => {setFormData({ ...formData, nicNumber: e.target.value }); if(errors.nicNumber) setErrors({...errors, nicNumber: null})}} style={{...inputStyle, borderColor: errors.nicNumber ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="National ID" />
+                                    {errors.nicNumber && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.nicNumber}</p>}
                                 </div>
                             </div>
                             <div>
@@ -262,8 +393,8 @@ function StaffManagement() {
                         </div>
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.6)', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
-                            <button onClick={handleSave} disabled={saving || !formData.staffName || !formData.payRate}
-                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: saving || !formData.staffName || !formData.payRate ? 0.5 : 1 }}>
+                            <button onClick={handleSave} disabled={saving || !formData.staffName || !formData.payRate || Object.keys(errors).length > 0}
+                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: saving || !formData.staffName || !formData.payRate || Object.keys(errors).length > 0 ? 0.5 : 1 }}>
                                 {saving ? 'Saving...' : editingStaff ? 'Update Staff' : 'Add Staff'}
                             </button>
                         </div>
