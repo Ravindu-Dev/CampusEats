@@ -30,7 +30,7 @@ public class StaffController {
     }
 
     @GetMapping("/canteen/{canteenId}")
-    public ResponseEntity<?> getStaffByCanteen(@PathVariable String canteenId) {
+    public ResponseEntity<?> getStaffByCanteen(@PathVariable("canteenId") String canteenId) {
         try {
             List<StaffResponse> staff = staffService.getStaffByCanteen(canteenId);
             return ResponseEntity.ok(staff);
@@ -41,7 +41,7 @@ public class StaffController {
     }
 
     @GetMapping("/canteen/{canteenId}/active")
-    public ResponseEntity<?> getActiveStaffByCanteen(@PathVariable String canteenId) {
+    public ResponseEntity<?> getActiveStaffByCanteen(@PathVariable("canteenId") String canteenId) {
         try {
             List<StaffResponse> staff = staffService.getActiveStaffByCanteen(canteenId);
             return ResponseEntity.ok(staff);
@@ -52,7 +52,7 @@ public class StaffController {
     }
 
     @GetMapping("/canteen/{canteenId}/count")
-    public ResponseEntity<?> getActiveStaffCount(@PathVariable String canteenId) {
+    public ResponseEntity<?> getActiveStaffCount(@PathVariable("canteenId") String canteenId) {
         try {
             long count = staffService.getActiveStaffCount(canteenId);
             return ResponseEntity.ok(Map.of("count", count));
@@ -63,7 +63,7 @@ public class StaffController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateStaff(@PathVariable String id, @RequestBody CreateStaffRequest request) {
+    public ResponseEntity<?> updateStaff(@PathVariable("id") String id, @RequestBody CreateStaffRequest request) {
         try {
             StaffResponse staff = staffService.updateStaff(id, request);
             return ResponseEntity.ok(staff);
@@ -77,7 +77,7 @@ public class StaffController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<?> updateStaffStatus(@PathVariable String id, @RequestParam String status) {
+    public ResponseEntity<?> updateStaffStatus(@PathVariable("id") String id, @RequestParam("status") String status) {
         try {
             StaffResponse staff = staffService.updateStaffStatus(id, status);
             return ResponseEntity.ok(staff);
@@ -91,7 +91,7 @@ public class StaffController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteStaff(@PathVariable String id) {
+    public ResponseEntity<?> deleteStaff(@PathVariable("id") String id) {
         try {
             staffService.deleteStaff(id);
             return ResponseEntity.ok("Staff member deactivated successfully");

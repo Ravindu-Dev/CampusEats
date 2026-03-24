@@ -32,7 +32,7 @@ public class ComboDealController {
     }
 
     @GetMapping("/canteen/{canteenId}")
-    public ResponseEntity<List<ComboDealResponse>> getCanteenComboDeals(@PathVariable String canteenId) {
+    public ResponseEntity<List<ComboDealResponse>> getCanteenComboDeals(@PathVariable("canteenId") String canteenId) {
         return ResponseEntity.ok(comboDealService.getCanteenComboDeals(canteenId));
     }
 
@@ -51,24 +51,24 @@ public class ComboDealController {
     @PreAuthorize("hasRole('CANTEEN_OWNER')")
     public ResponseEntity<ComboDealResponse> createComboDeal(
             @Valid @RequestBody ComboDealRequest request,
-            @RequestParam String canteenId) {
+            @RequestParam("canteenId") String canteenId) {
         return ResponseEntity.ok(comboDealService.createComboDeal(canteenId, request));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('CANTEEN_OWNER')")
     public ResponseEntity<ComboDealResponse> updateComboDeal(
-            @PathVariable String id,
+            @PathVariable("id") String id,
             @Valid @RequestBody ComboDealRequest request,
-            @RequestParam String canteenId) {
+            @RequestParam("canteenId") String canteenId) {
         return ResponseEntity.ok(comboDealService.updateComboDeal(id, canteenId, request));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('CANTEEN_OWNER')")
     public ResponseEntity<?> deleteComboDeal(
-            @PathVariable String id,
-            @RequestParam String canteenId) {
+            @PathVariable("id") String id,
+            @RequestParam("canteenId") String canteenId) {
         try {
             comboDealService.deleteComboDeal(id, canteenId);
             return ResponseEntity.ok(Map.of("message", "Combo deal deleted successfully"));

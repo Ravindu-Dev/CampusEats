@@ -46,7 +46,7 @@ public class ReviewController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> updateReview(@PathVariable String id, @Valid @RequestBody UpdateReviewRequest request) {
+    public ResponseEntity<?> updateReview(@PathVariable("id") String id, @Valid @RequestBody UpdateReviewRequest request) {
         try {
             ReviewResponse review = reviewService.updateReview(id, request, getCurrentUserId());
             return ResponseEntity.ok(review);
@@ -57,7 +57,7 @@ public class ReviewController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> deleteReview(@PathVariable String id) {
+    public ResponseEntity<?> deleteReview(@PathVariable("id") String id) {
         try {
             reviewService.deleteReview(id, getCurrentUserId());
             return ResponseEntity.ok().body("Review deleted successfully");
@@ -75,13 +75,13 @@ public class ReviewController {
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<ReviewResponse>> getUserReviews(@PathVariable String userId) {
+    public ResponseEntity<List<ReviewResponse>> getUserReviews(@PathVariable("userId") String userId) {
         List<ReviewResponse> reviews = reviewService.getUserReviews(userId);
         return ResponseEntity.ok(reviews);
     }
 
     @GetMapping("/canteen/{canteenId}")
-    public ResponseEntity<List<ReviewResponse>> getCanteenReviews(@PathVariable String canteenId) {
+    public ResponseEntity<List<ReviewResponse>> getCanteenReviews(@PathVariable("canteenId") String canteenId) {
         List<ReviewResponse> reviews = reviewService.getCanteenReviews(canteenId);
         return ResponseEntity.ok(reviews);
     }
