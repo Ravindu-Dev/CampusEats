@@ -223,7 +223,7 @@ function Menu() {
 
             {/* Loyalty Points Floating Badge */}
             {user && loyaltyAccount && tierConfig && (
-                <div className="fixed bottom-6 right-6 z-50 cursor-pointer" onClick={() => setShowLoyaltyBadge(!showLoyaltyBadge)}>
+                <div className="fixed bottom-6 left-6 z-50 cursor-pointer" onClick={() => setShowLoyaltyBadge(!showLoyaltyBadge)}>
                     {showLoyaltyBadge ? (
                         <div style={{ background: 'rgba(15,15,15,0.95)', border: `1px solid ${tierConfig.border}`, backdropFilter: 'blur(20px)' }} className="rounded-2xl p-5 shadow-2xl w-72">
                             <div className="flex items-center justify-between mb-3">
@@ -518,6 +518,16 @@ function Menu() {
                     </div>
                 </div>
 
+                {/* Canteen Operating Hours */}
+                {selectedRestaurant && canteens[selectedRestaurant] && (
+                    <div className="flex items-center gap-2 mb-4 text-xs font-bold text-orange-500 uppercase tracking-widest bg-orange-500/5 py-2.5 px-5 rounded-xl border border-orange-500/10 w-fit">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Operating: {canteens[selectedRestaurant].openingTime?.split('T')[1]?.substring(0, 5) || canteens[selectedRestaurant].openingTime || '08:00 AM'} — {canteens[selectedRestaurant].closingTime?.split('T')[1]?.substring(0, 5) || canteens[selectedRestaurant].closingTime || '08:00 PM'}</span>
+                    </div>
+                )}
+
                 {/* Results count */}
                 {filteredItems.length > 0 && (
                     <p className="text-gray-600 text-sm font-medium mb-6">
@@ -538,7 +548,7 @@ function Menu() {
                         {filteredItems.map((item, index) => {
                             const canteen = canteens[item.canteenId]
                             return (
-                                <div key={item.id} className="group bg-[#111] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-all duration-300" style={{ animationDelay: `${index * 40}ms` }}>
+                                <div key={item.id} className="group bg-[#111] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-all duration-300 flex flex-col" style={{ animationDelay: `${index * 40}ms` }}>
                                     <div className="relative h-52 overflow-hidden cursor-pointer group" onClick={() => setSelectedItem(item)}>
                                         {item.imageUrl ? (
                                             <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -558,7 +568,7 @@ function Menu() {
                                             <span className="px-2.5 py-1 bg-black/50 backdrop-blur-md rounded-lg text-[10px] font-bold text-white/80 uppercase tracking-widest border border-white/10">{item.category}</span>
                                         </div>
                                     </div>
-                                    <div className="p-5">
+                                    <div className="p-5 flex flex-col flex-grow">
                                         <h3 className="text-base font-black text-white leading-tight group-hover:text-orange-300 transition-colors line-clamp-1 mb-1" title={item.name}>{item.name}</h3>
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-1.5 text-gray-500">
@@ -574,9 +584,19 @@ function Menu() {
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-gray-600 text-xs leading-relaxed line-clamp-2 h-8 mb-4">{item.description || 'A delicious choice for your meal today.'}</p>
+                                        <div className="mb-4">
+                                            <p className="text-gray-600 text-xs leading-relaxed line-clamp-2">{item.description || 'A delicious choice for your meal today.'}</p>
+                                            {item.description && item.description.length > 60 && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedItem(item) }}
+                                                    className="text-orange-500 hover:text-orange-400 text-[10px] font-bold mt-1 transition-colors"
+                                                >
+                                                    See more
+                                                </button>
+                                            )}
+                                        </div>
                                         <button onClick={() => handleAddToCart(item)} disabled={addingToCart[item.id]}
-                                            className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 ${addingToCart[item.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-[0_0_25px_rgba(234,88,12,0.4)] hover:scale-[1.02] active:scale-95'}`}>
+                                            className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 mt-auto ${addingToCart[item.id] ? 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5' : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:shadow-[0_0_25px_rgba(234,88,12,0.4)] hover:scale-[1.02] active:scale-95'}`}>
                                             {addingToCart[item.id] ? (
                                                 <><div className="w-3.5 h-3.5 border-2 border-gray-600 border-t-gray-400 rounded-full animate-spin" />Adding…</>
                                             ) : (
