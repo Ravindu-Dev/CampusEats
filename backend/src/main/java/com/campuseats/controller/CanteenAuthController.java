@@ -230,4 +230,39 @@ public class CanteenAuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token refresh failed");
         }
     }
+
+    @PutMapping("/owner/{id}")
+    public ResponseEntity<?> updateOwnerProfile(@PathVariable("id") String id,
+                                                 @RequestBody CanteenOwner ownerDetails) {
+        try {
+            CanteenOwner updatedOwner = canteenOwnerService.updateOwner(id, ownerDetails);
+
+            // Build response (without exposing password)
+            Canteen canteen = null;
+            String canteenName = null;
+            String canteenStatus = null;
+
+            if (updatedOwner.getCanteenId() != null) {
+                canteen = canteenRepository.findById(updatedOwner.getCanteenId()).orElse(null);
+                if (canteen != null) {
+                    canteenName = canteen.getCanteenName();
+                    canteenStatus = canteen.getStatus();
+                }
+            }
+
+            CanteenOwnerResponse response = new CanteenOwnerResponse(
+                    null, // no new token needed
+                    updatedOwner.getEmail(),
+                    updatedOwner.getOwnerName(),
+                    updatedOwner.getCanteenId(),
+                    canteenName,
+                    canteenStatus,
+                    updatedOwner.getApprovalStatus());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
+        }
+    }
 }

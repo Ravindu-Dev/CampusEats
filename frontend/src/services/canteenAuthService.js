@@ -37,12 +37,21 @@ const refreshToken = async () => {
     return response.data;
 };
 
+const updateOwnerProfile = async (id, data) => {
+    const owner = getCurrentCanteenOwner();
+    const response = await axios.put(API_URL + 'owner/' + id, data, {
+        headers: owner ? { Authorization: `Bearer ${owner.token}` } : {}
+    });
+    return response.data;
+};
+
 const canteenAuthService = {
     register,
     login,
     logout,
     getCurrentCanteenOwner,
     refreshToken,
+    updateOwnerProfile,
 };
 
 export default canteenAuthService;

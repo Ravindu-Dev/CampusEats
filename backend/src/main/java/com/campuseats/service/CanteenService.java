@@ -33,27 +33,65 @@ public class CanteenService {
         Canteen canteen = canteenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Canteen not found"));
 
-        // Update fields
+        // Basic Details
         if (canteenDetails.getCanteenName() != null) {
             canteen.setCanteenName(canteenDetails.getCanteenName());
+        }
+        if (canteenDetails.getOwnerName() != null) {
+            canteen.setOwnerName(canteenDetails.getOwnerName());
         }
         if (canteenDetails.getDescription() != null) {
             canteen.setDescription(canteenDetails.getDescription());
         }
+        if (canteenDetails.getPhoneNumber() != null) {
+            canteen.setPhoneNumber(canteenDetails.getPhoneNumber());
+        }
+        if (canteenDetails.getAlternativeContactNumber() != null) {
+            canteen.setAlternativeContactNumber(canteenDetails.getAlternativeContactNumber());
+        }
+
+        // Location & Address
+        if (canteenDetails.getLocation() != null) {
+            canteen.setLocation(canteenDetails.getLocation());
+        }
+        if (canteenDetails.getCampus() != null) {
+            canteen.setCampus(canteenDetails.getCampus());
+        }
+        if (canteenDetails.getFloorNumber() != null) {
+            canteen.setFloorNumber(canteenDetails.getFloorNumber());
+        }
+        if (canteenDetails.getRoomNumber() != null) {
+            canteen.setRoomNumber(canteenDetails.getRoomNumber());
+        }
+        if (canteenDetails.getLandmark() != null) {
+            canteen.setLandmark(canteenDetails.getLandmark());
+        }
+
+        // Operational Details
         if (canteenDetails.getOpeningTime() != null) {
             canteen.setOpeningTime(canteenDetails.getOpeningTime());
         }
         if (canteenDetails.getClosingTime() != null) {
             canteen.setClosingTime(canteenDetails.getClosingTime());
         }
-        if (canteenDetails.getPhoneNumber() != null) {
-            canteen.setPhoneNumber(canteenDetails.getPhoneNumber());
+        if (canteenDetails.getOperatingDays() != null) {
+            canteen.setOperatingDays(canteenDetails.getOperatingDays());
         }
-        if (canteenDetails.getLocation() != null) {
-            canteen.setLocation(canteenDetails.getLocation());
+        if (canteenDetails.getAveragePreparationTime() != null) {
+            canteen.setAveragePreparationTime(canteenDetails.getAveragePreparationTime());
         }
+        canteen.setDeliveryAvailable(canteenDetails.isDeliveryAvailable());
+        canteen.setPickupAvailable(canteenDetails.isPickupAvailable());
+        if (canteenDetails.getSeatingCapacity() != null) {
+            canteen.setSeatingCapacity(canteenDetails.getSeatingCapacity());
+        }
+
+        // Categories
         if (canteenDetails.getCuisineTypes() != null) {
             canteen.setCuisineTypes(canteenDetails.getCuisineTypes());
+        }
+        if (canteenDetails.getSpecialtyItems() != null) {
+            canteen.setSpecialtyItems(canteenDetails.getSpecialtyItems());
         }
         if (canteenDetails.getDietaryOptions() != null) {
             canteen.setDietaryOptions(canteenDetails.getDietaryOptions());
