@@ -6,6 +6,9 @@ import orderService from '../services/orderService'
 import { menuItemService } from '../services/menuItemService'
 import CanteenLayout from '../components/CanteenLayout'
 
+const cuisineOptions = ['INDIAN', 'CHINESE', 'CONTINENTAL', 'ITALIAN', 'MEXICAN', 'BEVERAGES', 'SNACKS', 'DESSERTS']
+const allDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+
 function CanteenDashboard() {
     const [canteenOwner, setCanteenOwner] = useState(null)
     const [canteen, setCanteen] = useState(null)
@@ -14,9 +17,17 @@ function CanteenDashboard() {
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
+    // Edit modal states
+    const [showEditCanteen, setShowEditCanteen] = useState(false)
+    const [showEditOwner, setShowEditOwner] = useState(false)
+    const [editCanteenData, setEditCanteenData] = useState({})
+    const [editOwnerData, setEditOwnerData] = useState({})
+    const [saving, setSaving] = useState(false)
+    const [saveSuccess, setSaveSuccess] = useState('')
+    const [saveError, setSaveError] = useState('')
+
     useEffect(() => {
         const owner = canteenAuthService.getCurrentCanteenOwner()
-        console.log('Current Canteen Owner:', owner)
         if (!owner) {
             navigate('/canteen/login')
             return
@@ -26,7 +37,6 @@ function CanteenDashboard() {
         const fetchData = async () => {
             try {
                 if (owner.canteenId) {
-                    console.log('Fetching data for canteen ID:', owner.canteenId)
                     const [canteenData, ordersData, menuData] = await Promise.all([
                         canteenService.getCanteenById(owner.canteenId).catch(err => {
                             console.error('Error fetching canteen:', err)
@@ -42,12 +52,9 @@ function CanteenDashboard() {
                         })
                     ])
 
-                    console.log('Fetched Data:', { canteen: canteenData, ordersCount: ordersData?.length })
                     setCanteen(canteenData)
                     setOrders(ordersData || [])
                     setMenuItems(menuData || [])
-                } else {
-                    console.warn('Owner object is missing canteenId:', owner)
                 }
             } catch (err) {
                 console.error('Error fetching dashboard data:', err)
@@ -59,6 +66,106 @@ function CanteenDashboard() {
         fetchData()
     }, [navigate])
 
+    // ─── Edit Handlers ───
+    const openEditCanteen = () => {
+        setEditCanteenData({
+            canteenName: canteen?.canteenName || '',
+            location: canteen?.location || '',
+            campus: canteen?.campus || '',
+            floorNumber: canteen?.floorNumber || '',
+            roomNumber: canteen?.roomNumber || '',
+            phoneNumber: canteen?.phoneNumber || '',
+            alternativeContactNumber: canteen?.alternativeContactNumber || '',
+            openingTime: canteen?.openingTime || '',
+            closingTime: canteen?.closingTime || '',
+            description: canteen?.description || '',
+            cuisineTypes: canteen?.cuisineTypes || [],
+            operatingDays: canteen?.operatingDays || [],
+            seatingCapacity: canteen?.seatingCapacity || '',
+            averagePreparationTime: canteen?.averagePreparationTime || '',
+            deliveryAvailable: canteen?.deliveryAvailable || false,
+            pickupAvailable: canteen?.pickupAvailable !== undefined ? canteen.pickupAvailable : true,
+        })
+        setSaveError('')
+        setSaveSuccess('')
+        setShowEditCanteen(true)
+    }
+
+    const openEditOwner = () => {
+        setEditOwnerData({
+            ownerName: canteenOwner?.ownerName || '',
+            phoneNumber: canteen?.phoneNumber || canteenOwner?.phoneNumber || '',
+        })
+        setSaveError('')
+        setSaveSuccess('')
+        setShowEditOwner(true)
+    }
+
+    const handleSaveCanteen = async () => {
+        setSaving(true)
+        setSaveError('')
+        try {
+            const updated = await canteenService.updateCanteen(canteen.id, editCanteenData)
+            setCanteen(updated)
+            setSaveSuccess('Canteen details updated successfully!')
+            setTimeout(() => { setShowEditCanteen(false); setSaveSuccess('') }, 1200)
+        } catch (err) {
+            setSaveError(err.response?.data || 'Failed to update canteen details.')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleSaveOwner = async () => {
+        setSaving(true)
+        setSaveError('')
+        try {
+            // We need the owner ID. The localStorage stores the login response.
+            // The owner id is stored in canteen.ownerId
+            const ownerId = canteen?.ownerId
+            if (!ownerId) throw new Error('Owner ID not found')
+
+            const result = await canteenAuthService.updateOwnerProfile(ownerId, editOwnerData)
+
+            // Update localStorage with new owner name
+            const stored = canteenAuthService.getCurrentCanteenOwner()
+            if (stored) {
+                stored.ownerName = result.ownerName
+                localStorage.setItem('canteenOwner', JSON.stringify(stored))
+            }
+            setCanteenOwner(prev => ({ ...prev, ownerName: result.ownerName }))
+
+            // Also update the ownerName on canteen record
+            await canteenService.updateCanteen(canteen.id, { ownerName: result.ownerName })
+            setCanteen(prev => ({ ...prev, ownerName: result.ownerName }))
+
+            setSaveSuccess('Owner details updated successfully!')
+            setTimeout(() => { setShowEditOwner(false); setSaveSuccess('') }, 1200)
+        } catch (err) {
+            setSaveError(err.response?.data || 'Failed to update owner details.')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleCanteenFieldChange = (e) => {
+        const { name, value, type, checked } = e.target
+        setEditCanteenData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    }
+
+    const toggleCanteenArrayField = (field, value) => {
+        setEditCanteenData(prev => {
+            const arr = Array.isArray(prev[field]) ? [...prev[field]] : []
+            return { ...prev, [field]: arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value] }
+        })
+    }
+
+    const handleOwnerFieldChange = (e) => {
+        const { name, value } = e.target
+        setEditOwnerData(prev => ({ ...prev, [name]: value }))
+    }
+
+    // ─── Styling helpers ───
     const getStatusStyles = (status) => {
         switch (status) {
             case 'APPROVED': return { bg: 'rgba(34,197,94,0.1)', text: '#4ade80', border: 'rgba(34,197,94,0.2)' }
@@ -81,18 +188,32 @@ function CanteenDashboard() {
     const successfulOrders = orders.filter(o => o.paymentStatus === 'succeeded') || [];
     const totalOrdersCount = successfulOrders.length;
 
-    // Calculate Today's Revenue
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
     const todayRevenue = successfulOrders
         .filter(o => new Date(o.createdAt).getTime() >= todayStart)
         .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
-    // Recent Completed Orders
     const recentlyCompleted = orders
         .filter(o => o.orderStatus === 'COMPLETED' || o.orderStatus === 'READY')
         .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
         .slice(0, 5);
+
+    // ─── Shared modal styles ───
+    const inputCls = "w-full px-4 py-3 bg-[#0d0d0d] border border-white/[0.08] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition placeholder-gray-600 text-sm"
+    const labelCls = "block text-sm font-bold text-gray-400 mb-2"
+
+    const EditButton = ({ onClick, title }) => (
+        <button
+            onClick={onClick}
+            title={title}
+            className="p-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/20 transition-all cursor-pointer"
+        >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+        </button>
+    )
 
     if (loading) {
         return (
@@ -207,14 +328,17 @@ function CanteenDashboard() {
             </div>
 
             {/* Bottom Content Area */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
                 {/* Canteen Information Panel */}
                 {canteen ? (
                     <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '32px' }}>
-                        <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316', boxShadow: '0 0 10px rgba(249,115,22,0.5)' }}></span>
-                            Canteen Details
-                        </h3>
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316', boxShadow: '0 0 10px rgba(249,115,22,0.5)' }}></span>
+                                Canteen Details
+                            </h3>
+                            <EditButton onClick={openEditCanteen} title="Edit canteen details" />
+                        </div>
 
                         <div className="space-y-6">
                             <div>
@@ -283,60 +407,347 @@ function CanteenDashboard() {
                     </div>
                 )}
 
-                {/* Pending Area / Recent Activity */}
-                <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column' }}>
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 10px rgba(59,130,246,0.5)' }}></span>
-                        Recent Completed Orders
-                    </h3>
+                {/* Owner Details Panel */}
+                <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '32px' }}>
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 10px rgba(59,130,246,0.5)' }}></span>
+                            Owner Details
+                        </h3>
+                        <EditButton onClick={openEditOwner} title="Edit owner details" />
+                    </div>
 
-                    {recentlyCompleted.length === 0 ? (
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'rgba(255,255,255,0.2)' }}>
-                            <div style={{ padding: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.02)', marginBottom: '16px' }}>
-                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-lg shadow-orange-500/20">
+                                {canteenOwner?.ownerName?.charAt(0)?.toUpperCase() || 'C'}
                             </div>
-                            <p className="text-lg font-medium text-gray-400">No recent activity</p>
-                            <p className="text-sm mt-2 text-gray-500">Your latest completed orders will appear here.</p>
+                            <div>
+                                <p className="font-semibold text-gray-100 text-lg">{canteenOwner?.ownerName}</p>
+                                <p className="text-sm text-gray-500">Canteen Owner</p>
+                            </div>
                         </div>
-                    ) : (
-                        <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar" style={{ maxHeight: '400px' }}>
-                            {recentlyCompleted.map(order => {
-                                const style = getOrderBadgeStyle(order.orderStatus);
-                                return (
-                                    <div key={order.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }} className="rounded-xl p-4 flex items-center justify-between hover:bg-[rgba(255,255,255,0.03)] transition-colors">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <span className="font-bold text-gray-200">#{order.id.slice(-6).toUpperCase()}</span>
-                                                <span style={{ background: style.bg, color: style.text, border: `1px solid ${style.border}` }} className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider">
-                                                    {order.orderStatus}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-gray-400 truncate max-w-[200px]">{order.customerName}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-green-400">Rs.{order.totalAmount?.toFixed(2)}</p>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                {new Date(order.updatedAt || order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
 
-                    {recentlyCompleted.length > 0 && (
-                        <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.05)] text-center">
-                            <button
-                                onClick={() => navigate('/canteen/orders')}
-                                className="text-orange-400 hover:text-orange-300 text-sm font-semibold transition-colors"
-                            >
-                                View all orders →
-                            </button>
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1 font-medium">Email Address</p>
+                            <p className="font-medium text-gray-200">{canteenOwner?.email}</p>
+                            <p className="text-xs text-gray-600 mt-1">Email cannot be changed</p>
                         </div>
-                    )}
+
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1 font-medium">Phone Number</p>
+                            <p className="font-medium text-gray-200">{canteen?.phoneNumber || '—'}</p>
+                        </div>
+
+                        {canteen?.alternativeContactNumber && (
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1 font-medium">Alternative Contact</p>
+                                <p className="font-medium text-gray-200">{canteen.alternativeContactNumber}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {/* Recent Completed Orders */}
+            <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column' }}>
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 10px rgba(59,130,246,0.5)' }}></span>
+                    Recent Completed Orders
+                </h3>
+
+                {recentlyCompleted.length === 0 ? (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'rgba(255,255,255,0.2)', minHeight: '180px' }}>
+                        <div style={{ padding: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.02)', marginBottom: '16px' }}>
+                            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <p className="text-lg font-medium text-gray-400">No recent activity</p>
+                        <p className="text-sm mt-2 text-gray-500">Your latest completed orders will appear here.</p>
+                    </div>
+                ) : (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {recentlyCompleted.map(order => {
+                            const style = getOrderBadgeStyle(order.orderStatus);
+                            return (
+                                <div key={order.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }} className="rounded-xl p-4 flex items-center justify-between hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <span className="font-bold text-gray-200">#{order.id.slice(-6).toUpperCase()}</span>
+                                            <span style={{ background: style.bg, color: style.text, border: `1px solid ${style.border}` }} className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider">
+                                                {order.orderStatus}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-400 truncate max-w-[200px]">{order.customerName}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-bold text-green-400">Rs.{order.totalAmount?.toFixed(2)}</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {new Date(order.updatedAt || order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+
+                {recentlyCompleted.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.05)] text-center">
+                        <button
+                            onClick={() => navigate('/canteen/orders')}
+                            className="text-orange-400 hover:text-orange-300 text-sm font-semibold transition-colors cursor-pointer"
+                        >
+                            View all orders →
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* ═══════════════════════════════════════════
+                EDIT CANTEEN DETAILS MODAL
+            ═══════════════════════════════════════════ */}
+            {showEditCanteen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEditCanteen(false)} />
+                    <div className="relative bg-[#111] border border-white/[0.08] rounded-3xl p-8 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-black text-white flex items-center gap-3">
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316', boxShadow: '0 0 10px rgba(249,115,22,0.5)' }}></span>
+                                Edit Canteen Details
+                            </h2>
+                            <button onClick={() => setShowEditCanteen(false)} className="text-gray-500 hover:text-white transition p-1 cursor-pointer">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        {saveError && (
+                            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/25 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                                {saveError}
+                            </div>
+                        )}
+                        {saveSuccess && (
+                            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/25 text-green-400 px-4 py-3 rounded-xl mb-6 text-sm">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                {saveSuccess}
+                            </div>
+                        )}
+
+                        <div className="space-y-5">
+                            {/* Name */}
+                            <div>
+                                <label className={labelCls}>Canteen Name *</label>
+                                <input type="text" name="canteenName" value={editCanteenData.canteenName} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., The Campus Kitchen" />
+                            </div>
+
+                            {/* Location */}
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelCls}>Building / Location</label>
+                                    <input type="text" name="location" value={editCanteenData.location} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., Block A" />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Campus</label>
+                                    <input type="text" name="campus" value={editCanteenData.campus} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., Main Campus" />
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelCls}>Floor Number</label>
+                                    <input type="text" name="floorNumber" value={editCanteenData.floorNumber} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., 2" />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Room / Shop No.</label>
+                                    <input type="text" name="roomNumber" value={editCanteenData.roomNumber} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., 205" />
+                                </div>
+                            </div>
+
+                            {/* Contact */}
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelCls}>Phone Number</label>
+                                    <input type="tel" name="phoneNumber" value={editCanteenData.phoneNumber} onChange={handleCanteenFieldChange} className={inputCls} placeholder="+94 77 000 0000" />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Alternative Contact</label>
+                                    <input type="tel" name="alternativeContactNumber" value={editCanteenData.alternativeContactNumber} onChange={handleCanteenFieldChange} className={inputCls} placeholder="+94 77 000 0000" />
+                                </div>
+                            </div>
+
+                            {/* Hours */}
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelCls}>Opening Time</label>
+                                    <input type="time" name="openingTime" value={editCanteenData.openingTime} onChange={handleCanteenFieldChange} className={inputCls} style={{ colorScheme: 'dark' }} />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Closing Time</label>
+                                    <input type="time" name="closingTime" value={editCanteenData.closingTime} onChange={handleCanteenFieldChange} className={inputCls} style={{ colorScheme: 'dark' }} />
+                                </div>
+                            </div>
+
+                            {/* Operating Days */}
+                            <div>
+                                <label className={labelCls}>Operating Days</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {allDays.map(day => {
+                                        const selected = Array.isArray(editCanteenData.operatingDays) && editCanteenData.operatingDays.includes(day)
+                                        return (
+                                            <button key={day} type="button" onClick={() => toggleCanteenArrayField('operatingDays', day)}
+                                                className={`cursor-pointer px-4 py-2 rounded-xl text-sm font-black transition-all border ${selected ? 'bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-900/30' : 'bg-[#0d0d0d] text-gray-500 border-white/[0.07] hover:border-white/20'}`}>
+                                                {day}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Operational */}
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelCls}>Seating Capacity</label>
+                                    <input type="number" name="seatingCapacity" value={editCanteenData.seatingCapacity} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., 50" />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Avg. Prep Time (min)</label>
+                                    <input type="number" name="averagePreparationTime" value={editCanteenData.averagePreparationTime} onChange={handleCanteenFieldChange} className={inputCls} placeholder="15" />
+                                </div>
+                            </div>
+
+                            {/* Service options */}
+                            <div className="flex gap-4">
+                                {[
+                                    { name: 'deliveryAvailable', label: 'Delivery Available', icon: '🛵' },
+                                    { name: 'pickupAvailable', label: 'Pickup Available', icon: '🏃' },
+                                ].map(opt => (
+                                    <label key={opt.name} className={`flex items-center gap-3 cursor-pointer flex-1 p-3 rounded-xl border transition-all ${editCanteenData[opt.name] ? 'bg-orange-500/10 border-orange-500/30' : 'bg-[#0d0d0d] border-white/[0.07] hover:bg-white/[0.03]'}`}>
+                                        <input type="checkbox" name={opt.name} checked={editCanteenData[opt.name] || false} onChange={handleCanteenFieldChange} className="hidden" />
+                                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${editCanteenData[opt.name] ? 'bg-orange-500 border-orange-500' : 'border-white/20'}`}>
+                                            {editCanteenData[opt.name] && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                        </span>
+                                        <span className="text-lg">{opt.icon}</span>
+                                        <span className="text-white font-bold text-sm">{opt.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                                <label className={labelCls}>Description</label>
+                                <textarea name="description" value={editCanteenData.description} onChange={handleCanteenFieldChange} rows="3" placeholder="Describe your canteen..."
+                                    className={`${inputCls} resize-none`} />
+                            </div>
+
+                            {/* Cuisine Types */}
+                            <div>
+                                <label className={labelCls}>Cuisine Types</label>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {cuisineOptions.map(c => {
+                                        const selected = Array.isArray(editCanteenData.cuisineTypes) && editCanteenData.cuisineTypes.includes(c)
+                                        return (
+                                            <label key={c} className={`flex items-center gap-2 p-3 rounded-xl cursor-pointer border transition-all ${selected ? 'bg-orange-500/15 border-orange-500/40 text-orange-300' : 'bg-[#0d0d0d] border-white/[0.06] text-gray-500 hover:border-white/20'}`}>
+                                                <input type="checkbox" checked={selected} onChange={() => toggleCanteenArrayField('cuisineTypes', c)} className="hidden" />
+                                                <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-all ${selected ? 'bg-orange-500 border-orange-500' : 'border-white/20'}`}>
+                                                    {selected && <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>}
+                                                </span>
+                                                <span className="text-xs font-bold">{c}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.06]">
+                                <button onClick={() => setShowEditCanteen(false)}
+                                    className="px-6 py-3 bg-white/[0.06] border border-white/[0.08] text-white font-bold rounded-xl hover:bg-white/10 transition cursor-pointer">
+                                    Cancel
+                                </button>
+                                <button onClick={handleSaveCanteen} disabled={saving}
+                                    className="px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-orange-900/30 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
+                                    {saving ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Saving...
+                                        </span>
+                                    ) : 'Save Changes'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══════════════════════════════════════════
+                EDIT OWNER DETAILS MODAL
+            ═══════════════════════════════════════════ */}
+            {showEditOwner && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEditOwner(false)} />
+                    <div className="relative bg-[#111] border border-white/[0.08] rounded-3xl p-8 max-w-md w-full shadow-2xl">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-black text-white flex items-center gap-3">
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', boxShadow: '0 0 10px rgba(59,130,246,0.5)' }}></span>
+                                Edit Owner Details
+                            </h2>
+                            <button onClick={() => setShowEditOwner(false)} className="text-gray-500 hover:text-white transition p-1 cursor-pointer">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        {saveError && (
+                            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/25 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                                {saveError}
+                            </div>
+                        )}
+                        {saveSuccess && (
+                            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/25 text-green-400 px-4 py-3 rounded-xl mb-6 text-sm">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                {saveSuccess}
+                            </div>
+                        )}
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className={labelCls}>Email Address</label>
+                                <input type="email" value={canteenOwner?.email || ''} disabled
+                                    className="w-full px-4 py-3 bg-[#0d0d0d] border border-white/[0.05] text-gray-500 rounded-xl text-sm cursor-not-allowed" />
+                                <p className="text-xs text-gray-600 mt-1">Email cannot be changed</p>
+                            </div>
+
+                            <div>
+                                <label className={labelCls}>Owner Name *</label>
+                                <input type="text" name="ownerName" value={editOwnerData.ownerName} onChange={handleOwnerFieldChange} className={inputCls} placeholder="Your full name" />
+                            </div>
+
+                            <div>
+                                <label className={labelCls}>Phone Number</label>
+                                <input type="tel" name="phoneNumber" value={editOwnerData.phoneNumber} onChange={handleOwnerFieldChange} className={inputCls} placeholder="+94 77 000 0000" />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.06]">
+                                <button onClick={() => setShowEditOwner(false)}
+                                    className="px-6 py-3 bg-white/[0.06] border border-white/[0.08] text-white font-bold rounded-xl hover:bg-white/10 transition cursor-pointer">
+                                    Cancel
+                                </button>
+                                <button onClick={handleSaveOwner} disabled={saving}
+                                    className="px-8 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-xl shadow-lg shadow-orange-900/30 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
+                                    {saving ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Saving...
+                                        </span>
+                                    ) : 'Save Changes'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </CanteenLayout>
     )
 }
