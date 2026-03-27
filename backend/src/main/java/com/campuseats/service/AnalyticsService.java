@@ -201,14 +201,14 @@ public class AnalyticsService {
     private List<String> generateInsights(double totalRevenue, long totalOrders,
                                           CanteenPerformanceDTO topCanteen, String canteenId) {
         List<String> insights = new ArrayList<>();
-        insights.add(String.format("Total revenue for the selected period is \u20b9%.2f.", totalRevenue));
+        insights.add(String.format("Total revenue for the selected period is Rs. %.2f.", totalRevenue));
         insights.add(String.format("A total of %d orders were placed.", totalOrders));
         if ((canteenId == null || canteenId.isEmpty()) && topCanteen != null) {
-            insights.add(String.format("Top performing canteen: %s with \u20b9%.2f in revenue.",
+            insights.add(String.format("Top performing canteen: %s with Rs. %.2f in revenue.",
                     topCanteen.getCanteenName(), topCanteen.getRevenue()));
         }
         if (totalOrders > 0) {
-            insights.add(String.format("Average order value is \u20b9%.2f.", totalRevenue / totalOrders));
+            insights.add(String.format("Average order value is Rs. %.2f.", totalRevenue / totalOrders));
         }
         return insights;
     }

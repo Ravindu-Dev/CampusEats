@@ -3,6 +3,7 @@ import axios from 'axios';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, ShoppingBag, Store, RefreshCw, AlertCircle } from 'lucide-react';
 import canteenAdminService from '../../services/canteenAdminService';
+import adminAuthService from '../../services/adminAuthService';
 
 const AdminAnalytics = () => {
   const [data, setData] = useState(null);
@@ -18,9 +19,7 @@ const AdminAnalytics = () => {
     try {
       const url = `http://localhost:8081/api/admin/analytics/overview?days=${days}${selectedCanteen ? `&canteenId=${selectedCanteen}` : ''}`;
       const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}` // Adjust based on your auth implementation
-        }
+        headers: adminAuthService.getAuthHeader()
       });
       setData(response.data);
     } catch (err) {
@@ -126,7 +125,7 @@ const AdminAnalytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard 
           title="Total Revenue" 
-          value={`₹${data?.totalRevenue?.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}`}
+          value={`Rs. ${data?.totalRevenue?.toLocaleString('en-LK', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}`}
           icon={<TrendingUp className="w-6 h-6 text-green-400" />}
           colorClass="bg-green-500/10 border-green-500/20"
         />
@@ -147,26 +146,26 @@ const AdminAnalytics = () => {
           value={data?.topCanteen?.canteenName || 'N/A'}
           icon={<Store className="w-6 h-6 text-orange-400" />}
           colorClass="bg-orange-500/10 border-orange-500/20"
-          subtext={`Revenue: ₹${data?.topCanteen?.revenue?.toLocaleString() || 0}`}
+          subtext={`Revenue: Rs. ${data?.topCanteen?.revenue?.toLocaleString('en-LK', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}`}
         />
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="flex flex-col gap-8">
         <div className="bg-[#111111] p-6 rounded-2xl border border-white/10">
           <h3 className="text-lg font-semibold text-white/90 mb-6 flex items-center gap-2">
              Revenue Trend
           </h3>
-          <div className="h-80 w-full">
+          <div className="h-[500px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data?.revenueTrend || []} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="date" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
+                <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `Rs.${value}`} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1a1a1a', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value) => [`₹${value}`, 'Revenue']}
+                  formatter={(value) => [`Rs. ${value}`, 'Revenue']}
                 />
                 <Line type="monotone" dataKey="revenue" stroke="#f97316" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#111111' }} activeDot={{ r: 6, fill: '#f97316' }} />
               </LineChart>
@@ -178,7 +177,7 @@ const AdminAnalytics = () => {
           <h3 className="text-lg font-semibold text-white/90 mb-6 flex items-center gap-2">
              User Growth
           </h3>
-          <div className="h-80 w-full">
+          <div className="h-[500px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data?.userGrowth || []} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
@@ -242,7 +241,7 @@ const AdminAnalytics = () => {
                       </td>
                       <td className="px-6 py-4">{canteen.totalOrders?.toLocaleString()}</td>
                       <td className="px-6 py-4 text-right font-medium text-green-400">
-                        ₹{canteen.revenue?.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        Rs. {canteen.revenue?.toLocaleString('en-LK', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                       </td>
                     </tr>
                   ))

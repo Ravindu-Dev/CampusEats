@@ -18,8 +18,8 @@ public class AnalyticsController {
 
     @GetMapping("/overview")
     public ResponseEntity<AnalyticsOverviewResponse> getOverview(
-            @RequestParam(required = false, defaultValue = "30") Integer days,
-            @RequestParam(required = false) String canteenId) {
+            @RequestParam(name = "days", required = false, defaultValue = "30") Integer days,
+            @RequestParam(name = "canteenId", required = false) String canteenId) {
         AnalyticsOverviewResponse overview = analyticsService.getOverview(days, canteenId);
         return ResponseEntity.ok(overview);
     }
