@@ -5,6 +5,7 @@ import canteenService from '../services/canteenService'
 import orderService from '../services/orderService'
 import { menuItemService } from '../services/menuItemService'
 import CanteenLayout from '../components/CanteenLayout'
+import { imgbbService } from '../services/imgbbService'
 
 const cuisineOptions = ['INDIAN', 'CHINESE', 'CONTINENTAL', 'ITALIAN', 'MEXICAN', 'BEVERAGES', 'SNACKS', 'DESSERTS']
 const allDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
@@ -23,6 +24,7 @@ function CanteenDashboard() {
     const [editCanteenData, setEditCanteenData] = useState({})
     const [editOwnerData, setEditOwnerData] = useState({})
     const [saving, setSaving] = useState(false)
+    const [uploadingLogo, setUploadingLogo] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState('')
     const [saveError, setSaveError] = useState('')
 
@@ -85,6 +87,7 @@ function CanteenDashboard() {
             averagePreparationTime: canteen?.averagePreparationTime || '',
             deliveryAvailable: canteen?.deliveryAvailable || false,
             pickupAvailable: canteen?.pickupAvailable !== undefined ? canteen.pickupAvailable : true,
+            logoUrl: canteen?.logoUrl || '',
         })
         setSaveError('')
         setSaveSuccess('')
@@ -151,6 +154,21 @@ function CanteenDashboard() {
     const handleCanteenFieldChange = (e) => {
         const { name, value, type, checked } = e.target
         setEditCanteenData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    }
+
+    const handleLogoUpload = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        setUploadingLogo(true)
+        setSaveError('')
+        try {
+            const url = await imgbbService.uploadImage(file)
+            setEditCanteenData(prev => ({ ...prev, logoUrl: url }))
+        } catch (err) {
+            setSaveError('Failed to upload logo. Please try again.')
+        } finally {
+            setUploadingLogo(false)
+        }
     }
 
     const toggleCanteenArrayField = (field, value) => {
@@ -341,9 +359,16 @@ function CanteenDashboard() {
                         </div>
 
                         <div className="space-y-6">
-                            <div>
-                                <p className="text-sm text-gray-500 mb-1 font-medium">Canteen Name</p>
-                                <p className="font-semibold text-gray-100 text-lg">{canteen.canteenName}</p>
+                            <div className="flex items-center gap-4">
+                                {canteen.logoUrl && (
+                                    <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/[0.1] shadow-lg shadow-black/20 flex-shrink-0">
+                                        <img src={canteen.logoUrl} alt="Canteen Logo" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <div>
+                                    <p className="text-sm text-gray-500 mb-1 font-medium">Canteen Name</p>
+                                    <p className="font-semibold text-gray-100 text-lg">{canteen.canteenName}</p>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
@@ -534,6 +559,34 @@ function CanteenDashboard() {
                         )}
 
                         <div className="space-y-5">
+                            {/* Logo Upload */}
+                            <div>
+                                <label className={labelCls}>Canteen Logo</label>
+                                <div className="flex items-start gap-4">
+                                    {editCanteenData.logoUrl && (
+                                        <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-white/[0.1] flex-shrink-0">
+                                            <img src={editCanteenData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                            <button type="button" onClick={() => setEditCanteenData(p => ({ ...p, logoUrl: '' }))}
+                                                className="absolute top-1 right-1 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs hover:bg-red-700 cursor-pointer">×</button>
+                                        </div>
+                                    )}
+                                    <label className={`flex-1 flex flex-col items-center justify-center px-4 py-8 bg-[#0d0d0d] rounded-2xl border-2 border-dashed border-white/[0.1] cursor-pointer hover:border-orange-500/50 transition-colors ${uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        {uploadingLogo ? (
+                                            <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+                                        ) : (
+                                            <>
+                                                <svg className="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <span className="text-sm text-gray-500">Click to update logo</span>
+                                                <span className="text-xs text-gray-700 mt-1">PNG, JPG up to 5MB</span>
+                                            </>
+                                        )}
+                                        <input type="file" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} accept="image/*" />
+                                    </label>
+                                </div>
+                            </div>
+
                             {/* Name */}
                             <div>
                                 <label className={labelCls}>Canteen Name *</label>
