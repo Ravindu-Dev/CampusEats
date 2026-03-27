@@ -151,12 +151,12 @@ const AdminAnalytics = () => {
       </div>
 
       {/* Charts Section */}
-      <div className="flex flex-col gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-[#111111] p-6 rounded-2xl border border-white/10">
           <h3 className="text-lg font-semibold text-white/90 mb-6 flex items-center gap-2">
              Revenue Trend
           </h3>
-          <div className="h-[500px] w-full">
+          <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data?.revenueTrend || []} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
@@ -177,7 +177,7 @@ const AdminAnalytics = () => {
           <h3 className="text-lg font-semibold text-white/90 mb-6 flex items-center gap-2">
              User Growth
           </h3>
-          <div className="h-[500px] w-full">
+          <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data?.userGrowth || []} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
