@@ -96,6 +96,9 @@ public class CanteenService {
         if (canteenDetails.getDietaryOptions() != null) {
             canteen.setDietaryOptions(canteenDetails.getDietaryOptions());
         }
+        if (canteenDetails.getLogoUrl() != null) {
+            canteen.setLogoUrl(canteenDetails.getLogoUrl());
+        }
 
         return canteenRepository.save(canteen);
     }
