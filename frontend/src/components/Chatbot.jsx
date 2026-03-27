@@ -1,7 +1,28 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import chatbotService from '../services/chatbotService';
-import { Bot, X, Send, Sparkles } from 'lucide-react';
+import { X, Send, Sparkles } from 'lucide-react';
+
+const BlinkingBot = ({ size = 24, color = "currentColor", strokeWidth = 2 }) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width={size} 
+        height={size} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke={color} 
+        strokeWidth={strokeWidth} 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+    >
+        <path d="M12 8V4H8" />
+        <rect width="16" height="12" x="4" y="8" rx="2" />
+        <path d="M2 14h2" />
+        <path d="M20 14h2" />
+        <path d="M15 13v2" className="bot-eye" />
+        <path d="M9 13v2" className="bot-eye" />
+    </svg>
+);
 
 const SUGGESTIONS = [
     "🍽️ Menu today",
@@ -85,6 +106,14 @@ export default function Chatbot() {
         <>
             {/* ── Styles ─────────────────────────────── */}
             <style>{`
+                @keyframes botBlink {
+                    0%, 45%, 49%, 100% { transform: scaleY(1); }
+                    47% { transform: scaleY(0.1); }
+                }
+                .bot-eye {
+                    transform-origin: center 14px;
+                    animation: botBlink 4s infinite;
+                }
                 @keyframes botPulse {
                     0%, 100% { box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
                     50% { box-shadow: 0 4px 25px rgba(234, 88, 12, 0.4); }
@@ -180,7 +209,7 @@ export default function Chatbot() {
                         transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0deg) scale(1)',
                         opacity: isOpen ? 0 : 1
                     }}>
-                        <Bot size={32} color="#ffffff" strokeWidth={1.5} />
+                        <BlinkingBot size={32} color="#ffffff" strokeWidth={1.5} />
                     </div>
                     <div style={{ 
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -246,7 +275,7 @@ export default function Chatbot() {
                                 flexShrink: 0,
                             }}
                         >
-                            <Bot size={22} color="#ffffff" />
+                            <BlinkingBot size={22} color="#ffffff" />
                         </div>
                         <div>
                             <div
@@ -325,7 +354,7 @@ export default function Chatbot() {
                                             marginTop: '4px',
                                         }}
                                     >
-                                        <Bot size={15} color="#ffffff" />
+                                        <BlinkingBot size={15} color="#ffffff" />
                                     </div>
                                 )}
                                 <div
@@ -381,7 +410,7 @@ export default function Chatbot() {
                                         marginTop: '4px',
                                     }}
                                 >
-                                    <Bot size={15} color="#ffffff" />
+                                    <BlinkingBot size={15} color="#ffffff" />
                                 </div>
                                 <div
                                     style={{
