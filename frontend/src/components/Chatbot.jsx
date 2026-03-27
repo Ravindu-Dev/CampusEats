@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import chatbotService from '../services/chatbotService';
+import { Bot, X, Send, Sparkles } from 'lucide-react';
 
 const SUGGESTIONS = [
     "🍽️ Menu today",
@@ -13,10 +14,11 @@ const SUGGESTIONS = [
 
 export default function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [messages, setMessages] = useState([
         {
             role: 'bot',
-            text: "Hey there! 🍔 I'm **Burger Buddy**, your CampusEats assistant!\n\nAsk me about menus, dietary options, wait times, combo deals, or canteen hours!",
+            text: "Hello! 👋 I'm **Eatsbot**, your smart assistant.\n\nAsk me about menus, dietary options, wait times, combo deals, or canteen hours!",
         },
     ]);
     const [input, setInput] = useState('');
@@ -65,31 +67,27 @@ export default function Chatbot() {
         }
     };
 
-    // Markdown components styled for the dark chatbot theme
+    // System theme (light + orange accent) markdown styles
     const markdownComponents = {
-        strong: ({ children }) => <strong style={{ color: '#ff8c00' }}>{children}</strong>,
+        strong: ({ children }) => <strong style={{ color: '#ea580c' }}>{children}</strong>,
         p: ({ children }) => <p style={{ margin: '4px 0' }}>{children}</p>,
         ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>{children}</ul>,
         ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: '16px' }}>{children}</ol>,
         li: ({ children }) => <li style={{ marginBottom: '2px' }}>{children}</li>,
-        h1: ({ children }) => <div style={{ fontWeight: 700, fontSize: '15px', color: '#ff8c00', margin: '6px 0 4px' }}>{children}</div>,
-        h2: ({ children }) => <div style={{ fontWeight: 700, fontSize: '14px', color: '#ff8c00', margin: '6px 0 4px' }}>{children}</div>,
-        h3: ({ children }) => <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#ff8c00', margin: '4px 0 2px' }}>{children}</div>,
-        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline' }}>{children}</a>,
-        code: ({ children }) => <code style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '4px', fontSize: '12px' }}>{children}</code>,
+        h1: ({ children }) => <div style={{ fontWeight: 700, fontSize: '15px', color: '#ea580c', margin: '6px 0 4px' }}>{children}</div>,
+        h2: ({ children }) => <div style={{ fontWeight: 700, fontSize: '14px', color: '#ea580c', margin: '6px 0 4px' }}>{children}</div>,
+        h3: ({ children }) => <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#ea580c', margin: '4px 0 2px' }}>{children}</div>,
+        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#ea580c', textDecoration: 'underline' }}>{children}</a>,
+        code: ({ children }) => <code style={{ background: 'rgba(234, 88, 12, 0.1)', padding: '1px 4px', borderRadius: '4px', fontSize: '12px', color: '#ea580c' }}>{children}</code>,
     };
 
     return (
         <>
             {/* ── Styles ─────────────────────────────── */}
             <style>{`
-                @keyframes burgerBounce {
-                    0%, 100% { transform: translateY(0) scale(1); }
-                    50% { transform: translateY(-8px) scale(1.05); }
-                }
-                @keyframes burgerPulse {
-                    0%, 100% { box-shadow: 0 4px 20px rgba(255, 140, 0, 0.3); }
-                    50% { box-shadow: 0 4px 30px rgba(255, 140, 0, 0.6), 0 0 40px rgba(255, 140, 0, 0.15); }
+                @keyframes botPulse {
+                    0%, 100% { box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
+                    50% { box-shadow: 0 4px 25px rgba(234, 88, 12, 0.4); }
                 }
                 @keyframes chatSlideUp {
                     from { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -111,27 +109,30 @@ export default function Chatbot() {
                     transform: scale(1.1) !important;
                 }
                 .chatbot-suggestion:hover {
-                    background: rgba(255, 140, 0, 0.25) !important;
-                    border-color: rgba(255, 140, 0, 0.5) !important;
+                    background: rgba(234, 88, 12, 0.15) !important;
+                    border-color: rgba(234, 88, 12, 0.4) !important;
                     transform: translateY(-1px);
                 }
                 .chatbot-send:hover:not(:disabled) {
-                    background: linear-gradient(135deg, #ff8c00, #ff6b00) !important;
+                    background: linear-gradient(135deg, #ea580c, #c2410c) !important;
                     transform: scale(1.05);
                 }
                 .chatbot-input:focus {
-                    border-color: rgba(255, 140, 0, 0.5) !important;
-                    box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1) !important;
+                    border-color: rgba(234, 88, 12, 0.5) !important;
+                    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15) !important;
                 }
                 .chatbot-scrollbar::-webkit-scrollbar {
-                    width: 5px;
+                    width: 6px;
                 }
                 .chatbot-scrollbar::-webkit-scrollbar-track {
                     background: transparent;
                 }
                 .chatbot-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 140, 0, 0.3);
+                    background: rgba(234, 88, 12, 0.4);
                     border-radius: 10px;
+                }
+                .chatbot-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(234, 88, 12, 0.6);
                 }
             `}</style>
 
@@ -139,7 +140,17 @@ export default function Chatbot() {
             <button
                 id="chatbot-toggle"
                 className="chatbot-toggle"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    if (isOpen && !isClosing) {
+                        setIsClosing(true);
+                        setTimeout(() => {
+                            setIsOpen(false);
+                            setIsClosing(false);
+                        }, 280);
+                    } else if (!isOpen) {
+                        setIsOpen(true);
+                    }
+                }}
                 style={{
                     position: 'fixed',
                     bottom: '24px',
@@ -147,33 +158,44 @@ export default function Chatbot() {
                     width: '64px',
                     height: '64px',
                     borderRadius: '50%',
-                    border: '2px solid rgba(255, 140, 0, 0.4)',
-                    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
                     cursor: 'pointer',
                     zIndex: 9999,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: 0,
-                    animation: isOpen ? 'none' : 'burgerBounce 2s ease-in-out infinite, burgerPulse 2s ease-in-out infinite',
+                    animation: isOpen ? 'none' : 'botPulse 4s ease-in-out infinite',
                     transition: 'transform 0.2s ease',
-                    overflow: 'hidden',
+                    boxShadow: '0 4px 15px rgba(234, 88, 12, 0.2)',
                 }}
-                title="Chat with Burger Buddy"
+                title="Chat with Eatsbot"
             >
-                {isOpen ? (
-                    <span style={{ fontSize: '28px', color: '#ff8c00', lineHeight: 1 }}>✕</span>
-                ) : (
-                    <img
-                        src="/burger-buddy.png"
-                        alt="Burger Buddy"
-                        style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '50%' }}
-                    />
-                )}
+                <div style={{ position: 'relative', width: '32px', height: '32px' }}>
+                    <div style={{ 
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0deg) scale(1)',
+                        opacity: isOpen ? 0 : 1
+                    }}>
+                        <Bot size={32} color="#ffffff" strokeWidth={1.5} />
+                    </div>
+                    <div style={{ 
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: isOpen ? 'rotate(0deg) scale(1)' : 'rotate(-90deg) scale(0)',
+                        opacity: isOpen ? 1 : 0
+                    }}>
+                        <X size={28} color="#ffffff" />
+                    </div>
+                </div>
             </button>
 
             {/* ── Chat Window ───────────────────────── */}
-            {isOpen && (
+            {(isOpen || isClosing) && (
                 <div
                     id="chatbot-window"
                     style={{
@@ -189,18 +211,23 @@ export default function Chatbot() {
                         zIndex: 9998,
                         display: 'flex',
                         flexDirection: 'column',
-                        animation: 'chatSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                        background: 'linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%)',
-                        border: '1px solid rgba(255, 140, 0, 0.2)',
-                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 140, 0, 0.08)',
+                        animation: isClosing
+                            ? 'chatSlideDown 0.3s forwards cubic-bezier(0.4, 0, 1, 1)'
+                            : 'chatSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+                        // System light glassmorphism
+                        background: 'rgba(255, 255, 255, 0.85)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255, 255, 255, 0.5)',
+                        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
                     }}
                 >
                     {/* Header */}
                     <div
                         style={{
                             padding: '16px 20px',
-                            background: 'linear-gradient(135deg, rgba(255, 140, 0, 0.15), rgba(255, 107, 0, 0.08))',
-                            borderBottom: '1px solid rgba(255, 140, 0, 0.15)',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
@@ -208,46 +235,50 @@ export default function Chatbot() {
                     >
                         <div
                             style={{
-                                width: '40px',
-                                height: '40px',
+                                width: '42px',
+                                height: '42px',
                                 borderRadius: '50%',
-                                overflow: 'hidden',
-                                border: '2px solid rgba(255, 140, 0, 0.4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #ea580c, #c2410c)',
+                                boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
                                 flexShrink: 0,
                             }}
                         >
-                            <img
-                                src="/burger-buddy.png"
-                                alt="Burger Buddy"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
+                            <Bot size={22} color="#ffffff" />
                         </div>
                         <div>
                             <div
                                 style={{
                                     fontWeight: 700,
-                                    fontSize: '15px',
-                                    color: '#fff',
+                                    fontSize: '15.5px',
+                                    color: '#1a1a1a',
                                     fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
                                 }}
                             >
-                                Burger Buddy
+                                Eatsbot
+                                <Sparkles size={14} color="#ea580c" />
                             </div>
                             <div
                                 style={{
-                                    fontSize: '12px',
-                                    color: '#4ade80',
+                                    fontSize: '12.5px',
+                                    color: '#64748b',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '4px',
+                                    gap: '5px',
+                                    marginTop: '2px',
                                 }}
                             >
                                 <span
                                     style={{
-                                        width: '6px',
-                                        height: '6px',
+                                        width: '7px',
+                                        height: '7px',
                                         borderRadius: '50%',
-                                        background: '#4ade80',
+                                        background: '#22c55e',
                                         display: 'inline-block',
                                     }}
                                 />{' '}
@@ -265,7 +296,8 @@ export default function Chatbot() {
                             padding: '16px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '12px',
+                            gap: '14px',
+                            background: 'rgba(248, 250, 252, 0.4)', // Very subtle gray tint
                         }}
                     >
                         {messages.map((msg, i) => (
@@ -274,7 +306,7 @@ export default function Chatbot() {
                                 style={{
                                     display: 'flex',
                                     justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                    gap: '8px',
+                                    gap: '10px',
                                     animation: 'fadeInMsg 0.3s ease',
                                 }}
                             >
@@ -284,38 +316,42 @@ export default function Chatbot() {
                                             width: '28px',
                                             height: '28px',
                                             borderRadius: '50%',
-                                            overflow: 'hidden',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: 'linear-gradient(135deg, #ea580c, #c2410c)',
+                                            boxShadow: '0 2px 8px rgba(234, 88, 12, 0.2)',
                                             flexShrink: 0,
-                                            marginTop: '2px',
+                                            marginTop: '4px',
                                         }}
                                     >
-                                        <img
-                                            src="/burger-buddy.png"
-                                            alt=""
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
+                                        <Bot size={15} color="#ffffff" />
                                     </div>
                                 )}
                                 <div
                                     style={{
-                                        maxWidth: '80%',
-                                        padding: '10px 14px',
+                                        maxWidth: '82%',
+                                        padding: '12px 16px',
                                         borderRadius:
                                             msg.role === 'user'
-                                                ? '16px 16px 4px 16px'
-                                                : '16px 16px 16px 4px',
+                                                ? '18px 18px 4px 18px'
+                                                : '18px 18px 18px 4px',
                                         background:
                                             msg.role === 'user'
-                                                ? 'linear-gradient(135deg, #ff8c00, #ff6b00)'
-                                                : 'rgba(255, 255, 255, 0.07)',
-                                        color: '#fff',
-                                        fontSize: '13.5px',
+                                                ? 'linear-gradient(135deg, #ea580c, #c2410c)'
+                                                : '#ffffff',
+                                        color: msg.role === 'user' ? '#ffffff' : '#1e293b',
+                                        fontSize: '14px',
                                         lineHeight: 1.5,
                                         fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                         border:
                                             msg.role === 'bot'
-                                                ? '1px solid rgba(255, 255, 255, 0.08)'
+                                                ? '1px solid rgba(0, 0, 0, 0.06)'
                                                 : 'none',
+                                        boxShadow:
+                                            msg.role === 'user'
+                                                ? '0 4px 12px rgba(234, 88, 12, 0.25)'
+                                                : '0 4px 12px rgba(0, 0, 0, 0.03)',
                                         wordBreak: 'break-word',
                                     }}
                                 >
@@ -330,30 +366,32 @@ export default function Chatbot() {
 
                         {/* Typing indicator */}
                         {isTyping && (
-                            <div style={{ display: 'flex', gap: '8px', animation: 'fadeInMsg 0.3s ease' }}>
+                            <div style={{ display: 'flex', gap: '10px', animation: 'fadeInMsg 0.3s ease' }}>
                                 <div
                                     style={{
                                         width: '28px',
                                         height: '28px',
                                         borderRadius: '50%',
-                                        overflow: 'hidden',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'linear-gradient(135deg, #ea580c, #c2410c)',
+                                        boxShadow: '0 2px 8px rgba(234, 88, 12, 0.2)',
                                         flexShrink: 0,
+                                        marginTop: '4px',
                                     }}
                                 >
-                                    <img
-                                        src="/burger-buddy.png"
-                                        alt=""
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
+                                    <Bot size={15} color="#ffffff" />
                                 </div>
                                 <div
                                     style={{
-                                        padding: '12px 18px',
-                                        borderRadius: '16px 16px 16px 4px',
-                                        background: 'rgba(255, 255, 255, 0.07)',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        padding: '14px 18px',
+                                        borderRadius: '18px 18px 18px 4px',
+                                        background: '#ffffff',
+                                        border: '1px solid rgba(0, 0, 0, 0.06)',
+                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
                                         display: 'flex',
-                                        gap: '4px',
+                                        gap: '6px',
                                         alignItems: 'center',
                                     }}
                                 >
@@ -361,10 +399,10 @@ export default function Chatbot() {
                                         <span
                                             key={i}
                                             style={{
-                                                width: '7px',
-                                                height: '7px',
+                                                width: '6px',
+                                                height: '6px',
                                                 borderRadius: '50%',
-                                                background: '#ff8c00',
+                                                background: '#ea580c',
                                                 display: 'inline-block',
                                                 animation: `dotBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
                                             }}
@@ -381,10 +419,11 @@ export default function Chatbot() {
                     {messages.length <= 2 && (
                         <div
                             style={{
-                                padding: '0 16px 8px',
+                                padding: '0 16px 12px',
                                 display: 'flex',
                                 flexWrap: 'wrap',
-                                gap: '6px',
+                                gap: '8px',
+                                background: 'rgba(248, 250, 252, 0.4)',
                             }}
                         >
                             {SUGGESTIONS.map((s) => (
@@ -393,16 +432,18 @@ export default function Chatbot() {
                                     className="chatbot-suggestion"
                                     onClick={() => sendMessage(s.replace(/^[^\s]+ /, ''))}
                                     style={{
-                                        padding: '5px 12px',
+                                        padding: '6px 14px',
                                         borderRadius: '20px',
-                                        border: '1px solid rgba(255, 140, 0, 0.25)',
-                                        background: 'rgba(255, 140, 0, 0.1)',
-                                        color: '#ff8c00',
-                                        fontSize: '12px',
+                                        border: '1px solid rgba(234, 88, 12, 0.2)',
+                                        background: '#ffffff',
+                                        color: '#ea580c',
+                                        fontSize: '12.5px',
+                                        fontWeight: 500,
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                         whiteSpace: 'nowrap',
+                                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
                                     }}
                                 >
                                     {s}
@@ -414,12 +455,12 @@ export default function Chatbot() {
                     {/* Input Area */}
                     <div
                         style={{
-                            padding: '12px 16px',
-                            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                            padding: '14px 16px',
+                            borderTop: '1px solid rgba(0, 0, 0, 0.06)',
                             display: 'flex',
-                            gap: '8px',
+                            gap: '10px',
                             alignItems: 'center',
-                            background: 'rgba(0, 0, 0, 0.2)',
+                            background: '#ffffff',
                         }}
                     >
                         <input
@@ -432,15 +473,16 @@ export default function Chatbot() {
                             placeholder="Ask about menus, deals, wait times..."
                             style={{
                                 flex: 1,
-                                padding: '10px 14px',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                color: '#fff',
-                                fontSize: '13.5px',
+                                padding: '12px 16px',
+                                borderRadius: '14px',
+                                border: '1px solid rgba(0, 0, 0, 0.08)',
+                                background: '#f8fafc',
+                                color: '#1e293b',
+                                fontSize: '14px',
                                 outline: 'none',
                                 fontFamily: "'Inter', 'Segoe UI', sans-serif",
-                                transition: 'border-color 0.2s, box-shadow 0.2s',
+                                transition: 'all 0.2s ease',
+                                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.01)',
                             }}
                         />
                         <button
@@ -448,15 +490,15 @@ export default function Chatbot() {
                             onClick={() => sendMessage()}
                             disabled={!input.trim() || isTyping}
                             style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '12px',
+                                width: '44px',
+                                height: '44px',
+                                borderRadius: '14px',
                                 border: 'none',
                                 background:
                                     input.trim() && !isTyping
-                                        ? 'linear-gradient(135deg, #ff8c00, #e67a00)'
-                                        : 'rgba(255, 255, 255, 0.06)',
-                                color: input.trim() && !isTyping ? '#fff' : 'rgba(255,255,255,0.3)',
+                                        ? 'linear-gradient(135deg, #ea580c, #c2410c)'
+                                        : '#f1f5f9',
+                                color: input.trim() && !isTyping ? '#ffffff' : '#cbd5e1',
                                 fontSize: '18px',
                                 cursor: input.trim() && !isTyping ? 'pointer' : 'default',
                                 display: 'flex',
@@ -464,9 +506,10 @@ export default function Chatbot() {
                                 justifyContent: 'center',
                                 flexShrink: 0,
                                 transition: 'all 0.2s ease',
+                                boxShadow: input.trim() && !isTyping ? '0 4px 12px rgba(234, 88, 12, 0.25)' : 'none',
                             }}
                         >
-                            ➤
+                            <Send size={18} />
                         </button>
                     </div>
                 </div>
