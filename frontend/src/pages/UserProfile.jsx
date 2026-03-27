@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useRef } from 'react'
+import { useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { AuthContext } from '../context/AuthContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
@@ -10,11 +10,14 @@ import { imgbbService } from '../services/imgbbService'
 import ReviewModal from '../components/ReviewModal'
 import QRCodeDisplay from '../components/QRCodeDisplay'
 
+const ITEMS_PER_PAGE = 5
+
 function UserProfile() {
     const { user, logout, setUser } = useContext(AuthContext)
     const navigate = useNavigate()
     const location = useLocation()
     const fileInputRef = useRef(null)
+    const contentTopRef = useRef(null)
 
     const [activeTab, setActiveTab] = useState(() => {
         const params = new URLSearchParams(location.search)
@@ -41,8 +44,8 @@ function UserProfile() {
     const [validationErrors, setValidationErrors] = useState({})
     const [orderFilter, setOrderFilter] = useState('all')
     const [reviewFilter, setReviewFilter] = useState('all')
-    const [ordersToShow, setOrdersToShow] = useState(5)
-    const [reviewsToShow, setReviewsToShow] = useState(5)
+    const [currentOrderPage, setCurrentOrderPage] = useState(1)
+    const [currentReviewPage, setCurrentReviewPage] = useState(1)
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -321,6 +324,12 @@ function UserProfile() {
 
     const completion = getProfileCompletion()
 
+    const scrollToContent = useCallback(() => {
+        if (contentTopRef.current) {
+            contentTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+    }, [])
+
     const tabs = [
         { id: 'profile', label: 'Profile', icon: '👤' },
         { id: 'orders', label: 'My Orders', icon: '📦', count: stats.total },
@@ -402,7 +411,7 @@ function UserProfile() {
                 <div className="grid lg:grid-cols-12 gap-8">
 
                     {/* ─── Left Column ─── */}
-                    <div className="lg:col-span-4 space-y-6">
+                    <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6 lg:self-start">
 
                         {/* Profile Card */}
                         <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 text-center relative overflow-hidden">
@@ -523,7 +532,7 @@ function UserProfile() {
                     </div>
 
                     {/* ─── Right Column ─── */}
-                    <div className="lg:col-span-8 space-y-6">
+                    <div className="lg:col-span-8 space-y-6" ref={contentTopRef}>
 
                         {/* Profile Completion — only on profile tab */}
                         {activeTab === 'profile' && (
@@ -805,7 +814,9 @@ function UserProfile() {
                                         if (orderFilter === 'completed') return order.orderStatus === 'COMPLETED'
                                         return true
                                     })
-                                    const visibleOrders = filteredOrders.slice(0, ordersToShow)
+                                    const totalOrderPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)
+                                    const safeOrderPage = Math.min(currentOrderPage, totalOrderPages || 1)
+                                    const visibleOrders = filteredOrders.slice((safeOrderPage - 1) * ITEMS_PER_PAGE, safeOrderPage * ITEMS_PER_PAGE)
                                     return (
                                         <>
                                             {/* Filter Tabs */}
@@ -817,7 +828,7 @@ function UserProfile() {
                                                 ].map(f => (
                                                     <button
                                                         key={f.key}
-                                                        onClick={() => { setOrderFilter(f.key); setOrdersToShow(5) }}
+                                                        onClick={() => { setOrderFilter(f.key); setCurrentOrderPage(1) }}
                                                         className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${orderFilter === f.key
                                                             ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
                                                             : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
@@ -988,28 +999,44 @@ function UserProfile() {
                                                 ))
                                             )}
 
-                                            {/* Show More / Show Less */}
-                                            {filteredOrders.length > 5 && (
-                                                <div className="flex justify-center gap-3 pt-2">
-                                                    {ordersToShow < filteredOrders.length && (
-                                                        <button
-                                                            onClick={() => setOrdersToShow(prev => prev + 5)}
-                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all flex items-center gap-2"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                            </svg>
-                                                            Show More ({filteredOrders.length - ordersToShow} remaining)
-                                                        </button>
-                                                    )}
-                                                    {ordersToShow > 5 && (
-                                                        <button
-                                                            onClick={() => setOrdersToShow(5)}
-                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all"
-                                                        >
-                                                            Show Less
-                                                        </button>
-                                                    )}
+                                            {/* Pagination Controls */}
+                                            {totalOrderPages > 1 && (
+                                                <div className="flex items-center justify-center gap-2 pt-4">
+                                                    <button
+                                                        onClick={() => { setCurrentOrderPage(p => Math.max(1, p - 1)); scrollToContent() }}
+                                                        disabled={safeOrderPage === 1}
+                                                        className="px-3.5 py-2 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                                        </svg>
+                                                        Prev
+                                                    </button>
+                                                    <div className="flex items-center gap-1">
+                                                        {Array.from({ length: totalOrderPages }, (_, i) => i + 1).map(page => (
+                                                            <button
+                                                                key={page}
+                                                                onClick={() => { setCurrentOrderPage(page); scrollToContent() }}
+                                                                className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                                                                    page === safeOrderPage
+                                                                        ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/20'
+                                                                        : 'bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06]'
+                                                                }`}
+                                                            >
+                                                                {page}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => { setCurrentOrderPage(p => Math.min(totalOrderPages, p + 1)); scrollToContent() }}
+                                                        disabled={safeOrderPage === totalOrderPages}
+                                                        className="px-3.5 py-2 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                                    >
+                                                        Next
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
                                             )}
                                         </>
@@ -1041,7 +1068,9 @@ function UserProfile() {
                                         if (reviewFilter === 'all') return true
                                         return r.rating === parseInt(reviewFilter)
                                     })
-                                    const visibleReviews = filteredReviews.slice(0, reviewsToShow)
+                                    const totalReviewPages = Math.ceil(filteredReviews.length / ITEMS_PER_PAGE)
+                                    const safeReviewPage = Math.min(currentReviewPage, totalReviewPages || 1)
+                                    const visibleReviews = filteredReviews.slice((safeReviewPage - 1) * ITEMS_PER_PAGE, safeReviewPage * ITEMS_PER_PAGE)
                                     return (
                                         <>
                                             {/* Rating Filter Tabs */}
@@ -1056,7 +1085,7 @@ function UserProfile() {
                                                 ].filter(f => f.key === 'all' || f.count > 0).map(f => (
                                                     <button
                                                         key={f.key}
-                                                        onClick={() => { setReviewFilter(f.key); setReviewsToShow(5) }}
+                                                        onClick={() => { setReviewFilter(f.key); setCurrentReviewPage(1) }}
                                                         className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${reviewFilter === f.key
                                                             ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
                                                             : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
@@ -1197,28 +1226,44 @@ function UserProfile() {
                                                 ))
                                             )}
 
-                                            {/* Show More / Show Less */}
-                                            {filteredReviews.length > 5 && (
-                                                <div className="flex justify-center gap-3 pt-2">
-                                                    {reviewsToShow < filteredReviews.length && (
-                                                        <button
-                                                            onClick={() => setReviewsToShow(prev => prev + 5)}
-                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all flex items-center gap-2"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                            </svg>
-                                                            Show More ({filteredReviews.length - reviewsToShow} remaining)
-                                                        </button>
-                                                    )}
-                                                    {reviewsToShow > 5 && (
-                                                        <button
-                                                            onClick={() => setReviewsToShow(5)}
-                                                            className="px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all"
-                                                        >
-                                                            Show Less
-                                                        </button>
-                                                    )}
+                                            {/* Pagination Controls */}
+                                            {totalReviewPages > 1 && (
+                                                <div className="flex items-center justify-center gap-2 pt-4">
+                                                    <button
+                                                        onClick={() => { setCurrentReviewPage(p => Math.max(1, p - 1)); scrollToContent() }}
+                                                        disabled={safeReviewPage === 1}
+                                                        className="px-3.5 py-2 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                                        </svg>
+                                                        Prev
+                                                    </button>
+                                                    <div className="flex items-center gap-1">
+                                                        {Array.from({ length: totalReviewPages }, (_, i) => i + 1).map(page => (
+                                                            <button
+                                                                key={page}
+                                                                onClick={() => { setCurrentReviewPage(page); scrollToContent() }}
+                                                                className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                                                                    page === safeReviewPage
+                                                                        ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/20'
+                                                                        : 'bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06]'
+                                                                }`}
+                                                            >
+                                                                {page}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => { setCurrentReviewPage(p => Math.min(totalReviewPages, p + 1)); scrollToContent() }}
+                                                        disabled={safeReviewPage === totalReviewPages}
+                                                        className="px-3.5 py-2 bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.06] rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                                    >
+                                                        Next
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
                                             )}
                                         </>
