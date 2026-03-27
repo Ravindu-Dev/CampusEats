@@ -12,6 +12,8 @@ import axios from 'axios'
 
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages']
 
+const HIDDEN_CANTEEN_NAMES = ['Canteen 698d', 'Canteen 6994', 'Canteen 6992', 'Canteen 6993']
+
 const SCROLLBAR_STYLE = `
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
@@ -185,7 +187,14 @@ function Menu() {
         }
     }, [user])
 
+    const isCanteenHidden = (canteenId) => {
+        const canteen = canteens[canteenId]
+        if (!canteen) return false
+        return HIDDEN_CANTEEN_NAMES.includes(canteen.canteenName)
+    }
+
     const filteredItems = menuItems.filter(item => {
+        if (isCanteenHidden(item.canteenId)) return false
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
@@ -306,7 +315,7 @@ function Menu() {
                             </button>
 
                             <div ref={recommendedScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
-                                {recommendedCombos.map(combo => (
+                                {recommendedCombos.filter(combo => !HIDDEN_CANTEEN_NAMES.includes(combo.canteenName)).map(combo => (
                                     <div key={combo.id} className="flex-shrink-0 w-[360px] snap-start bg-white/[0.03] border border-white/[0.07] rounded-xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col h-[320px]">
                                         {/* Combo Image */}
                                         <div className="h-52 relative overflow-hidden cursor-pointer group" onClick={() => setSelectedCombo(combo)}>
@@ -381,7 +390,7 @@ function Menu() {
                             </button>
 
                             <div ref={allCombosScrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth">
-                                {allCombos.map(combo => (
+                                {allCombos.filter(combo => !HIDDEN_CANTEEN_NAMES.includes(combo.canteenName)).map(combo => (
                                     <div key={combo.id} className="flex-shrink-0 w-[300px] snap-start bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden hover:border-orange-500/20 transition-all group flex flex-col h-[240px]">
                                         {/* Combo Image */}
                                         <div className="h-44 relative overflow-hidden bg-white/5 cursor-pointer group" onClick={() => setSelectedCombo(combo)}>
@@ -455,11 +464,11 @@ function Menu() {
                                 <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${!selectedRestaurant ? 'bg-white/20' : 'bg-white/5'}`}>🍽️</div>
                                 <div className="text-center">
                                     <p className="font-bold text-xs">All Restaurants</p>
-                                    <p className={`text-xs mt-0.5 ${!selectedRestaurant ? 'text-orange-100' : 'text-gray-600'}`}>{menuItems.filter(i => i.available).length} items</p>
+                                    <p className={`text-xs mt-0.5 ${!selectedRestaurant ? 'text-orange-100' : 'text-gray-600'}`}>{menuItems.filter(i => i.available && !isCanteenHidden(i.canteenId)).length} items</p>
                                 </div>
                             </button>
 
-                            {Object.values(canteens).filter(canteen => canteen.active).map(canteen => {
+                            {Object.values(canteens).filter(canteen => canteen.active && !HIDDEN_CANTEEN_NAMES.includes(canteen.canteenName)).map(canteen => {
                                 const itemCount = menuItems.filter(i => i.canteenId === canteen.id && i.available).length
                                 const isSelected = selectedRestaurant === canteen.id
                                 const queueBadge = getQueueBadge(canteen.id)
