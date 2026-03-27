@@ -100,12 +100,8 @@ export default function CanteenLayout({ children, pageTitle, pageSubtitle }) {
                 {/* Logo & Branding */}
                 <div className="px-5 pt-6 pb-5 border-b border-white/[0.05]">
                     <Link to="/canteen/dashboard" className="flex items-center gap-3 no-underline" onClick={() => setSidebarOpen(false)}>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: 'linear-gradient(135deg, #f97316, #dc2626)', boxShadow: '0 4px 14px rgba(249,115,22,0.3)' }}>
-                            <span className="text-white font-black text-lg">C</span>
-                        </div>
                         <div>
-                            <div className="text-white font-extrabold text-[15px] tracking-tight leading-tight">CampusEats</div>
+                            <div className="text-white font-extrabold text-[15px] tracking-tight leading-tight">CampusEats<span className="text-orange-500">.</span></div>
                             <div className="text-orange-500 font-bold text-[10px] tracking-[1.5px] uppercase">Canteen Portal</div>
                         </div>
                     </Link>

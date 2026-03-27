@@ -98,25 +98,12 @@ export default function AdminLayout({ children, pendingCount = 0, pageTitle, pag
                     gap: '12px',
                     overflow: 'hidden',
                 }}>
-                    <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #f97316, #dc2626)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        boxShadow: '0 4px 12px rgba(249,115,22,0.35)',
-                    }}>
-                        <span style={{ color: 'white', fontWeight: 900, fontSize: '16px' }}>C</span>
-                    </div>
-                    {!sidebarCollapsed && (
-                        <div style={{ overflow: 'hidden' }}>
-                            <div style={{ color: 'white', fontWeight: 800, fontSize: '15px', letterSpacing: '-0.3px', whiteSpace: 'nowrap' }}>CampusEats</div>
+                    <div style={{ overflow: 'hidden' }}>
+                        <div style={{ color: 'white', fontWeight: 800, fontSize: sidebarCollapsed ? '16px' : '15px', letterSpacing: '-0.3px', whiteSpace: 'nowrap' }}>{sidebarCollapsed ? <span>C<span style={{ color: '#f97316' }}>.</span></span> : <span>CampusEats<span style={{ color: '#f97316' }}>.</span></span>}</div>
+                        {!sidebarCollapsed && (
                             <div style={{ color: '#f97316', fontWeight: 700, fontSize: '10px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Admin Panel</div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
                 {/* Nav Items */}

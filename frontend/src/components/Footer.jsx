@@ -29,12 +29,9 @@ function Footer() {
                     {/* Brand column */}
                     <div className="col-span-2 md:col-span-5 flex flex-col gap-6">
                         {/* Logo */}
-                        <Link to="/" className="flex items-center gap-3 group w-fit">
-                            <div className="w-11 h-11 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
-                                C
-                            </div>
+                        <Link to="/" className="flex items-center group w-fit">
                             <span className="text-2xl font-black text-white tracking-tight group-hover:text-orange-400 transition-colors">
-                                CampusEats
+                                CampusEats<span className="text-orange-500">.</span>
                             </span>
                         </Link>
 
@@ -155,7 +152,7 @@ function Footer() {
                 {/* ── Bottom bar ── */}
                 <div className="border-t border-white/[0.06] pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <p className="text-gray-600 text-xs">
-                        © {year} <span className="text-gray-400 font-semibold">CampusEats</span>. All rights reserved.
+                        © {year} <span className="text-gray-400 font-semibold">CampusEats<span className="text-orange-500">.</span></span> All rights reserved.
                     </p>
                     <div className="flex items-center gap-2 text-gray-600 text-xs">
                         <span>Made with</span>
