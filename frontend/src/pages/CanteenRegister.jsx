@@ -157,10 +157,7 @@ function CanteenRegister() {
                 <div className="sticky top-0 z-50 bg-[#080808]/80 backdrop-blur-xl border-b border-white/[0.06]">
                     <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
                         <Link to="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                                <span className="text-white font-black text-sm">C</span>
-                            </div>
-                            <span className="text-white font-black">CampusEats</span>
+                            <span className="text-white font-black">CampusEats<span className="text-orange-500">.</span></span>
                             <span className="text-xs text-orange-400 font-bold bg-orange-500/15 border border-orange-500/25 px-2 py-0.5 rounded-full ml-1">Partner</span>
                         </Link>
                         <Link to="/canteen/login" className="text-sm text-gray-500 hover:text-white transition font-medium">

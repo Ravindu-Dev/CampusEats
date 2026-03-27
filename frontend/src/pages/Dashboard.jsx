@@ -77,9 +77,8 @@ function Dashboard() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <Link to="/" className="flex items-center space-x-2">
-                            <div className="text-2xl">🍔</div>
                             <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
-                                CampusEats
+                                CampusEats<span className="text-orange-500">.</span>
                             </span>
                         </Link>
                         <div className="flex items-center gap-4">

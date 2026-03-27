@@ -97,10 +97,7 @@ function Signup() {
 
                 <div className="relative z-10 flex flex-col justify-between p-12 w-full">
                     <Link to="/" className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg">
-                            <span className="text-white font-black text-lg">C</span>
-                        </div>
-                        <span className="text-white font-black text-xl tracking-tight">CampusEats</span>
+                        <span className="text-white font-black text-xl tracking-tight">CampusEats<span className="text-orange-500">.</span></span>
                     </Link>
 
                     <div>
@@ -137,10 +134,7 @@ function Signup() {
 
                     {/* Mobile logo */}
                     <Link to="/" className="flex items-center gap-2 mb-10 lg:hidden">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                            <span className="text-white font-black">C</span>
-                        </div>
-                        <span className="text-white font-black text-lg">CampusEats</span>
+                        <span className="text-white font-black text-lg">CampusEats<span className="text-orange-500">.</span></span>
                     </Link>
 
                     <div className="mb-8">
