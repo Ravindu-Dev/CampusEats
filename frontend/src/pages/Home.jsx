@@ -63,8 +63,8 @@ function Home() {
                     style={{ willChange: 'transform' }}
                 >
                     <img
-                        src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop"
-                        alt="Campus Food"
+                        src="/2.jpg"
+                        alt="Campus Food Court"
                         className="w-full h-full object-cover"
                     />
                 </div>
