@@ -55,6 +55,9 @@ function Menu() {
     const [showLoyaltyBadge, setShowLoyaltyBadge] = useState(false)
     const [selectedCombo, setSelectedCombo] = useState(null)
     const [selectedItem, setSelectedItem] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const ITEMS_PER_PAGE = 12
+    const menuGridRef = useRef(null)
 
     const TIER_CONFIG = {
         BRONZE: { color: '#CD7F32', bg: 'rgba(205,127,50,0.15)', border: 'rgba(205,127,50,0.3)', icon: '🥉' },
@@ -201,6 +204,19 @@ function Menu() {
         const matchesRestaurant = !selectedRestaurant || item.canteenId === selectedRestaurant
         return matchesSearch && matchesCategory && matchesRestaurant && item.available
     })
+
+    // Reset page when filters change
+    useEffect(() => { setCurrentPage(1) }, [searchTerm, selectedCategory, selectedRestaurant])
+
+    const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE)
+    const paginatedItems = filteredItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+
+    const goToPage = (page) => {
+        setCurrentPage(page)
+        if (menuGridRef.current) {
+            menuGridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+    }
 
     const getQueueBadge = (canteenId) => {
         const queueInfo = queueStatuses[canteenId]
@@ -540,7 +556,7 @@ function Menu() {
                 {/* Results count */}
                 {filteredItems.length > 0 && (
                     <p className="text-gray-600 text-sm font-medium mb-6">
-                        Showing <span className="text-orange-500 font-bold">{filteredItems.length}</span> {filteredItems.length === 1 ? 'item' : 'items'}
+                        Showing <span className="text-orange-500 font-bold">{(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredItems.length)}</span> of <span className="text-white font-bold">{filteredItems.length}</span> {filteredItems.length === 1 ? 'item' : 'items'}
                         {selectedCategory !== 'All' && <span> in <span className="text-white">{selectedCategory}</span></span>}
                     </p>
                 )}
@@ -553,8 +569,9 @@ function Menu() {
                         <p className="text-gray-500 text-lg">We couldn't find matches for your search. Try "Rice" or "Coffee".</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredItems.map((item, index) => {
+                    <>
+                    <div ref={menuGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {paginatedItems.map((item, index) => {
                             const canteen = canteens[item.canteenId]
                             return (
                                 <div key={item.id} className="group bg-[#111] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-orange-500/30 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-all duration-300 flex flex-col" style={{ animationDelay: `${index * 40}ms` }}>
@@ -617,6 +634,40 @@ function Menu() {
                             )
                         })}
                     </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-10">
+                            <button
+                                onClick={() => goToPage(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 rounded-xl text-sm font-bold bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:bg-white/10 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                ← Prev
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => goToPage(page)}
+                                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                                        currentPage === page
+                                            ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/30'
+                                            : 'bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:bg-white/10 hover:text-white'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => goToPage(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="px-4 py-2 rounded-xl text-sm font-bold bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:bg-white/10 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                Next →
+                            </button>
+                        </div>
+                    )}
+                    </>
                 )}
             </div>
 

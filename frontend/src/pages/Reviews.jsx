@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import reviewService from '../services/reviewService'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -10,6 +10,9 @@ function Reviews() {
     const [searchTerm, setSearchTerm] = useState('')
     const [filterRating, setFilterRating] = useState(0)
     const [lightboxImage, setLightboxImage] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const ITEMS_PER_PAGE = 9
+    const contentRef = useRef(null)
 
     useEffect(() => { fetchReviews() }, [])
 
@@ -60,6 +63,19 @@ function Reviews() {
         return matchesSearch && matchesRating
     })
 
+    // Reset page when filters change
+    useEffect(() => { setCurrentPage(1) }, [searchTerm, filterRating])
+
+    const totalPages = Math.ceil(filteredReviews.length / ITEMS_PER_PAGE)
+    const paginatedReviews = filteredReviews.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+
+    const goToPage = (page) => {
+        setCurrentPage(page)
+        if (contentRef.current) {
+            contentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+    }
+
     return (
         <div className="min-h-screen bg-[#080808] font-sans text-white">
             <Navbar />
@@ -91,7 +107,7 @@ function Reviews() {
             </div>
 
             {/* ── Main content ── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10 pb-24">
+            <div ref={contentRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-10 pb-24">
 
                 {/* Search & filter */}
                 <div className="bg-[#111] border border-white/[0.07] rounded-2xl p-6 mb-8 shadow-xl">
@@ -173,11 +189,11 @@ function Reviews() {
                         ) : (
                             <>
                                 <p className="text-gray-600 text-sm font-medium ml-1 mb-5">
-                                    Showing <span className="text-orange-500 font-bold">{filteredReviews.length}</span> reviews
+                                    Showing <span className="text-orange-500 font-bold">{(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredReviews.length)}</span> of <span className="text-white font-bold">{filteredReviews.length}</span> reviews
                                 </p>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                    {filteredReviews.map((review) => (
+                                    {paginatedReviews.map((review) => (
                                         <div
                                             key={review.id}
                                             className="group bg-[#111] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-orange-500/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all duration-300 flex flex-col"
@@ -267,6 +283,39 @@ function Reviews() {
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* Pagination */}
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-center gap-2 mt-10">
+                                        <button
+                                            onClick={() => goToPage(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className="px-4 py-2 rounded-xl text-sm font-bold bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:bg-white/10 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                        >
+                                            ← Prev
+                                        </button>
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                            <button
+                                                key={page}
+                                                onClick={() => goToPage(page)}
+                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                                                    currentPage === page
+                                                        ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/30'
+                                                        : 'bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:bg-white/10 hover:text-white'
+                                                }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+                                        <button
+                                            onClick={() => goToPage(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="px-4 py-2 rounded-xl text-sm font-bold bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:bg-white/10 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                        >
+                                            Next →
+                                        </button>
+                                    </div>
+                                )}
                             </>
                         )}
                     </>
