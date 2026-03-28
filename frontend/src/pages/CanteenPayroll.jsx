@@ -97,7 +97,7 @@ function CanteenPayroll() {
 
     if (loading) return (
         <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading payroll...</p></div>
+            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading payroll...</p></div>
         </div>
     )
 
@@ -108,7 +108,7 @@ function CanteenPayroll() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button onClick={() => setShowModal(true)}
-                    style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(16,185,129,0.3)', transition: 'all 0.2s' }}>
+                    style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #ea580c, #dc2626)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(234,88,12,0.3)', transition: 'all 0.2s' }}>
                     + Generate Payroll
                 </button>
             </div>
@@ -116,7 +116,7 @@ function CanteenPayroll() {
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                 {[
-                    { label: 'Total Payrolls', value: payrolls.length, color: '#a855f7' },
+                    { label: 'Total Payrolls', value: payrolls.length, color: '#fb923c' },
                     { label: 'Pending Review', value: payrolls.filter(p => p.status === 'SUBMITTED' || p.status === 'UNDER_REVIEW').length, color: '#f59e0b' },
                     { label: 'Approved', value: payrolls.filter(p => p.status === 'APPROVED').length, color: '#4ade80' },
                     { label: 'Total Approved Payout', value: `Rs.${totalApproved.toLocaleString()}`, color: '#10b981' }
@@ -165,7 +165,7 @@ function CanteenPayroll() {
                                     <Link to={`/canteen/payroll/${p.id}`} style={{ padding: '8px 18px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '13px', fontWeight: 600, transition: 'all 0.2s' }}>View Details</Link>
                                     {p.status === 'DRAFT' && (
                                         <button onClick={() => handleSubmit(p.id)}
-                                            style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Submit for Review</button>
+                                            style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #ea580c, #dc2626)', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Submit for Review</button>
                                     )}
                                     {p.status === 'DRAFT' && (
                                         <button onClick={() => handleDelete(p.id)}
@@ -207,7 +207,7 @@ function CanteenPayroll() {
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.6)', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
                             <button onClick={handleGenerate} disabled={generating || !periodStart || !periodEnd}
-                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: generating || !periodStart || !periodEnd ? 0.5 : 1 }}>
+                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #ea580c, #dc2626)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: generating || !periodStart || !periodEnd ? 0.5 : 1 }}>
                                 {generating ? 'Generating...' : 'Generate'}
                             </button>
                         </div>

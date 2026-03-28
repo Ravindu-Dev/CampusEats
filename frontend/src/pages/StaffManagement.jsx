@@ -138,7 +138,7 @@ function StaffManagement() {
 
     if (loading) return (
         <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading staff...</p></div>
+            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading staff...</p></div>
         </div>
     )
 
@@ -161,7 +161,7 @@ function StaffManagement() {
                     <option value="TERMINATED" style={{ background: '#1a1a1a', color: 'white' }}>Terminated</option>
                 </select>
                 <button onClick={() => { setEditingStaff(null); setFormData({ ...emptyStaff }); setErrors({}); setShowModal(true) }}
-                    style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(168,85,247,0.3)' }}
+                    style={{ padding: '10px 24px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #ea580c, #dc2626)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(234,88,12,0.3)' }}
                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                     <span style={{ fontSize: '18px' }}>+</span> Add Staff
@@ -170,7 +170,7 @@ function StaffManagement() {
 
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                {[{ label: 'Total Staff', value: staff.length, color: '#a855f7' }, { label: 'Active', value: activeCount, color: '#4ade80' }, { label: 'Terminated', value: staff.filter(s => s.status === 'TERMINATED').length, color: '#f87171' }].map(stat => (
+                {[{ label: 'Total Staff', value: staff.length, color: '#fb923c' }, { label: 'Active', value: activeCount, color: '#4ade80' }, { label: 'Terminated', value: staff.filter(s => s.status === 'TERMINATED').length, color: '#f87171' }].map(stat => (
                     <div key={stat.label} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px' }}>
                         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>{stat.label}</p>
                         <p style={{ color: 'white', fontSize: '28px', fontWeight: 800 }}>{stat.value}</p>
@@ -217,7 +217,7 @@ function StaffManagement() {
                                                 borderBottom: index < filteredStaff.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
                                                 transition: 'background 0.2s'
                                             }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(168,85,247,0.04)'}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(249,115,22,0.04)'}
                                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                         >
                                             {/* Name */}
@@ -225,7 +225,7 @@ function StaffManagement() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     <div style={{
                                                         width: '38px', height: '38px', borderRadius: '10px',
-                                                        background: 'rgba(168,85,247,0.1)',
+                                                        background: 'rgba(249,115,22,0.1)',
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                         fontSize: '18px', flexShrink: 0
                                                     }}>
@@ -242,8 +242,8 @@ function StaffManagement() {
                                             <td style={{ padding: '14px 16px' }}>
                                                 <span style={{
                                                     padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-                                                    background: 'rgba(168,85,247,0.08)', color: '#c084fc',
-                                                    border: '1px solid rgba(168,85,247,0.15)', whiteSpace: 'nowrap'
+                                                    background: 'rgba(249,115,22,0.08)', color: '#fdba74',
+                                                    border: '1px solid rgba(249,115,22,0.15)', whiteSpace: 'nowrap'
                                                 }}>
                                                     {s.role}
                                                 </span>
@@ -400,7 +400,7 @@ function StaffManagement() {
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.6)', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
                             <button onClick={handleSave} disabled={saving || !formData.staffName || !formData.payRate || !formData.phone || !formData.nicNumber || !formData.joinDate || Object.values(errors).some(v => v)}
-                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: saving || !formData.staffName || !formData.payRate || !formData.phone || !formData.nicNumber || !formData.joinDate || Object.values(errors).some(v => v) ? 0.5 : 1 }}>
+                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #ea580c, #dc2626)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: saving || !formData.staffName || !formData.payRate || !formData.phone || !formData.nicNumber || !formData.joinDate || Object.values(errors).some(v => v) ? 0.5 : 1 }}>
                                 {saving ? 'Saving...' : editingStaff ? 'Update Staff' : 'Add Staff'}
                             </button>
                         </div>
