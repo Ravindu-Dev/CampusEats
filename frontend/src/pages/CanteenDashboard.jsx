@@ -23,6 +23,7 @@ function CanteenDashboard() {
     const [showEditOwner, setShowEditOwner] = useState(false)
     const [editCanteenData, setEditCanteenData] = useState({})
     const [editOwnerData, setEditOwnerData] = useState({})
+    const [errors, setErrors] = useState({})
     const [saving, setSaving] = useState(false)
     const [uploadingLogo, setUploadingLogo] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState('')
@@ -91,6 +92,7 @@ function CanteenDashboard() {
         })
         setSaveError('')
         setSaveSuccess('')
+        setErrors({})
         setShowEditCanteen(true)
     }
 
@@ -101,10 +103,18 @@ function CanteenDashboard() {
         })
         setSaveError('')
         setSaveSuccess('')
+        setErrors({})
         setShowEditOwner(true)
     }
 
     const handleSaveCanteen = async () => {
+        const validationErrors = validateCanteenForm()
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors)
+            setSaveError('Please fix the errors below.')
+            return
+        }
+
         setSaving(true)
         setSaveError('')
         try {
@@ -120,6 +130,13 @@ function CanteenDashboard() {
     }
 
     const handleSaveOwner = async () => {
+        const validationErrors = validateOwnerForm()
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors)
+            setSaveError('Please fix the errors below.')
+            return
+        }
+
         setSaving(true)
         setSaveError('')
         try {
@@ -149,6 +166,63 @@ function CanteenDashboard() {
         } finally {
             setSaving(false)
         }
+    }
+
+    const validateCanteenForm = () => {
+        const newErrors = {}
+        const phoneRegex = /^(?:\+94|0)?7[0-9]{8}$/
+
+        if (!editCanteenData.canteenName?.trim()) newErrors.canteenName = 'Canteen name is required'
+        if (!editCanteenData.phoneNumber?.trim()) {
+            newErrors.phoneNumber = 'Phone number is required'
+        } else if (!phoneRegex.test(editCanteenData.phoneNumber.trim())) {
+            newErrors.phoneNumber = 'Invalid Sri Lankan phone number (e.g., 0771234567 or +94771234567)'
+        }
+
+        if (editCanteenData.alternativeContactNumber?.trim() && !phoneRegex.test(editCanteenData.alternativeContactNumber.trim())) {
+            newErrors.alternativeContactNumber = 'Invalid alternative phone number'
+        }
+
+        if (!editCanteenData.openingTime) newErrors.openingTime = 'Opening time is required'
+        if (!editCanteenData.closingTime) newErrors.closingTime = 'Closing time is required'
+
+        if (editCanteenData.openingTime && editCanteenData.closingTime) {
+            if (editCanteenData.openingTime >= editCanteenData.closingTime) {
+                newErrors.closingTime = 'Closing time must be after opening time'
+            }
+        }
+
+        if (editCanteenData.seatingCapacity !== '' && parseInt(editCanteenData.seatingCapacity) < 0) {
+            newErrors.seatingCapacity = 'Capacity cannot be negative'
+        }
+
+        if (editCanteenData.averagePreparationTime !== '' && parseInt(editCanteenData.averagePreparationTime) < 0) {
+            newErrors.averagePreparationTime = 'Prep time cannot be negative'
+        }
+
+        if (!editCanteenData.operatingDays || editCanteenData.operatingDays.length === 0) {
+            newErrors.operatingDays = 'Select at least one operating day'
+        }
+
+        if (!editCanteenData.cuisineTypes || editCanteenData.cuisineTypes.length === 0) {
+            newErrors.cuisineTypes = 'Select at least one cuisine type'
+        }
+
+        return newErrors
+    }
+
+    const validateOwnerForm = () => {
+        const newErrors = {}
+        const phoneRegex = /^(?:\+94|0)?7[0-9]{8}$/
+
+        if (!editOwnerData.ownerName?.trim()) newErrors.ownerName = 'Owner name is required'
+        if (!editOwnerData.phoneNumber?.trim()) {
+            newErrors.phoneNumber = 'Phone number is required'
+        } else if (!phoneRegex.test(editOwnerData.phoneNumber.trim())) {
+            newErrors.phoneNumber = 'Invalid Sri Lankan phone number'
+        }
+
+        return newErrors
     }
 
     const handleCanteenFieldChange = (e) => {
@@ -590,7 +664,10 @@ function CanteenDashboard() {
                             {/* Name */}
                             <div>
                                 <label className={labelCls}>Canteen Name *</label>
-                                <input type="text" name="canteenName" value={editCanteenData.canteenName} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., The Campus Kitchen" />
+                                <input type="text" name="canteenName" value={editCanteenData.canteenName} onChange={handleCanteenFieldChange} 
+                                    className={`${inputCls} ${errors.canteenName ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} placeholder="e.g., The Campus Kitchen" />
+                                {errors.canteenName && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                    <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.canteenName}</p>}
                             </div>
 
                             {/* Location */}
@@ -619,31 +696,43 @@ function CanteenDashboard() {
                             {/* Contact */}
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className={labelCls}>Phone Number</label>
-                                    <input type="tel" name="phoneNumber" value={editCanteenData.phoneNumber} onChange={handleCanteenFieldChange} className={inputCls} placeholder="+94 77 000 0000" />
+                                    <label className={labelCls}>Phone Number *</label>
+                                    <input type="tel" name="phoneNumber" value={editCanteenData.phoneNumber} onChange={handleCanteenFieldChange} 
+                                        className={`${inputCls} ${errors.phoneNumber ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} placeholder="+94 77 000 0000" />
+                                    {errors.phoneNumber && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                        <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.phoneNumber}</p>}
                                 </div>
                                 <div>
                                     <label className={labelCls}>Alternative Contact</label>
-                                    <input type="tel" name="alternativeContactNumber" value={editCanteenData.alternativeContactNumber} onChange={handleCanteenFieldChange} className={inputCls} placeholder="+94 77 000 0000" />
+                                    <input type="tel" name="alternativeContactNumber" value={editCanteenData.alternativeContactNumber} onChange={handleCanteenFieldChange} 
+                                        className={`${inputCls} ${errors.alternativeContactNumber ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} placeholder="+94 77 000 0000" />
+                                    {errors.alternativeContactNumber && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                        <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.alternativeContactNumber}</p>}
                                 </div>
                             </div>
 
                             {/* Hours */}
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className={labelCls}>Opening Time</label>
-                                    <input type="time" name="openingTime" value={editCanteenData.openingTime} onChange={handleCanteenFieldChange} className={inputCls} style={{ colorScheme: 'dark' }} />
+                                    <label className={labelCls}>Opening Time *</label>
+                                    <input type="time" name="openingTime" value={editCanteenData.openingTime} onChange={handleCanteenFieldChange} 
+                                        className={`${inputCls} ${errors.openingTime ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} style={{ colorScheme: 'dark' }} />
+                                    {errors.openingTime && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                        <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.openingTime}</p>}
                                 </div>
                                 <div>
-                                    <label className={labelCls}>Closing Time</label>
-                                    <input type="time" name="closingTime" value={editCanteenData.closingTime} onChange={handleCanteenFieldChange} className={inputCls} style={{ colorScheme: 'dark' }} />
+                                    <label className={labelCls}>Closing Time *</label>
+                                    <input type="time" name="closingTime" value={editCanteenData.closingTime} onChange={handleCanteenFieldChange} 
+                                        className={`${inputCls} ${errors.closingTime ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} style={{ colorScheme: 'dark' }} />
+                                    {errors.closingTime && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                        <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.closingTime}</p>}
                                 </div>
                             </div>
 
                             {/* Operating Days */}
                             <div>
-                                <label className={labelCls}>Operating Days</label>
-                                <div className="flex flex-wrap gap-2">
+                                <label className={labelCls}>Operating Days *</label>
+                                <div className={`flex flex-wrap gap-2 p-2 rounded-2xl transition-all ${errors.operatingDays ? 'bg-red-500/5 border border-red-500/20' : ''}`}>
                                     {allDays.map(day => {
                                         const selected = Array.isArray(editCanteenData.operatingDays) && editCanteenData.operatingDays.includes(day)
                                         return (
@@ -654,17 +743,25 @@ function CanteenDashboard() {
                                         )
                                     })}
                                 </div>
+                                {errors.operatingDays && <p className="text-red-400 text-xs mt-2 ml-1 flex items-center gap-1.5 font-medium">
+                                    <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.operatingDays}</p>}
                             </div>
 
                             {/* Operational */}
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div>
                                     <label className={labelCls}>Seating Capacity</label>
-                                    <input type="number" name="seatingCapacity" value={editCanteenData.seatingCapacity} onChange={handleCanteenFieldChange} className={inputCls} placeholder="e.g., 50" />
+                                    <input type="number" name="seatingCapacity" value={editCanteenData.seatingCapacity} onChange={handleCanteenFieldChange} 
+                                        className={`${inputCls} ${errors.seatingCapacity ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} placeholder="e.g., 50" />
+                                    {errors.seatingCapacity && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                        <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.seatingCapacity}</p>}
                                 </div>
                                 <div>
                                     <label className={labelCls}>Avg. Prep Time (min)</label>
-                                    <input type="number" name="averagePreparationTime" value={editCanteenData.averagePreparationTime} onChange={handleCanteenFieldChange} className={inputCls} placeholder="15" />
+                                    <input type="number" name="averagePreparationTime" value={editCanteenData.averagePreparationTime} onChange={handleCanteenFieldChange} 
+                                        className={`${inputCls} ${errors.averagePreparationTime ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} placeholder="15" />
+                                    {errors.averagePreparationTime && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                        <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.averagePreparationTime}</p>}
                                 </div>
                             </div>
 
@@ -694,8 +791,8 @@ function CanteenDashboard() {
 
                             {/* Cuisine Types */}
                             <div>
-                                <label className={labelCls}>Cuisine Types</label>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <label className={labelCls}>Cuisine Types *</label>
+                                <div className={`grid grid-cols-2 md:grid-cols-4 gap-2 p-2 rounded-2xl transition-all ${errors.cuisineTypes ? 'bg-red-500/5 border border-red-500/20' : ''}`}>
                                     {cuisineOptions.map(c => {
                                         const selected = Array.isArray(editCanteenData.cuisineTypes) && editCanteenData.cuisineTypes.includes(c)
                                         return (
@@ -709,6 +806,8 @@ function CanteenDashboard() {
                                         )
                                     })}
                                 </div>
+                                {errors.cuisineTypes && <p className="text-red-400 text-xs mt-2 ml-1 flex items-center gap-1.5 font-medium">
+                                    <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.cuisineTypes}</p>}
                             </div>
 
                             {/* Action Buttons */}
@@ -770,14 +869,20 @@ function CanteenDashboard() {
                                 <p className="text-xs text-gray-600 mt-1">Email cannot be changed</p>
                             </div>
 
-                            <div>
+                             <div>
                                 <label className={labelCls}>Owner Name *</label>
-                                <input type="text" name="ownerName" value={editOwnerData.ownerName} onChange={handleOwnerFieldChange} className={inputCls} placeholder="Your full name" />
+                                <input type="text" name="ownerName" value={editOwnerData.ownerName} onChange={handleOwnerFieldChange} 
+                                    className={`${inputCls} ${errors.ownerName ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} placeholder="Your full name" />
+                                {errors.ownerName && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                    <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.ownerName}</p>}
                             </div>
 
-                            <div>
-                                <label className={labelCls}>Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={editOwnerData.phoneNumber} onChange={handleOwnerFieldChange} className={inputCls} placeholder="+94 77 000 0000" />
+                             <div>
+                                <label className={labelCls}>Phone Number *</label>
+                                <input type="tel" name="phoneNumber" value={editOwnerData.phoneNumber} onChange={handleOwnerFieldChange} 
+                                    className={`${inputCls} ${errors.phoneNumber ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} placeholder="+94 77 000 0000" />
+                                {errors.phoneNumber && <p className="text-red-400 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium">
+                                    <span className="w-1 h-1 rounded-full bg-red-400"></span>{errors.phoneNumber}</p>}
                             </div>
 
                             {/* Action Buttons */}
