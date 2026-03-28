@@ -34,6 +34,26 @@ function CanteenPayroll() {
 
     const handleGenerate = async () => {
         if (!periodStart || !periodEnd) { alert('Please select both start and end dates'); return }
+
+        // Validate: start date must not be in the future
+        const today = new Date().toISOString().split('T')[0]
+        if (periodStart > today) {
+            alert('Period start date cannot be a future date')
+            return
+        }
+
+        // Validate: end date must not be in the future
+        if (periodEnd > today) {
+            alert('Period end date cannot be a future date')
+            return
+        }
+
+        // Validate: end date must be >= start date
+        if (periodEnd < periodStart) {
+            alert('Period end date cannot be before the start date')
+            return
+        }
+
         setGenerating(true)
         try {
             const payroll = await payrollService.generatePayroll({ canteenId: canteen.id, periodStart, periodEnd })
@@ -51,6 +71,14 @@ function CanteenPayroll() {
             const owner = canteenAuthService.getCurrentCanteenOwner()
             const updated = await payrollService.submitPayroll(id, owner?.ownerName)
             setPayrolls(prev => prev.map(p => p.id === id ? updated : p))
+        } catch (err) { alert('Error: ' + (err.response?.data || err.message)) }
+    }
+
+    const handleDelete = async (id) => {
+        if (!confirm('Are you sure you want to delete this draft payroll? This action cannot be undone.')) return
+        try {
+            await payrollService.deleteDraftPayroll(id)
+            setPayrolls(prev => prev.filter(p => p.id !== id))
         } catch (err) { alert('Error: ' + (err.response?.data || err.message)) }
     }
 
@@ -139,6 +167,13 @@ function CanteenPayroll() {
                                         <button onClick={() => handleSubmit(p.id)}
                                             style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Submit for Review</button>
                                     )}
+                                    {p.status === 'DRAFT' && (
+                                        <button onClick={() => handleDelete(p.id)}
+                                            style={{ padding: '8px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)' }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)' }}
+                                        >🗑 Delete</button>
+                                    )}
                                 </div>
                                 {p.reviewComments && (
                                     <div style={{ marginTop: '12px', padding: '12px 16px', borderRadius: '10px', background: p.status === 'REJECTED' ? 'rgba(239,68,68,0.05)' : 'rgba(34,197,94,0.05)', border: `1px solid ${p.status === 'REJECTED' ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)'}` }}>
@@ -162,11 +197,11 @@ function CanteenPayroll() {
                         <div style={{ display: 'grid', gap: '16px' }}>
                             <div>
                                 <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Period Start</label>
-                                <input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} style={inputStyle} />
+                                <input type="date" value={periodStart} onChange={e => { setPeriodStart(e.target.value); if (periodEnd && e.target.value > periodEnd) setPeriodEnd('') }} max={new Date().toISOString().split('T')[0]} style={inputStyle} />
                             </div>
                             <div>
                                 <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Period End</label>
-                                <input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} style={inputStyle} />
+                                <input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} min={periodStart || ''} max={new Date().toISOString().split('T')[0]} style={inputStyle} />
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
