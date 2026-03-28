@@ -280,4 +280,15 @@ public class PayrollService {
     public long getPendingCount() {
         return payrollRepository.countByStatus("SUBMITTED") + payrollRepository.countByStatus("UNDER_REVIEW");
     }
+
+    // ───── Delete ─────
+
+    public void deleteDraftPayroll(String payrollId) {
+        Payroll payroll = getPayrollById(payrollId);
+        if (!"DRAFT".equals(payroll.getStatus())) {
+            throw new RuntimeException(
+                    "Can only delete payrolls in DRAFT status. Current status: " + payroll.getStatus());
+        }
+        payrollRepository.deleteById(payrollId);
+    }
 }

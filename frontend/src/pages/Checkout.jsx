@@ -46,8 +46,8 @@ function CheckoutForm({ orderIds, totalAmount, onSuccess }) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Stripe element renders inside a white bg box — keep it on a light surface for legibility */}
-            <div className="bg-white rounded-2xl p-4">
+            {/* Stripe element renders inside a dark-themed container */}
+            <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
                 <PaymentElement />
             </div>
 
@@ -215,15 +215,50 @@ function Checkout() {
 
     // ── Stripe appearance ──
     const appearance = {
-        theme: 'stripe',
+        theme: 'night',
         variables: {
             colorPrimary: '#ea580c',
-            colorBackground: '#ffffff',
-            colorText: '#1a1a1a',
+            colorBackground: '#141414',
+            colorText: '#e5e5e5',
             colorDanger: '#dc2626',
+            colorTextSecondary: '#737373',
+            colorTextPlaceholder: '#525252',
             fontFamily: 'Inter, system-ui, sans-serif',
             spacingUnit: '4px',
             borderRadius: '12px',
+            colorIconTabSelected: '#ea580c',
+        },
+        rules: {
+            '.Input': {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#e5e5e5',
+            },
+            '.Input:focus': {
+                border: '1px solid rgba(234, 88, 12, 0.5)',
+                boxShadow: '0 0 0 2px rgba(234, 88, 12, 0.2)',
+            },
+            '.Label': {
+                color: '#9ca3af',
+                fontWeight: '600',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+            },
+            '.Tab': {
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#9ca3af',
+            },
+            '.Tab:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                color: '#ffffff',
+            },
+            '.Tab--selected': {
+                backgroundColor: 'rgba(234, 88, 12, 0.15)',
+                border: '1px solid rgba(234, 88, 12, 0.4)',
+                color: '#ea580c',
+            },
         },
     };
 

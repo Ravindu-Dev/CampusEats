@@ -124,7 +124,7 @@ function AdminLogin() {
                                 <input
                                     type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                                     className="w-full pl-10 pr-4 py-3.5 bg-[#111] border border-white/[0.08] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition placeholder-gray-600 text-sm"
-                                    placeholder="admin@campuseats.com"
+                                    placeholder="Enter your email"
                                 />
                             </div>
                         </div>
@@ -141,7 +141,7 @@ function AdminLogin() {
                                 <input
                                     type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)}
                                     className="w-full pl-10 pr-12 py-3.5 bg-[#111] border border-white/[0.08] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition placeholder-gray-600 text-sm"
-                                    placeholder="••••••••"
+                                    placeholder="Enter your password"
                                 />
                                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-600 hover:text-gray-400 transition">

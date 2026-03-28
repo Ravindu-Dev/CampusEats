@@ -207,4 +207,20 @@ public class PayrollController {
                     .body("Error: " + e.getMessage());
         }
     }
+
+    // ───── Delete Draft Payroll ─────
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteDraftPayroll(@PathVariable("id") String id) {
+        try {
+            payrollService.deleteDraftPayroll(id);
+            return ResponseEntity.ok(Map.of("message", "Draft payroll deleted successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
+        }
+    }
 }

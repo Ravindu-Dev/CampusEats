@@ -89,6 +89,12 @@ const payrollService = {
         link.click()
         link.remove()
         window.URL.revokeObjectURL(url)
+    },
+
+    // Delete draft payroll
+    deleteDraftPayroll: async (id) => {
+        const response = await axios.delete(`${API_URL}/${id}`, { headers: getAuthHeaders() })
+        return response.data
     }
 }
 
