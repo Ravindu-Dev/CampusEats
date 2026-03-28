@@ -11,9 +11,11 @@ function ScanQRPage() {
     const navigate = useNavigate();
     const [scannedOrder, setScannedOrder] = useState(null);
     const [error, setError] = useState('');
+    const [modalError, setModalError] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
     const [canteenOwner, setCanteenOwner] = useState(null);
     const [manualOrderId, setManualOrderId] = useState('');
+    const [scannerKey, setScannerKey] = useState(0);
 
     useEffect(() => {
         const owner = canteenAuthService.getCurrentCanteenOwner();
@@ -77,7 +79,7 @@ function ScanQRPage() {
         if (!scannedOrder || !canteenOwner?.canteenId) return;
 
         setIsVerifying(true);
-        setError('');
+        setModalError('');
 
         try {
             // Update order status to COMPLETED
@@ -87,8 +89,9 @@ function ScanQRPage() {
                 canteenOwner.canteenId
             );
 
-            // Close modal
+            // Close modal on success
             setScannedOrder(null);
+            setModalError('');
 
             // Navigate to canteen orders page
             navigate('/canteen/orders', {
@@ -98,11 +101,9 @@ function ScanQRPage() {
                 }
             });
         } catch (err) {
-            const errorMessage = err.response?.data?.error || err.message || 'Failed to confirm handoff';
-            setError(errorMessage);
-
-            // Auto-clear error after 5 seconds
-            setTimeout(() => setError(''), 5000);
+            // Show error inside the modal (keep modal open)
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to confirm handoff';
+            setModalError(errorMessage);
         } finally {
             setIsVerifying(false);
         }
@@ -111,6 +112,9 @@ function ScanQRPage() {
     const handleCancelVerification = () => {
         setScannedOrder(null);
         setError('');
+        setModalError('');
+        // Remount the scanner so the camera restarts
+        setScannerKey(prev => prev + 1);
     };
 
     if (!canteenOwner) {
@@ -178,6 +182,7 @@ function ScanQRPage() {
 
                         <div className="rounded-xl overflow-hidden border-2 border-dashed border-[rgba(255,255,255,0.1)] hover:border-orange-500/50 transition-colors p-2 bg-[rgba(0,0,0,0.2)]">
                             <QRScanner
+                                key={scannerKey}
                                 onScanSuccess={handleScanSuccess}
                                 onScanError={handleScanError}
                             />
@@ -244,6 +249,8 @@ function ScanQRPage() {
                         order={scannedOrder}
                         onConfirm={handleConfirmHandoff}
                         onCancel={handleCancelVerification}
+                        isLoading={isVerifying}
+                        error={modalError}
                     />
                 )}
             </div>
