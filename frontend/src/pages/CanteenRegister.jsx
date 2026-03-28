@@ -17,7 +17,41 @@ function CanteenRegister() {
     const [showSuccess, setShowSuccess] = useState(false)
     const [error, setError] = useState('')
     const [errors, setErrors] = useState({})
+    const [showPassword, setShowPassword] = useState(false)
     const navigate = useNavigate()
+
+    const validatePassword = (pass) => {
+        return {
+            length: pass.length >= 8,
+            uppercase: /[A-Z]/.test(pass),
+            lowercase: /[a-z]/.test(pass),
+            number: /[0-9]/.test(pass),
+            special: /[!@#$%^&*(),.?":{}|<> ]/.test(pass),
+        }
+    }
+
+    // Strictly require .com extension
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/
+
+    const validateField = async (name, value) => {
+        if (name === 'email') {
+            if (!value.trim()) return 'Email is required.'
+            if (!emailRegex.test(value.trim())) return 'Invalid email format. Only .com addresses are allowed.'
+            
+            try {
+                const alreadyExists = await canteenAuthService.checkEmail(value.trim())
+                if (alreadyExists) return 'This email is already registered.'
+            } catch (err) {
+                console.error('Email check failed', err)
+            }
+        }
+        if (name === 'password') {
+            const reqs = validatePassword(value)
+            if (!reqs.length) return 'Password must be at least 8 characters.'
+            if (!reqs.uppercase || !reqs.number || !reqs.special) return 'Password does not meet complexity requirements.'
+        }
+        return null
+    }
 
     const [formData, setFormData] = useState({
         ownerName: '', email: '', password: '', confirmPassword: '',
@@ -36,11 +70,28 @@ function CanteenRegister() {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target
-        setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value })
-        if (errors[name]) setErrors(prev => { const n = { ...prev }; delete n[name]; return n })
-        if (name === 'deliveryAvailable' || name === 'pickupAvailable') {
-            setErrors(prev => { const n = { ...prev }; delete n.serviceOptions; return n })
-        }
+        const newVal = type === 'checkbox' ? checked : value
+        setFormData({ ...formData, [name]: newVal })
+
+        setErrors(prev => {
+            const newErrors = { ...prev }
+            if (newErrors[name]) delete newErrors[name]
+            if (name === 'deliveryAvailable' || name === 'pickupAvailable') delete newErrors.serviceOptions
+
+            // Basic regex check in real-time
+            if (name === 'email' && newVal.trim() && !emailRegex.test(newVal.trim())) {
+                newErrors.email = 'Only .com addresses are allowed.'
+            }
+            return newErrors
+        })
+    }
+
+    const handleBlur = async (e) => {
+        const { name, value } = e.target
+        if (!value.trim()) return
+
+        const err = await validateField(name, value)
+        if (err) setErrors(prev => ({ ...prev, [name]: err }))
     }
 
     const handleCheckboxArray = (name, value) => {
@@ -65,19 +116,23 @@ function CanteenRegister() {
         }
     }
 
-    const validate = () => {
+    const validate = async () => {
         const errs = {}
 
         if (step === 1) {
             if (!formData.ownerName.trim()) errs.ownerName = 'Owner name is required.'
-            if (!formData.email.trim()) errs.email = 'Email is required.'
-            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) errs.email = 'Please enter a valid email address.'
-            if (!formData.password) errs.password = 'Password is required.'
-            else if (formData.password.length < 6) errs.password = 'Password must be at least 6 characters.'
+            const emailErr = await validateField('email', formData.email)
+            if (emailErr) errs.email = emailErr
+            
+            const passwordErr = await validateField('password', formData.password)
+            if (passwordErr) errs.password = passwordErr
+            
             if (!formData.confirmPassword) errs.confirmPassword = 'Please confirm your password.'
             else if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.'
+            
             if (!formData.phoneNumber.trim()) errs.phoneNumber = 'Phone number is required.'
             else if (!/^(\+94|0)\d{9}$/.test(formData.phoneNumber.replace(/\s/g, ''))) errs.phoneNumber = 'Enter a valid phone number (e.g., +94 77 000 0000).'
+            
             if (formData.alternativeContactNumber.trim() && !/^(\+94|0)\d{9}$/.test(formData.alternativeContactNumber.replace(/\s/g, '')))
                 errs.alternativeContactNumber = 'Enter a valid phone number.'
         }
@@ -113,7 +168,7 @@ function CanteenRegister() {
         return true
     }
 
-    const nextStep = () => { setError(''); setErrors({}); if (validate()) setStep(s => s + 1) }
+    const nextStep = async () => { setError(''); setErrors({}); if (await validate()) setStep(s => s + 1) }
     const prevStep = () => { setError(''); setErrors({}); setStep(s => s - 1) }
 
     const handleSubmit = async () => {
@@ -224,14 +279,50 @@ function CanteenRegister() {
                                     </div>
                                     <div>
                                         <label className={labelCls}>Email *</label>
-                                        <input type="email" name="email" value={formData.email} onChange={handleChange} required className={getInputCls('email')} placeholder="owner@canteen.com" />
+                                        <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} required className={getInputCls('email')} placeholder="owner@canteen.com" />
                                         {fieldError('email')}
                                     </div>
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label className={labelCls}>Password *</label>
-                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required minLength="6" className={getInputCls('password')} placeholder="Min. 6 characters" />
+                                            <div className="relative">
+                                                <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} onBlur={handleBlur} required className={`${getInputCls('password')} pr-12`} placeholder="Min. 8 characters" />
+                                                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-600 hover:text-gray-400 transition">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showPassword
+                                                            ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                                            : "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                             {fieldError('password')}
+
+                                            {/* Password Checklist */}
+                                            <div className="mt-3 grid grid-cols-2 gap-2">
+                                                {[
+                                                    { key: 'length', label: '8+ characters' },
+                                                    { key: 'uppercase', label: 'Upper Case' },
+                                                    { key: 'number', label: 'Numbers' },
+                                                    { key: 'special', label: 'Special Char' },
+                                                ].map(req => {
+                                                    const isMet = validatePassword(formData.password)[req.key]
+                                                    return (
+                                                        <div key={req.key} className="flex items-center gap-2">
+                                                            <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all duration-300 ${isMet ? 'bg-orange-500 border-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.3)]' : 'bg-white/[0.03] border-white/[0.1]'}`}>
+                                                                {isMet && (
+                                                                    <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+                                                            <span className={`text-[10px] font-bold transition-colors ${isMet ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                                {req.label}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
                                         <div>
                                             <label className={labelCls}>Confirm Password *</label>
