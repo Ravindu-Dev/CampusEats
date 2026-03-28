@@ -20,10 +20,18 @@ public class CanteenRegistrationRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^[a-zA-Z0-9._%+-]+@+[a-zA-Z0-9.-]+\\.com$",
+        message = "Invalid email format. Only .com addresses are allowed."
+    )
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+        message = "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character"
+    )
     private String password;
 
     @NotBlank(message = "Phone number is required")
