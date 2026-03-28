@@ -91,7 +91,7 @@ function AttendanceManagement() {
 
     if (loading) return (
         <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading attendance...</p></div>
+            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading attendance...</p></div>
         </div>
     )
 
@@ -114,7 +114,7 @@ function AttendanceManagement() {
                 </div>
                 <div style={{ marginLeft: 'auto' }}>
                     <button onClick={handleSaveAll} disabled={saving}
-                        style={{ padding: '10px 28px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #06b6d4, #0891b2)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(6,182,212,0.3)', opacity: saving ? 0.6 : 1, transition: 'all 0.2s' }}>
+                        style={{ padding: '10px 28px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #ea580c, #dc2626)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(234,88,12,0.3)', opacity: saving ? 0.6 : 1, transition: 'all 0.2s' }}>
                         {saving ? 'Saving...' : '💾 Save Attendance'}
                     </button>
                 </div>
@@ -122,7 +122,7 @@ function AttendanceManagement() {
 
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-                {[{ label: 'Total Staff', value: staff.length, color: '#a855f7' }, { label: 'Present', value: presentCount, color: '#4ade80' }, { label: 'Absent', value: absentCount, color: '#f87171' }, { label: 'Date', value: new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }), color: '#06b6d4' }].map(stat => (
+                {[{ label: 'Total Staff', value: staff.length, color: '#fb923c' }, { label: 'Present', value: presentCount, color: '#4ade80' }, { label: 'Absent', value: absentCount, color: '#f87171' }, { label: 'Date', value: new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }), color: '#fb923c' }].map(stat => (
                     <div key={stat.label} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '16px' }}>
                         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>{stat.label}</p>
                         <p style={{ color: stat.color, fontSize: stat.label === 'Date' ? '14px' : '24px', fontWeight: 800 }}>{stat.value}</p>
