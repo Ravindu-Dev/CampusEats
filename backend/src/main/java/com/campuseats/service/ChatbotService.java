@@ -265,9 +265,32 @@ public class ChatbotService {
                             + "💰 **Deals** — Active combo deals & offers\n"
                             + "🕐 **Hours** — Canteen timings\n\n"
                             + "Just ask me anything!");
-        } else if (lower.contains("menu") || lower.contains("food") || lower.contains("eat")) {
+        } else if (lower.contains("vegan") || lower.contains("vegetarian") || lower.contains("veg")
+                || lower.contains("halal") || lower.contains("diet")) {
+            // Dietary options
+            List<MenuItem> vegItems = menuItemRepository.findAll().stream()
+                    .filter(MenuItem::isAvailable)
+                    .filter(MenuItem::isVegetarian)
+                    .limit(10)
+                    .collect(Collectors.toList());
+            if (vegItems.isEmpty()) {
+                result.put("reply", "🥗 No vegetarian/vegan items are listed right now. Check back later or browse the menu! 🍔");
+            } else {
+                StringBuilder sb = new StringBuilder("🥗 Here are the **vegetarian/vegan** options:\n\n");
+                for (MenuItem item : vegItems) {
+                    sb.append("🟢 **").append(item.getName()).append("** — Rs. ")
+                            .append(String.format("%.0f", item.getPrice()));
+                    if (item.getCategory() != null) {
+                        sb.append(" (").append(item.getCategory()).append(")");
+                    }
+                    sb.append("\n");
+                }
+                result.put("reply", sb.toString());
+            }
+        } else if (lower.contains("menu") || lower.contains("food") || lower.contains("eat")
+                || lower.contains("item") || lower.contains("available")) {
             List<MenuItem> items = menuItemRepository.findAll().stream()
-                    .filter(MenuItem::isAvailable).limit(8).collect(Collectors.toList());
+                    .filter(MenuItem::isAvailable).limit(10).collect(Collectors.toList());
             StringBuilder sb = new StringBuilder("🍽️ Here are some available items:\n\n");
             for (MenuItem item : items) {
                 String icon = item.isVegetarian() ? "🟢" : "🔴";
@@ -275,7 +298,83 @@ public class ChatbotService {
                         .append(String.format("%.0f", item.getPrice())).append("\n");
             }
             result.put("reply", sb.toString());
-        } else if (lower.contains("busy") || lower.contains("wait") || lower.contains("queue")) {
+        } else if (lower.contains("deal") || lower.contains("combo") || lower.contains("offer")
+                || lower.contains("discount") || lower.contains("promo")) {
+            // Combo deals
+            List<ComboDeal> deals = comboDealRepository.findAll().stream()
+                    .filter(ComboDeal::isActive)
+                    .collect(Collectors.toList());
+            if (deals.isEmpty()) {
+                result.put("reply", "🎁 No active combo deals right now. Keep checking — new deals drop often! 🍔");
+            } else {
+                StringBuilder sb = new StringBuilder("🎁 **Active Combo Deals:**\n\n");
+                for (ComboDeal deal : deals) {
+                    sb.append("🔥 **").append(deal.getName()).append("**");
+                    if (deal.getDescription() != null) {
+                        sb.append(" — ").append(deal.getDescription());
+                    }
+                    sb.append("\n   ~~Rs. ").append(String.format("%.0f", deal.getOriginalPrice()))
+                            .append("~~ → **Rs. ").append(String.format("%.0f", deal.getComboPrice())).append("**");
+                    if (deal.getDiscountPercent() != null) {
+                        sb.append(" (").append(String.format("%.0f", deal.getDiscountPercent())).append("% off!)");
+                    }
+                    sb.append("\n\n");
+                }
+                result.put("reply", sb.toString());
+            }
+        } else if (lower.contains("cheap") || lower.contains("budget") || lower.contains("under")
+                || lower.contains("affordable") || lower.contains("price") || lower.contains("low")) {
+            // Budget items — find items under Rs. 200 (or parse number from query)
+            double maxPrice = 200;
+            try {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(lower);
+                if (m.find()) maxPrice = Double.parseDouble(m.group());
+            } catch (Exception ignored) {}
+            final double limit = maxPrice;
+            List<MenuItem> cheapItems = menuItemRepository.findAll().stream()
+                    .filter(MenuItem::isAvailable)
+                    .filter(item -> item.getPrice() <= limit)
+                    .sorted(Comparator.comparingDouble(MenuItem::getPrice))
+                    .limit(10)
+                    .collect(Collectors.toList());
+            if (cheapItems.isEmpty()) {
+                result.put("reply", "💰 No items found under Rs. " + String.format("%.0f", limit) + " right now. Try a higher budget! 🍔");
+            } else {
+                StringBuilder sb = new StringBuilder("💰 Items under **Rs. ")
+                        .append(String.format("%.0f", limit)).append("**:\n\n");
+                for (MenuItem item : cheapItems) {
+                    String icon = item.isVegetarian() ? "🟢" : "🔴";
+                    sb.append(icon).append(" **").append(item.getName()).append("** — Rs. ")
+                            .append(String.format("%.0f", item.getPrice())).append("\n");
+                }
+                result.put("reply", sb.toString());
+            }
+        } else if (lower.contains("hour") || lower.contains("time") || lower.contains("open")
+                || lower.contains("close") || lower.contains("timing") || lower.contains("schedule")) {
+            // Canteen hours
+            List<Canteen> canteens = canteenRepository.findAll().stream()
+                    .filter(Canteen::isActive)
+                    .collect(Collectors.toList());
+            if (canteens.isEmpty()) {
+                result.put("reply", "🕐 No canteen info available right now. Check back soon! 🍔");
+            } else {
+                StringBuilder sb = new StringBuilder("🕐 **Canteen Hours:**\n\n");
+                for (Canteen c : canteens) {
+                    sb.append("🏪 **").append(c.getCanteenName()).append("**\n");
+                    sb.append("   ⏰ ").append(c.getOpeningTime() != null ? c.getOpeningTime() : "N/A")
+                            .append(" – ").append(c.getClosingTime() != null ? c.getClosingTime() : "N/A").append("\n");
+                    if (c.getOperatingDays() != null && !c.getOperatingDays().isEmpty()) {
+                        sb.append("   📅 ").append(String.join(", ", c.getOperatingDays())).append("\n");
+                    }
+                    if (c.getLocation() != null) {
+                        sb.append("   📍 ").append(c.getLocation()).append("\n");
+                    }
+                    sb.append("\n");
+                }
+                result.put("reply", sb.toString());
+            }
+        } else if (lower.contains("busy") || lower.contains("wait") || lower.contains("queue")
+                || lower.contains("crowd") || lower.contains("line")) {
             List<CanteenQueueStatusDTO> queue = canteenService.getAllCanteenQueueStatus();
             queue.sort(Comparator.comparingInt(CanteenQueueStatusDTO::getPendingOrderCount));
             StringBuilder sb = new StringBuilder("⏱️ Live wait status:\n\n");
@@ -286,11 +385,22 @@ public class ChatbotService {
                         .append(q.getPendingOrderCount()).append(" pending\n");
             }
             result.put("reply", sb.toString());
+        } else if (lower.contains("help")) {
+            result.put("reply",
+                    "🍔 **Here's what I can help with:**\n\n"
+                            + "🍽️ **\"Menu today\"** — See available items\n"
+                            + "🥗 **\"Vegan options\"** — Vegetarian/vegan items\n"
+                            + "⏱️ **\"Least busy canteen\"** — Live wait times\n"
+                            + "🎁 **\"Combo deals\"** — Active deals & discounts\n"
+                            + "💰 **\"Items under 200\"** — Budget-friendly picks\n"
+                            + "🕐 **\"Canteen hours\"** — Opening & closing times\n\n"
+                            + "Just type your question!");
         } else {
             result.put("reply",
                     "🤔 I'm not sure I understood that. Try asking about:\n\n"
-                            + "• Menu / food items\n• Vegan / vegetarian options\n"
-                            + "• Which canteen is least busy\n• Combo deals\n\n"
+                            + "• **Menu** / food items\n• **Vegan** / vegetarian options\n"
+                            + "• Which canteen is least **busy**\n• **Combo deals** & offers\n"
+                            + "• Items under a **budget**\n• Canteen **hours**\n\n"
                             + "Or type **help**! 🍔");
         }
 
