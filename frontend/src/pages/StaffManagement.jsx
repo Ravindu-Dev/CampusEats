@@ -46,10 +46,12 @@ function StaffManagement() {
         if (!formData.staffName || formData.staffName.trim().length < 3) {
             newErrors.staffName = 'Name must be at least 3 characters'
         }
-        if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
+        if (!formData.phone || !/^\d{10}$/.test(formData.phone)) {
             newErrors.phone = 'Phone number must be exactly 10 digits'
         }
-        if (formData.nicNumber) {
+        if (!formData.nicNumber) {
+            newErrors.nicNumber = 'NIC number is required'
+        } else {
             const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/
             if (!nicRegex.test(formData.nicNumber)) {
                 newErrors.nicNumber = 'Invalid NIC format (e.g., 123456789V or 12 digits)'
@@ -57,6 +59,9 @@ function StaffManagement() {
         }
         if (!formData.payRate || parseFloat(formData.payRate) <= 0) {
             newErrors.payRate = 'Pay rate must be a positive number'
+        }
+        if (!formData.joinDate) {
+            newErrors.joinDate = 'Join date is required'
         }
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -336,7 +341,7 @@ function StaffManagement() {
                         <div style={{ display: 'grid', gap: '16px' }}>
                             <div>
                                 <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Staff Name *</label>
-                                <input type="text" value={formData.staffName} onChange={e => {setFormData({ ...formData, staffName: e.target.value }); if(errors.staffName) setErrors({...errors, staffName: null})}} style={{...inputStyle, borderColor: errors.staffName ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="Full name" />
+                                <input type="text" value={formData.staffName} onChange={e => {setFormData({ ...formData, staffName: e.target.value }); if(errors.staffName) setErrors(prev => { const n = { ...prev }; delete n.staffName; return n })}} style={{...inputStyle, borderColor: errors.staffName ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="Full name" />
                                 {errors.staffName && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.staffName}</p>}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -362,25 +367,26 @@ function StaffManagement() {
                                 </div>
                                 <div>
                                     <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Pay Rate (LKR) *</label>
-                                    <input type="number" value={formData.payRate} onChange={e => {setFormData({ ...formData, payRate: e.target.value }); if(errors.payRate) setErrors({...errors, payRate: null})}} style={{...inputStyle, borderColor: errors.payRate ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="0.00" />
+                                    <input type="number" value={formData.payRate} onChange={e => {setFormData({ ...formData, payRate: e.target.value }); if(errors.payRate) setErrors(prev => { const n = { ...prev }; delete n.payRate; return n })}} style={{...inputStyle, borderColor: errors.payRate ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="0.00" />
                                     {errors.payRate && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.payRate}</p>}
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
-                                    <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Phone</label>
-                                    <input type="text" value={formData.phone} onChange={e => {setFormData({ ...formData, phone: e.target.value }); if(errors.phone) setErrors({...errors, phone: null})}} style={{...inputStyle, borderColor: errors.phone ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="07X XXX XXXX" />
+                                    <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Phone *</label>
+                                    <input type="text" value={formData.phone} onChange={e => {setFormData({ ...formData, phone: e.target.value }); if(errors.phone) setErrors(prev => { const n = { ...prev }; delete n.phone; return n })}} style={{...inputStyle, borderColor: errors.phone ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="07X XXX XXXX" />
                                     {errors.phone && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.phone}</p>}
                                 </div>
                                 <div>
-                                    <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>NIC Number</label>
-                                    <input type="text" value={formData.nicNumber} onChange={e => {setFormData({ ...formData, nicNumber: e.target.value }); if(errors.nicNumber) setErrors({...errors, nicNumber: null})}} style={{...inputStyle, borderColor: errors.nicNumber ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="National ID" />
+                                    <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>NIC Number *</label>
+                                    <input type="text" value={formData.nicNumber} onChange={e => {setFormData({ ...formData, nicNumber: e.target.value }); if(errors.nicNumber) setErrors(prev => { const n = { ...prev }; delete n.nicNumber; return n })}} style={{...inputStyle, borderColor: errors.nicNumber ? '#f87171' : 'rgba(255,255,255,0.1)'}} placeholder="National ID" />
                                     {errors.nicNumber && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.nicNumber}</p>}
                                 </div>
                             </div>
                             <div>
-                                <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Join Date</label>
-                                <input type="date" value={formData.joinDate} onChange={e => setFormData({ ...formData, joinDate: e.target.value })} style={inputStyle} />
+                                <label style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600, marginBottom: '6px', display: 'block' }}>Join Date *</label>
+                                <input type="date" value={formData.joinDate} onChange={e => {setFormData({ ...formData, joinDate: e.target.value }); if(errors.joinDate) setErrors(prev => { const n = { ...prev }; delete n.joinDate; return n })}} style={{...inputStyle, borderColor: errors.joinDate ? '#f87171' : 'rgba(255,255,255,0.1)'}} />
+                                {errors.joinDate && <p style={{ color: '#f87171', fontSize: '10px', marginTop: '4px', fontWeight: 600 }}>{errors.joinDate}</p>}
                             </div>
                             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
                                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>BANK DETAILS (Optional)</p>
@@ -393,8 +399,8 @@ function StaffManagement() {
                         </div>
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.6)', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
-                            <button onClick={handleSave} disabled={saving || !formData.staffName || !formData.payRate || Object.keys(errors).length > 0}
-                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: saving || !formData.staffName || !formData.payRate || Object.keys(errors).length > 0 ? 0.5 : 1 }}>
+                            <button onClick={handleSave} disabled={saving || !formData.staffName || !formData.payRate || !formData.phone || !formData.nicNumber || !formData.joinDate || Object.values(errors).some(v => v)}
+                                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '14px', opacity: saving || !formData.staffName || !formData.payRate || !formData.phone || !formData.nicNumber || !formData.joinDate || Object.values(errors).some(v => v) ? 0.5 : 1 }}>
                                 {saving ? 'Saving...' : editingStaff ? 'Update Staff' : 'Add Staff'}
                             </button>
                         </div>
