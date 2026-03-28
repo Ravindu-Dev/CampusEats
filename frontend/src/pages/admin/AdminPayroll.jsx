@@ -13,7 +13,8 @@ function AdminPayroll() {
         const fetchData = async () => {
             try {
                 const all = await payrollService.getAllPayrolls().catch(() => [])
-                setPayrolls(all || [])
+                // Filter out DRAFT payrolls — they haven't been submitted by the canteen owner yet
+                setPayrolls((all || []).filter(p => p.status !== 'DRAFT'))
                 const pending = await payrollService.getPendingPayrolls().catch(() => [])
                 setPendingPayrolls(pending || [])
             } catch (err) { console.error('Error:', err) }
