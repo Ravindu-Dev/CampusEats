@@ -33,10 +33,17 @@ function CanteenRegister() {
     // Strictly require .com extension
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/
 
-    const validateField = (name, value) => {
+    const validateField = async (name, value) => {
         if (name === 'email') {
             if (!value.trim()) return 'Email is required.'
             if (!emailRegex.test(value.trim())) return 'Invalid email format. Only .com addresses are allowed.'
+            
+            try {
+                const alreadyExists = await canteenAuthService.checkEmail(value.trim())
+                if (alreadyExists) return 'This email is already registered.'
+            } catch (err) {
+                console.error('Email check failed', err)
+            }
         }
         if (name === 'password') {
             const reqs = validatePassword(value)
@@ -71,18 +78,19 @@ function CanteenRegister() {
             if (newErrors[name]) delete newErrors[name]
             if (name === 'deliveryAvailable' || name === 'pickupAvailable') delete newErrors.serviceOptions
 
-            // Real-time re-validation for critical fields
-            if (name === 'email' && newVal.trim()) {
-                const err = validateField('email', newVal)
-                if (err) newErrors.email = err
+            // Basic regex check in real-time
+            if (name === 'email' && newVal.trim() && !emailRegex.test(newVal.trim())) {
+                newErrors.email = 'Only .com addresses are allowed.'
             }
             return newErrors
         })
     }
 
-    const handleBlur = (e) => {
+    const handleBlur = async (e) => {
         const { name, value } = e.target
-        const err = validateField(name, value)
+        if (!value.trim()) return
+
+        const err = await validateField(name, value)
         if (err) setErrors(prev => ({ ...prev, [name]: err }))
     }
 
@@ -108,22 +116,16 @@ function CanteenRegister() {
         }
     }
 
-    const validate = () => {
+    const validate = async () => {
         const errs = {}
 
         if (step === 1) {
             if (!formData.ownerName.trim()) errs.ownerName = 'Owner name is required.'
-            if (!formData.email.trim()) errs.email = 'Email is required.'
-            else if (!emailRegex.test(formData.email.trim())) errs.email = 'Invalid email format. Numbers after the domain extension (e.g., .com123) are not allowed.'
+            const emailErr = await validateField('email', formData.email)
+            if (emailErr) errs.email = emailErr
             
-            if (!formData.password) errs.password = 'Password is required.'
-            else {
-                const reqs = validatePassword(formData.password)
-                if (!reqs.length) errs.password = 'Password must be at least 8 characters.'
-                else if (!reqs.uppercase) errs.password = 'Password must include at least one uppercase letter.'
-                else if (!reqs.special) errs.password = 'Password must include at least one special character.'
-                else if (!reqs.number) errs.password = 'Password must include at least one number.'
-            }
+            const passwordErr = await validateField('password', formData.password)
+            if (passwordErr) errs.password = passwordErr
             
             if (!formData.confirmPassword) errs.confirmPassword = 'Please confirm your password.'
             else if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.'
@@ -166,7 +168,7 @@ function CanteenRegister() {
         return true
     }
 
-    const nextStep = () => { setError(''); setErrors({}); if (validate()) setStep(s => s + 1) }
+    const nextStep = async () => { setError(''); setErrors({}); if (await validate()) setStep(s => s + 1) }
     const prevStep = () => { setError(''); setErrors({}); setStep(s => s - 1) }
 
     const handleSubmit = async () => {
