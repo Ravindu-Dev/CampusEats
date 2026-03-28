@@ -29,6 +29,11 @@ public class AttendanceService {
     public AttendanceResponse logAttendance(AttendanceRequest request) {
         LocalDate date = LocalDate.parse(request.getDate());
 
+        // Prevent future date attendance
+        if (date.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Cannot log attendance for a future date");
+        }
+
         // Check for duplicate
         Optional<Attendance> existing = attendanceRepository.findByStaffIdAndDate(
                 request.getStaffId(), date);
@@ -55,6 +60,11 @@ public class AttendanceService {
 
     public List<AttendanceResponse> logBulkAttendance(AttendanceRequest.BulkAttendanceRequest request) {
         LocalDate date = LocalDate.parse(request.getDate());
+
+        // Prevent future date attendance
+        if (date.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Cannot log attendance for a future date");
+        }
         List<AttendanceResponse> results = new ArrayList<>();
 
         for (AttendanceRequest.AttendanceEntry entry : request.getEntries()) {

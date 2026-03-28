@@ -243,20 +243,20 @@ export default function Chatbot() {
                         animation: isClosing
                             ? 'chatSlideDown 0.3s forwards cubic-bezier(0.4, 0, 1, 1)'
                             : 'chatSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                        // System dark glassmorphism
-                        background: 'rgba(17, 24, 39, 0.9)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+                        // Glass dark black
+                        background: 'rgba(0, 0, 0, 0.85)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6)',
                     }}
                 >
                     {/* Header */}
                     <div
                         style={{
                             padding: '16px 20px',
-                            background: 'rgba(17, 24, 39, 0.95)',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                            background: 'rgba(0, 0, 0, 0.9)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
@@ -326,7 +326,7 @@ export default function Chatbot() {
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '14px',
-                            background: 'rgba(0, 0, 0, 0.1)', // Subtle contrast for message area
+                            background: 'transparent', // Pure black glass message area
                         }}
                     >
                         {messages.map((msg, i) => (
@@ -368,14 +368,14 @@ export default function Chatbot() {
                                         background:
                                             msg.role === 'user'
                                                 ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
-                                                : 'rgba(255, 255, 255, 0.08)',
+                                                : 'rgba(255, 255, 255, 0.06)',
                                         color: msg.role === 'user' ? '#ffffff' : '#f1f5f9',
                                         fontSize: '14px',
                                         lineHeight: 1.5,
                                         fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                         border:
                                             msg.role === 'bot'
-                                                ? '1px solid rgba(255, 255, 255, 0.1)'
+                                                ? '1px solid rgba(255, 255, 255, 0.08)'
                                                 : 'none',
                                         boxShadow:
                                             msg.role === 'user'
@@ -452,7 +452,7 @@ export default function Chatbot() {
                                 display: 'flex',
                                 flexWrap: 'wrap',
                                 gap: '8px',
-                                background: 'rgba(17, 24, 39, 0.95)',
+                                background: 'transparent',
                             }}
                         >
                             {SUGGESTIONS.map((s) => (
@@ -485,11 +485,11 @@ export default function Chatbot() {
                     <div
                         style={{
                             padding: '14px 16px',
-                            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
                             display: 'flex',
                             gap: '10px',
                             alignItems: 'center',
-                            background: 'rgba(17, 24, 39, 0.95)',
+                            background: 'rgba(0, 0, 0, 0.9)',
                         }}
                     >
                         <input

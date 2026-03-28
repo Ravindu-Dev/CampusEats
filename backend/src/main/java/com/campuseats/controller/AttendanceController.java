@@ -22,6 +22,8 @@ public class AttendanceController {
         try {
             AttendanceResponse response = attendanceService.logAttendance(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage());
@@ -33,6 +35,8 @@ public class AttendanceController {
         try {
             List<AttendanceResponse> responses = attendanceService.logBulkAttendance(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(responses);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage());
