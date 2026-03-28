@@ -56,6 +56,15 @@ function AttendanceManagement() {
     const handleSaveAll = async () => {
         setSaving(true)
         try {
+            // Validate times
+            for (const [staffId, data] of Object.entries(entries)) {
+                if (data.dayType !== 'ABSENT' && data.dayType !== 'LEAVE' && data.checkInTime && data.checkOutTime && data.checkOutTime < data.checkInTime) {
+                    alert('Check-out time cannot be earlier than check-in time. Please correct it before saving.');
+                    setSaving(false);
+                    return;
+                }
+            }
+
             const bulkEntries = Object.entries(entries).map(([staffId, data]) => ({
                 staffId, checkInTime: data.checkInTime, checkOutTime: data.checkOutTime, dayType: data.dayType, notes: data.notes
             }))
@@ -162,18 +171,18 @@ function AttendanceManagement() {
                                         </p>
                                     </div>
                                 </div>
-                                <input type="time" value={entry.checkInTime} onChange={e => handleEntryChange(s.id, 'checkInTime', e.target.value)}
+                                <input type="time" value={entry.checkInTime} max={entry.checkOutTime || undefined} onChange={e => handleEntryChange(s.id, 'checkInTime', e.target.value)}
                                     disabled={entry.dayType === 'ABSENT' || entry.dayType === 'LEAVE'}
                                     style={{ ...inputStyle, opacity: entry.dayType === 'ABSENT' || entry.dayType === 'LEAVE' ? 0.3 : 1 }} />
-                                <input type="time" value={entry.checkOutTime} onChange={e => handleEntryChange(s.id, 'checkOutTime', e.target.value)}
+                                <input type="time" value={entry.checkOutTime} min={entry.checkInTime || undefined} onChange={e => handleEntryChange(s.id, 'checkOutTime', e.target.value)}
                                     disabled={entry.dayType === 'ABSENT' || entry.dayType === 'LEAVE'}
                                     style={{ ...inputStyle, opacity: entry.dayType === 'ABSENT' || entry.dayType === 'LEAVE' ? 0.3 : 1 }} />
                                 <select value={entry.dayType} onChange={e => handleEntryChange(s.id, 'dayType', e.target.value)}
                                     style={{ ...inputStyle, cursor: 'pointer', color: getDayTypeStyle(entry.dayType).text, background: getDayTypeStyle(entry.dayType).bg, borderColor: getDayTypeStyle(entry.dayType).border }}>
-                                    <option value="PRESENT">Present</option>
-                                    <option value="ABSENT">Absent</option>
-                                    <option value="HALF_DAY">Half Day</option>
-                                    <option value="LEAVE">Leave</option>
+                                    <option value="PRESENT" style={{ background: '#0a0a0a', color: 'white' }}>Present</option>
+                                    <option value="ABSENT" style={{ background: '#0a0a0a', color: 'white' }}>Absent</option>
+                                    <option value="HALF_DAY" style={{ background: '#0a0a0a', color: 'white' }}>Half Day</option>
+                                    <option value="LEAVE" style={{ background: '#0a0a0a', color: 'white' }}>Leave</option>
                                 </select>
                                 <input type="text" placeholder="Optional notes..." value={entry.notes} onChange={e => handleEntryChange(s.id, 'notes', e.target.value)} style={inputStyle} />
                             </div>
