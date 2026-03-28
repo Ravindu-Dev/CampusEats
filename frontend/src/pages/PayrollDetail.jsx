@@ -40,7 +40,7 @@ function PayrollDetail() {
 
     if (loading) return (
         <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading payroll...</p></div>
+            <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div><p className="text-lg text-gray-400">Loading payroll...</p></div>
         </div>
     )
 
@@ -48,7 +48,7 @@ function PayrollDetail() {
         <CanteenLayout pageTitle="Payroll Detail">
             <div style={{ textAlign: 'center', padding: '80px 20px' }}>
                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '18px' }}>Payroll not found</p>
-                <Link to="/canteen/payroll" style={{ color: '#10b981', textDecoration: 'none' }}>← Back to Payroll</Link>
+                <Link to="/canteen/payroll" style={{ color: '#fb923c', textDecoration: 'none' }}>← Back to Payroll</Link>
             </div>
         </CanteenLayout>
     )
@@ -90,7 +90,7 @@ function PayrollDetail() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {payroll.items?.map(item => (
                     <div key={item.staffId} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', transition: 'all 0.3s' }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(16,185,129,0.2)'}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.2)'}
                         onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                             <div>
@@ -114,7 +114,7 @@ function PayrollDetail() {
                         </div>
                         {payroll.status === 'APPROVED' && (
                             <button onClick={() => handleDownloadPayslip(item.staffId, item.staffName)} disabled={downloading === item.staffId}
-                                style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontSize: '12px', fontWeight: 700, cursor: 'pointer', opacity: downloading === item.staffId ? 0.5 : 1, transition: 'all 0.2s' }}>
+                                style={{ padding: '8px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #ea580c, #dc2626)', color: 'white', fontSize: '12px', fontWeight: 700, cursor: 'pointer', opacity: downloading === item.staffId ? 0.5 : 1, transition: 'all 0.2s' }}>
                                 {downloading === item.staffId ? '⏳ Downloading...' : '📄 Download Payslip PDF'}
                             </button>
                         )}
