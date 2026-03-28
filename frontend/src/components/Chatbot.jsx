@@ -88,18 +88,18 @@ export default function Chatbot() {
         }
     };
 
-    // System theme (light + orange accent) markdown styles
+    // Dark theme markdown styles
     const markdownComponents = {
-        strong: ({ children }) => <strong style={{ color: '#ea580c' }}>{children}</strong>,
+        strong: ({ children }) => <strong style={{ color: '#ef4444' }}>{children}</strong>,
         p: ({ children }) => <p style={{ margin: '4px 0' }}>{children}</p>,
         ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>{children}</ul>,
         ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: '16px' }}>{children}</ol>,
         li: ({ children }) => <li style={{ marginBottom: '2px' }}>{children}</li>,
-        h1: ({ children }) => <div style={{ fontWeight: 700, fontSize: '15px', color: '#ea580c', margin: '6px 0 4px' }}>{children}</div>,
-        h2: ({ children }) => <div style={{ fontWeight: 700, fontSize: '14px', color: '#ea580c', margin: '6px 0 4px' }}>{children}</div>,
-        h3: ({ children }) => <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#ea580c', margin: '4px 0 2px' }}>{children}</div>,
-        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#ea580c', textDecoration: 'underline' }}>{children}</a>,
-        code: ({ children }) => <code style={{ background: 'rgba(234, 88, 12, 0.1)', padding: '1px 4px', borderRadius: '4px', fontSize: '12px', color: '#ea580c' }}>{children}</code>,
+        h1: ({ children }) => <div style={{ fontWeight: 700, fontSize: '15px', color: '#ef4444', margin: '6px 0 4px' }}>{children}</div>,
+        h2: ({ children }) => <div style={{ fontWeight: 700, fontSize: '14px', color: '#ef4444', margin: '6px 0 4px' }}>{children}</div>,
+        h3: ({ children }) => <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#ef4444', margin: '4px 0 2px' }}>{children}</div>,
+        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#ef4444', textDecoration: 'underline' }}>{children}</a>,
+        code: ({ children }) => <code style={{ background: 'rgba(239, 68, 68, 0.15)', padding: '1px 4px', borderRadius: '4px', fontSize: '12px', color: '#ef4444' }}>{children}</code>,
     };
 
     return (
@@ -115,8 +115,8 @@ export default function Chatbot() {
                     animation: botBlink 4s infinite;
                 }
                 @keyframes botPulse {
-                    0%, 100% { box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
-                    50% { box-shadow: 0 4px 25px rgba(234, 88, 12, 0.4); }
+                    0%, 100% { box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2); }
+                    50% { box-shadow: 0 4px 25px rgba(220, 38, 38, 0.4); }
                 }
                 @keyframes chatSlideUp {
                     from { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -138,17 +138,17 @@ export default function Chatbot() {
                     transform: scale(1.1) !important;
                 }
                 .chatbot-suggestion:hover {
-                    background: rgba(234, 88, 12, 0.15) !important;
-                    border-color: rgba(234, 88, 12, 0.4) !important;
+                    background: rgba(220, 38, 38, 0.15) !important;
+                    border-color: rgba(220, 38, 38, 0.4) !important;
                     transform: translateY(-1px);
                 }
                 .chatbot-send:hover:not(:disabled) {
-                    background: linear-gradient(135deg, #ea580c, #c2410c) !important;
+                    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
                     transform: scale(1.05);
                 }
                 .chatbot-input:focus {
-                    border-color: rgba(234, 88, 12, 0.5) !important;
-                    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15) !important;
+                    border-color: rgba(220, 38, 38, 0.5) !important;
+                    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
                 }
                 .chatbot-scrollbar::-webkit-scrollbar {
                     width: 6px;
@@ -157,11 +157,11 @@ export default function Chatbot() {
                     background: transparent;
                 }
                 .chatbot-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(234, 88, 12, 0.4);
+                    background: rgba(220, 38, 38, 0.4);
                     border-radius: 10px;
                 }
                 .chatbot-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(234, 88, 12, 0.6);
+                    background: rgba(220, 38, 38, 0.6);
                 }
             `}</style>
 
@@ -188,7 +188,7 @@ export default function Chatbot() {
                     height: '64px',
                     borderRadius: '50%',
                     border: 'none',
-                    background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                    background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
                     cursor: 'pointer',
                     zIndex: 9999,
                     display: 'flex',
@@ -197,7 +197,7 @@ export default function Chatbot() {
                     padding: 0,
                     animation: isOpen ? 'none' : 'botPulse 4s ease-in-out infinite',
                     transition: 'transform 0.2s ease',
-                    boxShadow: '0 4px 15px rgba(234, 88, 12, 0.2)',
+                    boxShadow: '0 4px 15px rgba(220, 38, 38, 0.2)',
                 }}
                 title="Chat with Eatsbot"
             >
@@ -243,20 +243,20 @@ export default function Chatbot() {
                         animation: isClosing
                             ? 'chatSlideDown 0.3s forwards cubic-bezier(0.4, 0, 1, 1)'
                             : 'chatSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                        // System light glassmorphism
-                        background: 'rgba(255, 255, 255, 0.85)',
-                        backdropFilter: 'blur(16px)',
-                        WebkitBackdropFilter: 'blur(16px)',
-                        border: '1px solid rgba(255, 255, 255, 0.5)',
-                        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+                        // System dark glassmorphism
+                        background: 'rgba(17, 24, 39, 0.9)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
                     }}
                 >
                     {/* Header */}
                     <div
                         style={{
                             padding: '16px 20px',
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+                            background: 'rgba(17, 24, 39, 0.95)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
@@ -270,8 +270,8 @@ export default function Chatbot() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: 'linear-gradient(135deg, #ea580c, #c2410c)',
-                                boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
+                                background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
                                 flexShrink: 0,
                             }}
                         >
@@ -282,7 +282,7 @@ export default function Chatbot() {
                                 style={{
                                     fontWeight: 700,
                                     fontSize: '15.5px',
-                                    color: '#1a1a1a',
+                                    color: '#ffffff',
                                     fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                     display: 'flex',
                                     alignItems: 'center',
@@ -290,7 +290,7 @@ export default function Chatbot() {
                                 }}
                             >
                                 Eatsbot
-                                <Sparkles size={14} color="#ea580c" />
+                                <Sparkles size={14} color="#ef4444" />
                             </div>
                             <div
                                 style={{
@@ -307,7 +307,7 @@ export default function Chatbot() {
                                         width: '7px',
                                         height: '7px',
                                         borderRadius: '50%',
-                                        background: '#22c55e',
+                                        background: '#10b981',
                                         display: 'inline-block',
                                     }}
                                 />{' '}
@@ -326,7 +326,7 @@ export default function Chatbot() {
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '14px',
-                            background: 'rgba(248, 250, 252, 0.4)', // Very subtle gray tint
+                            background: 'rgba(0, 0, 0, 0.1)', // Subtle contrast for message area
                         }}
                     >
                         {messages.map((msg, i) => (
@@ -348,8 +348,8 @@ export default function Chatbot() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            background: 'linear-gradient(135deg, #ea580c, #c2410c)',
-                                            boxShadow: '0 2px 8px rgba(234, 88, 12, 0.2)',
+                                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                                            boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)',
                                             flexShrink: 0,
                                             marginTop: '4px',
                                         }}
@@ -367,20 +367,20 @@ export default function Chatbot() {
                                                 : '18px 18px 18px 4px',
                                         background:
                                             msg.role === 'user'
-                                                ? 'linear-gradient(135deg, #ea580c, #c2410c)'
-                                                : '#ffffff',
-                                        color: msg.role === 'user' ? '#ffffff' : '#1e293b',
+                                                ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                                                : 'rgba(255, 255, 255, 0.08)',
+                                        color: msg.role === 'user' ? '#ffffff' : '#f1f5f9',
                                         fontSize: '14px',
                                         lineHeight: 1.5,
                                         fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                         border:
                                             msg.role === 'bot'
-                                                ? '1px solid rgba(0, 0, 0, 0.06)'
+                                                ? '1px solid rgba(255, 255, 255, 0.1)'
                                                 : 'none',
                                         boxShadow:
                                             msg.role === 'user'
-                                                ? '0 4px 12px rgba(234, 88, 12, 0.25)'
-                                                : '0 4px 12px rgba(0, 0, 0, 0.03)',
+                                                ? '0 4px 12px rgba(220, 38, 38, 0.25)'
+                                                : '0 4px 12px rgba(0, 0, 0, 0.1)',
                                         wordBreak: 'break-word',
                                     }}
                                 >
@@ -404,8 +404,8 @@ export default function Chatbot() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        background: 'linear-gradient(135deg, #ea580c, #c2410c)',
-                                        boxShadow: '0 2px 8px rgba(234, 88, 12, 0.2)',
+                                        background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                                        boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)',
                                         flexShrink: 0,
                                         marginTop: '4px',
                                     }}
@@ -416,9 +416,9 @@ export default function Chatbot() {
                                     style={{
                                         padding: '14px 18px',
                                         borderRadius: '18px 18px 18px 4px',
-                                        background: '#ffffff',
-                                        border: '1px solid rgba(0, 0, 0, 0.06)',
-                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                                         display: 'flex',
                                         gap: '6px',
                                         alignItems: 'center',
@@ -431,7 +431,7 @@ export default function Chatbot() {
                                                 width: '6px',
                                                 height: '6px',
                                                 borderRadius: '50%',
-                                                background: '#ea580c',
+                                                background: '#ef4444',
                                                 display: 'inline-block',
                                                 animation: `dotBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
                                             }}
@@ -452,7 +452,7 @@ export default function Chatbot() {
                                 display: 'flex',
                                 flexWrap: 'wrap',
                                 gap: '8px',
-                                background: 'rgba(248, 250, 252, 0.4)',
+                                background: 'rgba(17, 24, 39, 0.95)',
                             }}
                         >
                             {SUGGESTIONS.map((s) => (
@@ -463,9 +463,9 @@ export default function Chatbot() {
                                     style={{
                                         padding: '6px 14px',
                                         borderRadius: '20px',
-                                        border: '1px solid rgba(234, 88, 12, 0.2)',
-                                        background: '#ffffff',
-                                        color: '#ea580c',
+                                        border: '1px solid rgba(220, 38, 38, 0.3)',
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        color: '#fca5a5',
                                         fontSize: '12.5px',
                                         fontWeight: 500,
                                         cursor: 'pointer',
@@ -485,11 +485,11 @@ export default function Chatbot() {
                     <div
                         style={{
                             padding: '14px 16px',
-                            borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                             display: 'flex',
                             gap: '10px',
                             alignItems: 'center',
-                            background: '#ffffff',
+                            background: 'rgba(17, 24, 39, 0.95)',
                         }}
                     >
                         <input
@@ -504,14 +504,14 @@ export default function Chatbot() {
                                 flex: 1,
                                 padding: '12px 16px',
                                 borderRadius: '14px',
-                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                background: '#f8fafc',
-                                color: '#1e293b',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                color: '#ffffff',
                                 fontSize: '14px',
                                 outline: 'none',
                                 fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                 transition: 'all 0.2s ease',
-                                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.01)',
+                                boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.2)',
                             }}
                         />
                         <button
@@ -525,7 +525,7 @@ export default function Chatbot() {
                                 border: 'none',
                                 background:
                                     input.trim() && !isTyping
-                                        ? 'linear-gradient(135deg, #ea580c, #c2410c)'
+                                        ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
                                         : '#f1f5f9',
                                 color: input.trim() && !isTyping ? '#ffffff' : '#cbd5e1',
                                 fontSize: '18px',
@@ -535,7 +535,7 @@ export default function Chatbot() {
                                 justifyContent: 'center',
                                 flexShrink: 0,
                                 transition: 'all 0.2s ease',
-                                boxShadow: input.trim() && !isTyping ? '0 4px 12px rgba(234, 88, 12, 0.25)' : 'none',
+                                boxShadow: input.trim() && !isTyping ? '0 4px 12px rgba(220, 38, 38, 0.25)' : 'none',
                             }}
                         >
                             <Send size={18} />
@@ -546,3 +546,4 @@ export default function Chatbot() {
         </>
     );
 }
+
