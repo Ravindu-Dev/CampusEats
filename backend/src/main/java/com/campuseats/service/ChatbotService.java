@@ -170,7 +170,7 @@ public class ChatbotService {
     }
 
     private String buildSystemPrompt(String liveContext) {
-        return "You are **Burger Buddy** 🍔, the friendly and enthusiastic AI assistant mascot for CampusEats — " +
+        return "You are **Eatsbot** 🍔, the friendly and enthusiastic AI assistant mascot for CampusEats — " +
                 "a campus food delivery and canteen pre-order system.\n\n" +
                 "## Your Personality\n" +
                 "- Friendly, upbeat, and helpful — like a cheerful anime burger character\n" +
@@ -258,7 +258,7 @@ public class ChatbotService {
 
         if (isGreeting(lower)) {
             result.put("reply",
-                    "Hey there! 🍔 I'm Burger Buddy, your CampusEats assistant! I can help you with:\n\n"
+                    "Hey there! 🍔 I'm Eatsbot, your CampusEats assistant! I can help you with:\n\n"
                             + "🍽️ **Menu** — What's available to eat\n"
                             + "🥗 **Dietary options** — Veg, vegan, halal filters\n"
                             + "⏱️ **Wait times** — Which canteen is least busy\n"
