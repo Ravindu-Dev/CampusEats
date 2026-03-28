@@ -7,6 +7,11 @@ const register = async (canteenData) => {
     return response.data;
 };
 
+const checkEmail = async (email) => {
+    const response = await axios.get(API_URL + 'check-email', { params: { email } });
+    return response.data;
+};
+
 const login = async (credentials) => {
     const response = await axios.post(API_URL + 'login', credentials);
     if (response.data.token) {
@@ -47,6 +52,7 @@ const updateOwnerProfile = async (id, data) => {
 
 const canteenAuthService = {
     register,
+    checkEmail,
     login,
     logout,
     getCurrentCanteenOwner,

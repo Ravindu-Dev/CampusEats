@@ -34,6 +34,13 @@ public class CanteenAuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
 
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestParam("email") String email) {
+        boolean exists = canteenOwnerRepository.existsByEmail(email) || 
+                         canteenRepository.existsByEmail(email);
+        return ResponseEntity.ok(exists);
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> registerCanteen(@Valid @RequestBody CanteenRegistrationRequest request) {
         try {
