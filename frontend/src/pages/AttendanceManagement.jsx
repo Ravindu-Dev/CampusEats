@@ -99,7 +99,7 @@ function AttendanceManagement() {
         <CanteenLayout pageTitle="Attendance Management" pageSubtitle="Log daily work hours and manage attendance">
             {/* Date Selector & Actions */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
+                <input type="date" value={selectedDate} max={new Date().toISOString().split('T')[0]} onChange={e => setSelectedDate(e.target.value)}
                     style={{ ...inputStyle, fontSize: '14px', fontWeight: 600, minWidth: '180px' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {['PRESENT', 'ABSENT', 'LEAVE'].map(type => {
