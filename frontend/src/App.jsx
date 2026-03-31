@@ -41,6 +41,31 @@ import PayrollConfig from './pages/admin/PayrollConfig'
 import PayrollReview from './pages/admin/PayrollReview'
 import notificationService from './services/notificationService'
 import Chatbot from './components/Chatbot'
+import { ThemeProvider, useTheme } from './context/ThemeContext'
+import SnowEffect from './components/theme-effects/SnowEffect'
+import NewYearEffect from './components/theme-effects/NewYearEffect'
+import HeartEffect from './components/theme-effects/HeartEffect'
+import RainEffect from './components/theme-effects/RainEffect'
+import MoonEffect from './components/theme-effects/MoonEffect'
+import HalloweenEffect from './components/theme-effects/HalloweenEffect'
+import SummerEffect from './components/theme-effects/SummerEffect'
+import SinhalaTamilNewYearEffect from './components/theme-effects/SinhalaTamilNewYearEffect'
+
+const ThemeEffectManager = () => {
+    const { currentTheme } = useTheme();
+
+    switch (currentTheme) {
+        case 'christmas': return <SnowEffect />;
+        case 'new-year': return <NewYearEffect />;
+        case 'valentine': return <HeartEffect />;
+        case 'monsoon': return <RainEffect />;
+        case 'ramadan': return <MoonEffect />;
+        case 'halloween': return <HalloweenEffect />;
+        case 'summer': return <SummerEffect />;
+        case 'sinhala-tamil-new-year': return <SinhalaTamilNewYearEffect />;
+        default: return null;
+    }
+};
 
 // In-app notification toast for foreground push notifications
 function NotificationToast({ notification, onClose }) {
@@ -148,62 +173,65 @@ function App() {
     }, []);
 
     return (
-        <AuthProvider>
-            <CartProvider>
-                <Router>
-                    <style>{`
-                        @keyframes slideInRight {
-                            from { transform: translateX(100%); opacity: 0; }
-                            to { transform: translateX(0); opacity: 1; }
-                        }
-                    `}</style>
-                    <NotificationToast
-                        notification={notification}
-                        onClose={() => setNotification(null)}
-                    />
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/menu" element={<Menu />} />
-                        <Route path="/reviews" element={<Reviews />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/about" element={<About />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/signup" element={<Signup />} />
-                        <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
-                        <Route path="/profile" element={<UserProfile />} />
-                        <Route path="/orders" element={<Orders />} />
-                        <Route path="/my-reviews" element={<MyReviews />} />
-                        <Route path="/canteen/login" element={<CanteenLogin />} />
-                        <Route path="/canteen/register" element={<CanteenRegister />} />
-                        <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
-                        <Route path="/canteen/reviews" element={<CanteenReviews />} />
-                        <Route path="/canteen/scan-qr" element={<ScanQRPage />} />
-                        <Route path="/canteen/staff" element={<StaffManagement />} />
-                        <Route path="/canteen/attendance" element={<AttendanceManagement />} />
-                        <Route path="/canteen/payroll" element={<CanteenPayroll />} />
-                        <Route path="/canteen/payroll/:id" element={<PayrollDetail />} />
-                        <Route path="/admin/login" element={<AdminLogin />} />
-                        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                        <Route path="/admin/pending-approvals" element={<PendingApprovals />} />
-                        <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
-                        <Route path="/admin/canteens" element={<AllCanteens />} />
-                        <Route path="/admin/payroll" element={<AdminPayroll />} />
-                        <Route path="/admin/payroll/config" element={<PayrollConfig />} />
-                        <Route path="/admin/payroll/:id" element={<PayrollReview />} />
-                        <Route path="/canteen/menu-management" element={<MenuManagement />} />
-                        <Route path="/canteen/combo-management" element={<ComboManagement />} />
-                        <Route path="/canteen/orders" element={<CanteenOrders />} />
-                        <Route path="/canteen/kitchen" element={<KitchenDashboard />} />
-                        <Route path="/checkout" element={<Checkout />} />
-                        <Route path="/orders/track/:orderId" element={<OrderTracking />} />
-                        <Route path="/privacy" element={<Privacy />} />
-                        <Route path="/terms" element={<Terms />} />
-                    </Routes>
-                    <Cart />
-                    <Chatbot />
-                </Router>
-            </CartProvider>
-        </AuthProvider>
+        <ThemeProvider>
+            <AuthProvider>
+                <CartProvider>
+                    <Router>
+                        <style>{`
+                            @keyframes slideInRight {
+                                from { transform: translateX(100%); opacity: 0; }
+                                to { transform: translateX(0); opacity: 1; }
+                            }
+                        `}</style>
+                        <ThemeEffectManager />
+                        <NotificationToast
+                            notification={notification}
+                            onClose={() => setNotification(null)}
+                        />
+                        <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/menu" element={<Menu />} />
+                            <Route path="/reviews" element={<Reviews />} />
+                            <Route path="/contact" element={<Contact />} />
+                            <Route path="/about" element={<About />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/signup" element={<Signup />} />
+                            <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
+                            <Route path="/profile" element={<UserProfile />} />
+                            <Route path="/orders" element={<Orders />} />
+                            <Route path="/my-reviews" element={<MyReviews />} />
+                            <Route path="/canteen/login" element={<CanteenLogin />} />
+                            <Route path="/canteen/register" element={<CanteenRegister />} />
+                            <Route path="/canteen/dashboard" element={<CanteenDashboard />} />
+                            <Route path="/canteen/reviews" element={<CanteenReviews />} />
+                            <Route path="/canteen/scan-qr" element={<ScanQRPage />} />
+                            <Route path="/canteen/staff" element={<StaffManagement />} />
+                            <Route path="/canteen/attendance" element={<AttendanceManagement />} />
+                            <Route path="/canteen/payroll" element={<CanteenPayroll />} />
+                            <Route path="/canteen/payroll/:id" element={<PayrollDetail />} />
+                            <Route path="/admin/login" element={<AdminLogin />} />
+                            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                            <Route path="/admin/pending-approvals" element={<PendingApprovals />} />
+                            <Route path="/admin/canteen-owners" element={<AllCanteenOwners />} />
+                            <Route path="/admin/canteens" element={<AllCanteens />} />
+                            <Route path="/admin/payroll" element={<AdminPayroll />} />
+                            <Route path="/admin/payroll/config" element={<PayrollConfig />} />
+                            <Route path="/admin/payroll/:id" element={<PayrollReview />} />
+                            <Route path="/canteen/menu-management" element={<MenuManagement />} />
+                            <Route path="/canteen/combo-management" element={<ComboManagement />} />
+                            <Route path="/canteen/orders" element={<CanteenOrders />} />
+                            <Route path="/canteen/kitchen" element={<KitchenDashboard />} />
+                            <Route path="/checkout" element={<Checkout />} />
+                            <Route path="/orders/track/:orderId" element={<OrderTracking />} />
+                            <Route path="/privacy" element={<Privacy />} />
+                            <Route path="/terms" element={<Terms />} />
+                        </Routes>
+                        <Cart />
+                        <Chatbot />
+                    </Router>
+                </CartProvider>
+            </AuthProvider>
+        </ThemeProvider>
     )
 }
 

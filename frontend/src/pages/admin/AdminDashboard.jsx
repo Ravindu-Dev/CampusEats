@@ -6,6 +6,7 @@ import canteenOwnerService from '../../services/canteenOwnerService'
 import canteenAdminService from '../../services/canteenAdminService'
 import AdminLayout from './AdminLayout'
 import AdminAnalytics from './AdminAnalytics'
+import AdminThemeControl from '../../components/admin/AdminThemeControl'
 
 function StatCard({ label, value, icon, color, subtitle }) {
     return (
@@ -181,6 +182,22 @@ function AdminDashboard() {
                 >
                     Platform Analytics
                 </button>
+                <button 
+                    onClick={() => setActiveTab('theme')}
+                    style={{
+                        paddingBottom: '16px',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: activeTab === 'theme' ? '2px solid #f97316' : '2px solid transparent',
+                        color: activeTab === 'theme' ? '#f97316' : 'rgba(255,255,255,0.4)',
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                    }}
+                >
+                    Theme Settings
+                </button>
             </div>
 
             {activeTab === 'overview' ? (
@@ -294,9 +311,13 @@ function AdminDashboard() {
                         ))}
                     </div>
                 </>
-            ) : (
+            ) : activeTab === 'analytics' ? (
                 <div style={{ margin: '0 -24px' }}>
                     <AdminAnalytics />
+                </div>
+            ) : (
+                <div className="animate-fade-in-up">
+                    <AdminThemeControl />
                 </div>
             )}
         </AdminLayout>
