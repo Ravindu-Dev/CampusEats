@@ -3,15 +3,41 @@
 @tailwind utilities;
 
 :root {
+  --primary-color: #ef4444;
+  --bg-primary: #f8fafc;
+  --text-primary: #1a1a1a;
+  --card-bg: rgba(255, 255, 255, 0.85);
   font-family:
     "Inter",
     system-ui,
     -apple-system,
     sans-serif;
-  background-color: #f8fafc;
-  color: #1a1a1a;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.dark {
+  --bg-primary: #0f172a;
+  --text-primary: #f8fafc;
+  --card-bg: rgba(30, 41, 59, 0.8);
+}
+
+/* Theme Specific Overrides */
+.theme-christmas {
+  --primary-color: #D42426;
+  --accent-color: #165B33;
+}
+
+.theme-valentine {
+  --primary-color: #ff4d6d;
+  --accent-color: #c9184a;
+}
+
+.theme-halloween {
+  --primary-color: #ff9a00;
+  --accent-color: #6e3cbc;
 }
 
 body {
@@ -20,11 +46,15 @@ body {
   width: 100%;
   overflow-x: hidden;
   background-image: url("https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop");
-  /* Subtle texture background if needed, or remove for clean look */
   background-size: cover;
   background-attachment: fixed;
   background-blend-mode: overlay;
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: var(--bg-primary);
+}
+
+.dark body {
+  background-color: rgba(15, 23, 42, 0.95);
+  background-image: none; /* Darker theme usually looks better without the light texture */
 }
 
 #root {
