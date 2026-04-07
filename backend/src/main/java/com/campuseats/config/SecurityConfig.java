@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/chatbot/**").permitAll()
+                        .requestMatchers("/api/theme").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/menu-items/**").permitAll()
                         .requestMatchers("/api/canteens/**").permitAll()
                         .requestMatchers("/api/staff/**").permitAll()
