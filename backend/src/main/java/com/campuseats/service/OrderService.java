@@ -383,34 +383,4 @@ public class OrderService {
                 }
         }
 
-        public List<MenuItem> getMostBoughtItems(String userId, int limit) {
-                List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
-                Map<String, Integer> itemCounts = new HashMap<>();
-
-                for (Order order : orders) {
-                        if ("succeeded".equals(order.getPaymentStatus()) || "pending".equals(order.getPaymentStatus())) {
-                                if (order.getOrderItems() != null) {
-                                        for (Order.OrderItem item : order.getOrderItems()) {
-                                                if (item.getMenuItemId() != null) {
-                                                        itemCounts.put(item.getMenuItemId(), itemCounts.getOrDefault(item.getMenuItemId(), 0) + item.getQuantity());
-                                                }
-                                        }
-                                }
-                        }
-                }
-
-                if (itemCounts.isEmpty()) return new ArrayList<>();
-
-                List<String> topItemIds = itemCounts.entrySet().stream()
-                                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                                .limit(limit)
-                                .map(Map.Entry::getKey)
-                                .collect(Collectors.toList());
-
-                List<MenuItem> favorites = new ArrayList<>();
-                for (String id : topItemIds) {
-                        menuItemRepository.findById(id).ifPresent(favorites::add);
-                }
-                return favorites;
-        }
 }
