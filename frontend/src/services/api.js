@@ -5,12 +5,16 @@ const api = axios.create({
     baseURL: '/api',
 });
 
-// Add JWT token to requests
+// Add JWT token to requests (only if not already set by the caller)
 api.interceptors.request.use(
     (config) => {
-        const user = authService.getCurrentUser();
-        if (user && user.token) {
-            config.headers.Authorization = `Bearer ${user.token}`;
+        // If the caller already set an Authorization header (e.g., canteen owner token),
+        // do NOT overwrite it with the user token.
+        if (!config.headers.Authorization) {
+            const user = authService.getCurrentUser();
+            if (user && user.token) {
+                config.headers.Authorization = `Bearer ${user.token}`;
+            }
         }
         return config;
     },
@@ -48,6 +52,16 @@ api.interceptors.response.use(
                 return Promise.reject(error);
             }
 
+            // Check if this request was made with a non-user token (e.g., canteen owner token).
+            // If so, don't try to refresh the user token — just let it fail gracefully.
+            const user = authService.getCurrentUser();
+            const userToken = user?.token;
+            const requestToken = originalRequest.headers?.Authorization?.replace('Bearer ', '');
+            if (requestToken && requestToken !== userToken) {
+                // This was a canteen/admin request with its own token — don't interfere
+                return Promise.reject(error);
+            }
+
             if (isRefreshing) {
                 // Queue this request until the refresh completes
                 return new Promise((resolve, reject) => {
@@ -62,7 +76,6 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const user = authService.getCurrentUser();
                 if (!user || !user.token) {
                     throw new Error('No token available');
                 }
