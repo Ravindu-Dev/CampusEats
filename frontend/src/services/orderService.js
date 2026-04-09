@@ -12,6 +12,12 @@ const orderService = {
         return response.data;
     },
 
+    getMostBoughtItems: async (limit = 4) => {
+        const response = await api.get(`/orders/most-bought?limit=${limit}`);
+        // Handle 204 No Content gracefully
+        return response.status === 204 ? [] : response.data;
+    },
+
     getOrderById: async (orderId) => {
         const response = await api.get(`/orders/${orderId}`);
         return response.data;
