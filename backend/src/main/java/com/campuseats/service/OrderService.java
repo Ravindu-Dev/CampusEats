@@ -25,6 +25,7 @@ public class OrderService {
         private final QRCodeService qrCodeService;
         private final PushNotificationService pushNotificationService;
         private final LoyaltyService loyaltyService;
+        private final EmailService emailService;
 
         public List<OrderResponse> createOrder(String userId, CreateOrderRequest request) {
                 // Get user's cart
@@ -201,7 +202,18 @@ public class OrderService {
                         }
                 }
 
-                orderRepository.save(order);
+                Order savedOrder = orderRepository.save(order);
+
+                // Send order confirmation email after successful payment
+                if ("succeeded".equals(status)) {
+                        try {
+                                emailService.sendOrderConfirmationEmail(savedOrder);
+                        } catch (Exception e) {
+                                // Don't let email failure affect payment processing
+                                org.slf4j.LoggerFactory.getLogger(OrderService.class)
+                                                .error("Failed to send order confirmation email: {}", e.getMessage());
+                        }
+                }
         }
 
         private OrderResponse convertToResponse(Order order) {

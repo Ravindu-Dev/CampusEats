@@ -73,6 +73,12 @@
             <version>24.0.0</version>
         </dependency>
         
+        <!-- Spring Boot Starter Mail (Gmail SMTP for order confirmation emails) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- ZXing for QR Code Generation -->
         <dependency>
             <groupId>com.google.zxing</groupId>
