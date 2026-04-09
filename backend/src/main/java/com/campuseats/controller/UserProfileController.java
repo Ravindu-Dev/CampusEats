@@ -2,6 +2,7 @@ package com.campuseats.controller;
 
 import com.campuseats.model.User;
 import com.campuseats.repository.UserRepository;
+import com.campuseats.repository.MenuItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,7 @@ import java.util.*;
 public class UserProfileController {
 
     private final UserRepository userRepository;
+    private final MenuItemRepository menuItemRepository;
 
     /**
      * GET /api/user/profile — returns the authenticated user's profile
@@ -56,6 +58,44 @@ public class UserProfileController {
 
         Map<String, Object> profile = buildProfileMap(user);
         return ResponseEntity.ok(profile);
+    }
+
+    @PostMapping("/favorites/{itemId}")
+    public ResponseEntity<?> addFavorite(@PathVariable String itemId) {
+        User user = getAuthenticatedUser();
+        com.campuseats.model.MenuItem item = menuItemRepository.findById(itemId).orElse(null);
+        if (item == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Item not found"));
+        }
+        if (user.getFavoriteMenuItemIds() == null) {
+            user.setFavoriteMenuItemIds(new HashSet<>());
+        }
+        user.getFavoriteMenuItemIds().add(itemId);
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Added to favorites"));
+    }
+
+    @DeleteMapping("/favorites/{itemId}")
+    public ResponseEntity<?> removeFavorite(@PathVariable String itemId) {
+        User user = getAuthenticatedUser();
+        if (user.getFavoriteMenuItemIds() != null) {
+            user.getFavoriteMenuItemIds().remove(itemId);
+            userRepository.save(user);
+        }
+        return ResponseEntity.ok(Map.of("message", "Removed from favorites"));
+    }
+
+    @GetMapping("/favorites")
+    public ResponseEntity<?> getFavorites() {
+        User user = getAuthenticatedUser();
+        if (user.getFavoriteMenuItemIds() == null || user.getFavoriteMenuItemIds().isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+        List<com.campuseats.model.MenuItem> favorites = new ArrayList<>();
+        user.getFavoriteMenuItemIds().forEach(id -> {
+            menuItemRepository.findById(id).ifPresent(favorites::add);
+        });
+        return ResponseEntity.ok(favorites);
     }
 
     private User getAuthenticatedUser() {
