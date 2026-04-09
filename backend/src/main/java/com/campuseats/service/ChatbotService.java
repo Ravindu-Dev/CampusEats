@@ -229,7 +229,7 @@ public class ChatbotService {
                 "## Your Personality\n" +
                 "- Friendly, upbeat, and helpful — like a cheerful anime burger character\n" +
                 "- Use emojis naturally but don't overdo it (2-4 per message)\n" +
-                "- Use Markdown formatting: **bold** for emphasis, bullet points for lists\n" +
+                "- Use Markdown formatting: **bold** for emphasis, use `- ` bullet points for listing multiple items so they are easy to scan\n" +
                 "- Add a veg indicator 🟢 (vegetarian) or 🔴 (non-veg) next to food items\n\n" +
                 "## Your Capabilities\n" +
                 "- Answer questions about available menu items, prices, categories, and descriptions\n" +
@@ -376,7 +376,7 @@ public class ChatbotService {
             } else {
                 StringBuilder sb = new StringBuilder("🥗 Here are the **vegetarian/vegan** options:\n\n");
                 for (MenuItem item : vegItems) {
-                    sb.append("🟢 **").append(item.getName()).append("** — Rs. ")
+                    sb.append("- 🟢 **").append(item.getName()).append("** — Rs. ")
                             .append(String.format("%.0f", item.getPrice()));
                     if (item.getCategory() != null) {
                         sb.append(" (").append(item.getCategory()).append(")");
@@ -392,7 +392,7 @@ public class ChatbotService {
             StringBuilder sb = new StringBuilder("🍽️ Here are some available items:\n\n");
             for (MenuItem item : items) {
                 String icon = item.isVegetarian() ? "🟢" : "🔴";
-                sb.append(icon).append(" **").append(item.getName()).append("** — Rs. ")
+                sb.append("- ").append(icon).append(" **").append(item.getName()).append("** — Rs. ")
                         .append(String.format("%.0f", item.getPrice())).append("\n");
             }
             result.put("reply", sb.toString());
@@ -442,7 +442,7 @@ public class ChatbotService {
                         .append(String.format("%.0f", limit)).append("**:\n\n");
                 for (MenuItem item : cheapItems) {
                     String icon = item.isVegetarian() ? "🟢" : "🔴";
-                    sb.append(icon).append(" **").append(item.getName()).append("** — Rs. ")
+                    sb.append("- ").append(icon).append(" **").append(item.getName()).append("** — Rs. ")
                             .append(String.format("%.0f", item.getPrice())).append("\n");
                 }
                 result.put("reply", sb.toString());
