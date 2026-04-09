@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import chatbotService from '../services/chatbotService';
-import { X, Send, Sparkles } from 'lucide-react';
+import { X, Send, Sparkles, Trash2, RotateCcw, Clock } from 'lucide-react';
 
 const BlinkingBot = ({ size = 24, color = "currentColor", strokeWidth = 2 }) => (
     <svg 
@@ -33,19 +33,26 @@ const SUGGESTIONS = [
     "🕐 Canteen hours",
 ];
 
+const formatTime = (date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 export default function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [messages, setMessages] = useState([
         {
             role: 'bot',
-            text: "Hello! 👋 I'm **Eatsbot**, your smart assistant.\n\nAsk me about menus, dietary options, wait times, combo deals, or canteen hours!",
+            text: "Hello! 👋 I'm **Eatsbot**, your smart campus food assistant.\n\nI can help you with:\n- 🍽️ Today's menu & prices\n- 🥗 Dietary options (veg, vegan, halal)\n- ⏱️ Live canteen wait times\n- 🎁 Combo deals & offers\n- 💰 Budget-friendly picks\n\nJust ask me anything!",
+            time: new Date(),
         },
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [hasUnread, setHasUnread] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+    const messagesContainerRef = useRef(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,31 +61,70 @@ export default function Chatbot() {
     useEffect(() => {
         if (isOpen) {
             setTimeout(() => inputRef.current?.focus(), 300);
+            setHasUnread(false);
         }
     }, [isOpen]);
 
+    // Build conversation history for API (exclude initial welcome message)
+    const buildHistory = useCallback(() => {
+        return messages
+            .slice(1) // skip initial welcome
+            .map((msg) => ({
+                role: msg.role === 'bot' ? 'assistant' : 'user',
+                content: msg.text,
+            }));
+    }, [messages]);
+
     const sendMessage = async (text) => {
         const userMsg = text || input.trim();
-        if (!userMsg) return;
+        if (!userMsg || isTyping) return;
 
-        setMessages((prev) => [...prev, { role: 'user', text: userMsg }]);
+        const userMessage = { role: 'user', text: userMsg, time: new Date() };
+        setMessages((prev) => [...prev, userMessage]);
         setInput('');
         setIsTyping(true);
 
         try {
-            const response = await chatbotService.sendMessage(userMsg);
-            setMessages((prev) => [
-                ...prev,
-                { role: 'bot', text: response.reply, data: response.data },
-            ]);
+            const history = buildHistory();
+            const response = await chatbotService.sendMessage(userMsg, history);
+            const botMessage = { role: 'bot', text: response.reply, data: response.data, time: new Date() };
+            setMessages((prev) => [...prev, botMessage]);
+
+            // Mark unread if chat is closed
+            if (!isOpen) setHasUnread(true);
         } catch {
             setMessages((prev) => [
                 ...prev,
-                { role: 'bot', text: "Oops! I'm having trouble reaching the kitchen. Please try again! 🍔" },
+                {
+                    role: 'bot',
+                    text: "Oops! I'm having trouble reaching the kitchen. Please try again! 🍔",
+                    time: new Date(),
+                    isError: true,
+                },
             ]);
         } finally {
             setIsTyping(false);
         }
+    };
+
+    const retryLastMessage = () => {
+        // Find the last user message and retry
+        const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+        if (lastUserMsg) {
+            // Remove the error message first
+            setMessages((prev) => prev.filter((m) => !m.isError));
+            sendMessage(lastUserMsg.text);
+        }
+    };
+
+    const clearChat = () => {
+        setMessages([
+            {
+                role: 'bot',
+                text: "Chat cleared! 🔄 I'm ready for new questions.\n\nWhat would you like to know about campus food? 🍔",
+                time: new Date(),
+            },
+        ]);
     };
 
     const handleKeyDown = (e) => {
@@ -100,6 +146,39 @@ export default function Chatbot() {
         h3: ({ children }) => <div style={{ fontWeight: 600, fontSize: '13.5px', color: '#ef4444', margin: '4px 0 2px' }}>{children}</div>,
         a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#ef4444', textDecoration: 'underline' }}>{children}</a>,
         code: ({ children }) => <code style={{ background: 'rgba(239, 68, 68, 0.15)', padding: '1px 4px', borderRadius: '4px', fontSize: '12px', color: '#ef4444' }}>{children}</code>,
+        hr: () => <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '8px 0' }} />,
+        img: ({ src, alt }) => (
+            <div style={{
+                margin: '8px 0',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            }}>
+                <img
+                    src={src}
+                    alt={alt || 'Food item'}
+                    style={{
+                        width: '100%',
+                        maxHeight: '180px',
+                        objectFit: 'cover',
+                        display: 'block',
+                    }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                {alt && (
+                    <div style={{
+                        padding: '6px 10px',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        fontSize: '11px',
+                        color: '#94a3b8',
+                        fontStyle: 'italic',
+                    }}>
+                        📸 {alt}
+                    </div>
+                )}
+            </div>
+        ),
     };
 
     return (
@@ -134,6 +213,19 @@ export default function Chatbot() {
                     from { opacity: 0; transform: translateY(8px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes shimmer {
+                    0% { background-position: -200px 0; }
+                    100% { background-position: 200px 0; }
+                }
+                @keyframes badgePop {
+                    0% { transform: scale(0); }
+                    50% { transform: scale(1.3); }
+                    100% { transform: scale(1); }
+                }
+                @keyframes pulseRing {
+                    0% { transform: scale(1); opacity: 1; }
+                    100% { transform: scale(1.6); opacity: 0; }
+                }
                 .chatbot-toggle:hover {
                     transform: scale(1.1) !important;
                 }
@@ -150,6 +242,13 @@ export default function Chatbot() {
                     border-color: rgba(220, 38, 38, 0.5) !important;
                     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
                 }
+                .chatbot-clear:hover {
+                    background: rgba(255, 255, 255, 0.1) !important;
+                }
+                .chatbot-retry:hover {
+                    background: rgba(220, 38, 38, 0.25) !important;
+                    border-color: rgba(220, 38, 38, 0.5) !important;
+                }
                 .chatbot-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
@@ -162,6 +261,12 @@ export default function Chatbot() {
                 }
                 .chatbot-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: rgba(220, 38, 38, 0.6);
+                }
+                .chatbot-msg-bubble {
+                    transition: all 0.2s ease;
+                }
+                .chatbot-msg-bubble:hover {
+                    filter: brightness(1.05);
                 }
             `}</style>
 
@@ -221,6 +326,29 @@ export default function Chatbot() {
                         <X size={28} color="#ffffff" />
                     </div>
                 </div>
+
+                {/* Unread notification badge */}
+                {hasUnread && !isOpen && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '-2px',
+                        right: '-2px',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        background: '#10b981',
+                        border: '2px solid #000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        animation: 'badgePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#fff',
+                    }}>
+                        !
+                    </div>
+                )}
             </button>
 
             {/* ── Chat Window ───────────────────────── */}
@@ -231,9 +359,9 @@ export default function Chatbot() {
                         position: 'fixed',
                         bottom: '100px',
                         right: '24px',
-                        width: '380px',
-                        maxWidth: 'calc(100vw - 48px)',
-                        height: '520px',
+                        width: '400px',
+                        maxWidth: 'calc(100vw - 32px)',
+                        height: '560px',
                         maxHeight: 'calc(100vh - 140px)',
                         borderRadius: '20px',
                         overflow: 'hidden',
@@ -243,19 +371,18 @@ export default function Chatbot() {
                         animation: isClosing
                             ? 'chatSlideDown 0.3s forwards cubic-bezier(0.4, 0, 1, 1)'
                             : 'chatSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                        // Glass dark black
-                        background: 'rgba(0, 0, 0, 0.85)',
+                        background: 'rgba(0, 0, 0, 0.88)',
                         backdropFilter: 'blur(24px)',
                         WebkitBackdropFilter: 'blur(24px)',
                         border: '1px solid rgba(255, 255, 255, 0.08)',
-                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6)',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(220, 38, 38, 0.1)',
                     }}
                 >
                     {/* Header */}
                     <div
                         style={{
-                            padding: '16px 20px',
-                            background: 'rgba(0, 0, 0, 0.9)',
+                            padding: '14px 16px 14px 20px',
+                            background: 'linear-gradient(180deg, rgba(220, 38, 38, 0.08) 0%, rgba(0, 0, 0, 0.95) 100%)',
                             borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                             display: 'flex',
                             alignItems: 'center',
@@ -273,11 +400,18 @@ export default function Chatbot() {
                                 background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
                                 boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
                                 flexShrink: 0,
+                                position: 'relative',
                             }}
                         >
                             <BlinkingBot size={22} color="#ffffff" />
+                            {/* Online indicator on avatar */}
+                            <span style={{
+                                position: 'absolute', bottom: '0px', right: '0px',
+                                width: '10px', height: '10px', borderRadius: '50%',
+                                background: '#10b981', border: '2px solid rgba(0,0,0,0.9)',
+                            }} />
                         </div>
-                        <div>
+                        <div style={{ flex: 1 }}>
                             <div
                                 style={{
                                     fontWeight: 700,
@@ -294,30 +428,49 @@ export default function Chatbot() {
                             </div>
                             <div
                                 style={{
-                                    fontSize: '12.5px',
+                                    fontSize: '12px',
                                     color: '#64748b',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '5px',
-                                    marginTop: '2px',
+                                    marginTop: '1px',
                                 }}
                             >
-                                <span
-                                    style={{
-                                        width: '7px',
-                                        height: '7px',
-                                        borderRadius: '50%',
-                                        background: '#10b981',
-                                        display: 'inline-block',
-                                    }}
-                                />{' '}
-                                Online — Ask me anything!
+                                {isTyping ? (
+                                    <span style={{ color: '#10b981' }}>Typing...</span>
+                                ) : (
+                                    'Powered by DeepSeek AI'
+                                )}
                             </div>
                         </div>
+
+                        {/* Clear chat button */}
+                        <button
+                            className="chatbot-clear"
+                            onClick={clearChat}
+                            title="Clear chat"
+                            style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                background: 'transparent',
+                                color: '#64748b',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Trash2 size={16} />
+                        </button>
                     </div>
 
                     {/* Messages */}
                     <div
+                        ref={messagesContainerRef}
                         className="chatbot-scrollbar"
                         style={{
                             flex: 1,
@@ -325,8 +478,8 @@ export default function Chatbot() {
                             padding: '16px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '14px',
-                            background: 'transparent', // Pure black glass message area
+                            gap: '12px',
+                            background: 'transparent',
                         }}
                     >
                         {messages.map((msg, i) => (
@@ -335,7 +488,7 @@ export default function Chatbot() {
                                 style={{
                                     display: 'flex',
                                     justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                    gap: '10px',
+                                    gap: '8px',
                                     animation: 'fadeInMsg 0.3s ease',
                                 }}
                             >
@@ -348,7 +501,9 @@ export default function Chatbot() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                                            background: msg.isError
+                                                ? 'linear-gradient(135deg, #f97316, #ea580c)'
+                                                : 'linear-gradient(135deg, #dc2626, #b91c1c)',
                                             boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)',
                                             flexShrink: 0,
                                             marginTop: '4px',
@@ -357,37 +512,90 @@ export default function Chatbot() {
                                         <BlinkingBot size={15} color="#ffffff" />
                                     </div>
                                 )}
-                                <div
-                                    style={{
-                                        maxWidth: '82%',
-                                        padding: '12px 16px',
-                                        borderRadius:
-                                            msg.role === 'user'
-                                                ? '18px 18px 4px 18px'
-                                                : '18px 18px 18px 4px',
-                                        background:
-                                            msg.role === 'user'
-                                                ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
-                                                : 'rgba(255, 255, 255, 0.06)',
-                                        color: msg.role === 'user' ? '#ffffff' : '#f1f5f9',
-                                        fontSize: '14px',
-                                        lineHeight: 1.5,
-                                        fontFamily: "'Inter', 'Segoe UI', sans-serif",
-                                        border:
-                                            msg.role === 'bot'
-                                                ? '1px solid rgba(255, 255, 255, 0.08)'
-                                                : 'none',
-                                        boxShadow:
-                                            msg.role === 'user'
-                                                ? '0 4px 12px rgba(220, 38, 38, 0.25)'
-                                                : '0 4px 12px rgba(0, 0, 0, 0.1)',
-                                        wordBreak: 'break-word',
-                                    }}
-                                >
-                                    {msg.role === 'bot' ? (
-                                        <ReactMarkdown components={markdownComponents}>{msg.text}</ReactMarkdown>
-                                    ) : (
-                                        msg.text
+                                <div style={{ maxWidth: '82%', display: 'flex', flexDirection: 'column' }}>
+                                    <div
+                                        className="chatbot-msg-bubble"
+                                        style={{
+                                            padding: '12px 16px',
+                                            borderRadius:
+                                                msg.role === 'user'
+                                                    ? '18px 18px 4px 18px'
+                                                    : '18px 18px 18px 4px',
+                                            background:
+                                                msg.isError
+                                                    ? 'rgba(249, 115, 22, 0.12)'
+                                                    : msg.role === 'user'
+                                                        ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                                                        : 'rgba(255, 255, 255, 0.06)',
+                                            color: msg.role === 'user' ? '#ffffff' : '#f1f5f9',
+                                            fontSize: '13.5px',
+                                            lineHeight: 1.55,
+                                            fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                                            border: msg.isError
+                                                ? '1px solid rgba(249, 115, 22, 0.25)'
+                                                : msg.role === 'bot'
+                                                    ? '1px solid rgba(255, 255, 255, 0.08)'
+                                                    : 'none',
+                                            boxShadow:
+                                                msg.role === 'user'
+                                                    ? '0 4px 12px rgba(220, 38, 38, 0.25)'
+                                                    : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                            wordBreak: 'break-word',
+                                        }}
+                                    >
+                                        {msg.role === 'bot' ? (
+                                            <ReactMarkdown components={markdownComponents}>{msg.text}</ReactMarkdown>
+                                        ) : (
+                                            msg.text
+                                        )}
+                                    </div>
+
+                                    {/* Timestamp */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        marginTop: '4px',
+                                        justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                                        paddingLeft: msg.role === 'bot' ? '4px' : 0,
+                                        paddingRight: msg.role === 'user' ? '4px' : 0,
+                                    }}>
+                                        <Clock size={10} color="#475569" />
+                                        <span style={{
+                                            fontSize: '10.5px',
+                                            color: '#475569',
+                                            fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                                        }}>
+                                            {msg.time ? formatTime(msg.time) : ''}
+                                        </span>
+                                    </div>
+
+                                    {/* Retry button on error */}
+                                    {msg.isError && (
+                                        <button
+                                            className="chatbot-retry"
+                                            onClick={retryLastMessage}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                marginTop: '6px',
+                                                padding: '6px 14px',
+                                                borderRadius: '12px',
+                                                border: '1px solid rgba(249, 115, 22, 0.3)',
+                                                background: 'rgba(249, 115, 22, 0.1)',
+                                                color: '#f97316',
+                                                fontSize: '12px',
+                                                fontWeight: 500,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                                                width: 'fit-content',
+                                            }}
+                                        >
+                                            <RotateCcw size={12} />
+                                            Retry
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -395,7 +603,7 @@ export default function Chatbot() {
 
                         {/* Typing indicator */}
                         {isTyping && (
-                            <div style={{ display: 'flex', gap: '10px', animation: 'fadeInMsg 0.3s ease' }}>
+                            <div style={{ display: 'flex', gap: '8px', animation: 'fadeInMsg 0.3s ease' }}>
                                 <div
                                     style={{
                                         width: '28px',
@@ -414,22 +622,30 @@ export default function Chatbot() {
                                 </div>
                                 <div
                                     style={{
-                                        padding: '14px 18px',
+                                        padding: '12px 18px',
                                         borderRadius: '18px 18px 18px 4px',
-                                        background: 'rgba(255, 255, 255, 0.08)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                        background: 'rgba(255, 255, 255, 0.06)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                                         display: 'flex',
-                                        gap: '6px',
+                                        gap: '8px',
                                         alignItems: 'center',
                                     }}
                                 >
+                                    <span style={{
+                                        fontSize: '12px',
+                                        color: '#94a3b8',
+                                        fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                                        fontStyle: 'italic',
+                                    }}>
+                                        Thinking
+                                    </span>
                                     {[0, 1, 2].map((i) => (
                                         <span
                                             key={i}
                                             style={{
-                                                width: '6px',
-                                                height: '6px',
+                                                width: '5px',
+                                                height: '5px',
                                                 borderRadius: '50%',
                                                 background: '#ef4444',
                                                 display: 'inline-block',
@@ -448,10 +664,10 @@ export default function Chatbot() {
                     {messages.length <= 2 && (
                         <div
                             style={{
-                                padding: '0 16px 12px',
+                                padding: '0 16px 10px',
                                 display: 'flex',
                                 flexWrap: 'wrap',
-                                gap: '8px',
+                                gap: '6px',
                                 background: 'transparent',
                             }}
                         >
@@ -461,18 +677,17 @@ export default function Chatbot() {
                                     className="chatbot-suggestion"
                                     onClick={() => sendMessage(s.replace(/^[^\s]+ /, ''))}
                                     style={{
-                                        padding: '6px 14px',
+                                        padding: '6px 12px',
                                         borderRadius: '20px',
-                                        border: '1px solid rgba(220, 38, 38, 0.3)',
-                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        border: '1px solid rgba(220, 38, 38, 0.25)',
+                                        background: 'rgba(220, 38, 38, 0.06)',
                                         color: '#fca5a5',
-                                        fontSize: '12.5px',
+                                        fontSize: '12px',
                                         fontWeight: 500,
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                         whiteSpace: 'nowrap',
-                                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
                                     }}
                                 >
                                     {s}
@@ -484,12 +699,12 @@ export default function Chatbot() {
                     {/* Input Area */}
                     <div
                         style={{
-                            padding: '14px 16px',
+                            padding: '12px 16px',
                             borderTop: '1px solid rgba(255, 255, 255, 0.06)',
                             display: 'flex',
                             gap: '10px',
                             alignItems: 'center',
-                            background: 'rgba(0, 0, 0, 0.9)',
+                            background: 'rgba(0, 0, 0, 0.95)',
                         }}
                     >
                         <input
@@ -499,7 +714,8 @@ export default function Chatbot() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Ask about menus, deals, wait times..."
+                            placeholder={isTyping ? "Eatsbot is thinking..." : "Ask about menus, deals, wait times..."}
+                            disabled={isTyping}
                             style={{
                                 flex: 1,
                                 padding: '12px 16px',
@@ -507,11 +723,12 @@ export default function Chatbot() {
                                 border: '1px solid rgba(255, 255, 255, 0.1)',
                                 background: 'rgba(255, 255, 255, 0.05)',
                                 color: '#ffffff',
-                                fontSize: '14px',
+                                fontSize: '13.5px',
                                 outline: 'none',
                                 fontFamily: "'Inter', 'Segoe UI', sans-serif",
                                 transition: 'all 0.2s ease',
                                 boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.2)',
+                                opacity: isTyping ? 0.6 : 1,
                             }}
                         />
                         <button
@@ -526,8 +743,8 @@ export default function Chatbot() {
                                 background:
                                     input.trim() && !isTyping
                                         ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
-                                        : '#f1f5f9',
-                                color: input.trim() && !isTyping ? '#ffffff' : '#cbd5e1',
+                                        : 'rgba(255, 255, 255, 0.06)',
+                                color: input.trim() && !isTyping ? '#ffffff' : '#475569',
                                 fontSize: '18px',
                                 cursor: input.trim() && !isTyping ? 'pointer' : 'default',
                                 display: 'flex',
@@ -541,9 +758,25 @@ export default function Chatbot() {
                             <Send size={18} />
                         </button>
                     </div>
+
+                    {/* Footer branding */}
+                    <div style={{
+                        padding: '6px 16px 8px',
+                        textAlign: 'center',
+                        background: 'rgba(0, 0, 0, 0.95)',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.03)',
+                    }}>
+                        <span style={{
+                            fontSize: '10px',
+                            color: '#334155',
+                            fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                            letterSpacing: '0.5px',
+                        }}>
+                            CampusEats · Made with ❤️
+                        </span>
+                    </div>
                 </div>
             )}
         </>
     );
 }
-
