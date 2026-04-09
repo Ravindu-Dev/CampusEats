@@ -49,6 +49,16 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
+    @GetMapping("/most-bought")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<com.campuseats.model.MenuItem>> getMostBoughtItems(@RequestParam(defaultValue = "3") int limit) {
+        List<com.campuseats.model.MenuItem> items = orderService.getMostBoughtItems(getCurrentUserId(), limit);
+        if (items.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(items);
+    }
+
     @GetMapping("/{orderId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable("orderId") String orderId) {
