@@ -175,7 +175,7 @@ public class ComboDealService {
                 .collect(Collectors.toList());
     }
 
-    // ── Gemini AI Recommendation Engine ──
+    // ── Recommendation Engine (Gemini AI + Rule-Based Fallback) ──
 
     public List<ComboDealResponse> getRecommendedCombos(String userId) {
         // 1. Get all active combo deals
@@ -198,11 +198,14 @@ public class ComboDealService {
             return Collections.emptyList();
         }
 
-        // 4. If no API key, do NOT show generic fallbacks (only relevant ones allowed)
-        if (geminiRecommendationApiKey == null || geminiRecommendationApiKey.isBlank()
-                || geminiRecommendationApiKey.equals("YOUR_GEMINI_RECOMMENDATION_API_KEY_HERE")) {
-            log.warn("No recommendation API key — returning empty list for relevance.");
-            return Collections.emptyList();
+        // 4. If no API key, use rule-based engine instead of Gemini
+        boolean hasApiKey = geminiRecommendationApiKey != null
+                && !geminiRecommendationApiKey.isBlank()
+                && !geminiRecommendationApiKey.equals("YOUR_GEMINI_RECOMMENDATION_API_KEY_HERE");
+
+        if (!hasApiKey) {
+            log.info("No Gemini API key — using rule-based recommendation engine for user {}", userId);
+            return getRuleBasedRecommendations(userId, activeDeals, recentOrders);
         }
 
         // 5. Build context for Gemini
@@ -215,8 +218,8 @@ public class ComboDealService {
             List<GeminiRecommendation> recommendations = parseGeminiResponse(geminiResponse);
 
             if (recommendations.isEmpty()) {
-                log.debug("Gemini returned no high-confidence recommendations.");
-                return Collections.emptyList();
+                log.debug("Gemini returned no high-confidence recommendations — trying rule-based fallback.");
+                return getRuleBasedRecommendations(userId, activeDeals, recentOrders);
             }
 
             // 7. Map Gemini recommendations to combo responses, filtering by relevance
@@ -238,17 +241,139 @@ public class ComboDealService {
             }
 
             if (result.isEmpty()) {
-                log.debug("No recommendations met the relevance threshold (>= 60).");
-                return Collections.emptyList();
+                log.debug("No Gemini recommendations met relevance threshold — trying rule-based fallback.");
+                return getRuleBasedRecommendations(userId, activeDeals, recentOrders);
             }
 
             log.info("Gemini AI recommended {} relevant combos for user {}", result.size(), userId);
             return result;
 
         } catch (Exception e) {
-            log.error("Gemini recommendation API failed: {}", e.getMessage());
-            return Collections.emptyList(); // No fallback for relevance-only
+            log.error("Gemini recommendation API failed: {} — falling back to rule-based engine", e.getMessage());
+            return getRuleBasedRecommendations(userId, activeDeals, recentOrders);
         }
+    }
+
+    // ── Rule-Based Recommendation Engine ──
+
+    /**
+     * Scores combo deals against the user's recent order history without any external API.
+     *
+     * Scoring (0 – 100):
+     *   • Item overlap  : up to 65 pts  — (matching items / total combo items) × 65
+     *   • Canteen bonus : up to 35 pts  — whether the user has ordered from this canteen this week
+     *
+     * Only combos scoring >= 60 are returned, keeping recommendations relevant.
+     */
+    private List<ComboDealResponse> getRuleBasedRecommendations(
+            String userId, List<ComboDeal> activeDeals, List<Order> recentOrders) {
+
+        // Build normalised sets from order history
+        Set<String> orderedItemNames = new HashSet<>();
+        Set<String> visitedCanteenIds = new HashSet<>();
+        Map<String, Integer> itemFrequency = new HashMap<>();   // item name → total qty ordered
+        Map<String, Double> canteenSpend = new HashMap<>();     // canteen id → total spend
+
+        for (Order order : recentOrders) {
+            for (Order.OrderItem item : order.getOrderItems()) {
+                String normName = item.getName().trim().toLowerCase();
+                orderedItemNames.add(normName);
+                itemFrequency.merge(normName, item.getQuantity(), Integer::sum);
+                visitedCanteenIds.add(item.getCanteenId());
+                canteenSpend.merge(item.getCanteenId(),
+                        item.getPrice() * item.getQuantity(), Double::sum);
+            }
+        }
+
+        List<ComboDealResponse> result = new ArrayList<>();
+
+        for (ComboDeal deal : activeDeals) {
+            List<ComboDeal.ComboItem> comboItems = deal.getItems();
+            if (comboItems == null || comboItems.isEmpty()) continue;
+
+            // ── Item overlap score ──
+            long matchedItems = comboItems.stream()
+                    .filter(ci -> orderedItemNames.contains(ci.getName().trim().toLowerCase()))
+                    .count();
+            double itemScore = ((double) matchedItems / comboItems.size()) * 65.0;
+
+            // ── Canteen familiarity score ──
+            double canteenScore = visitedCanteenIds.contains(deal.getCanteenId()) ? 35.0 : 0.0;
+
+            int totalScore = (int) Math.round(itemScore + canteenScore);
+
+            if (totalScore < 60) continue;
+
+            // ── Generate a reason string ──
+            String reason = buildRuleBasedReason(deal, comboItems, orderedItemNames,
+                    itemFrequency, visitedCanteenIds, matchedItems);
+
+            ComboDealResponse response = convertToResponse(deal, null);
+            response.setRecommended(true);
+            response.setRecommendationReason(reason);
+            result.add(response);
+        }
+
+        // Sort: highest item match first
+        result.sort((a, b) -> {
+            long aMatch = activeDeals.stream()
+                    .filter(d -> d.getId().equals(a.getId())).findFirst()
+                    .map(d -> d.getItems().stream()
+                            .filter(ci -> orderedItemNames.contains(ci.getName().trim().toLowerCase()))
+                            .count()).orElse(0L);
+            long bMatch = activeDeals.stream()
+                    .filter(d -> d.getId().equals(b.getId())).findFirst()
+                    .map(d -> d.getItems().stream()
+                            .filter(ci -> orderedItemNames.contains(ci.getName().trim().toLowerCase()))
+                            .count()).orElse(0L);
+            return Long.compare(bMatch, aMatch);
+        });
+
+        log.info("Rule-based engine recommended {} combos for user {}", result.size(), userId);
+        return result;
+    }
+
+    /**
+     * Builds a short, human-readable recommendation reason (4–7 words) from rule-based signals.
+     */
+    private String buildRuleBasedReason(
+            ComboDeal deal,
+            List<ComboDeal.ComboItem> comboItems,
+            Set<String> orderedItemNames,
+            Map<String, Integer> itemFrequency,
+            Set<String> visitedCanteenIds,
+            long matchedItems) {
+
+        // Find the most-ordered matched item in this combo
+        Optional<ComboDeal.ComboItem> topItem = comboItems.stream()
+                .filter(ci -> orderedItemNames.contains(ci.getName().trim().toLowerCase()))
+                .max(Comparator.comparingInt(
+                        ci -> itemFrequency.getOrDefault(ci.getName().trim().toLowerCase(), 0)));
+
+        boolean isFromFavCanteen = visitedCanteenIds.contains(deal.getCanteenId());
+        boolean allItemsMatch = matchedItems == comboItems.size();
+
+        if (allItemsMatch) {
+            return "Includes all your favourites";
+        }
+
+        if (topItem.isPresent()) {
+            String itemName = topItem.get().getName();
+            // Truncate long names
+            if (itemName.length() > 18) itemName = itemName.substring(0, 16) + "…";
+            if (isFromFavCanteen) {
+                return "Your go-to " + itemName + " combo";
+            }
+            return "Includes your fav " + itemName;
+        }
+
+        if (isFromFavCanteen) {
+            return canteenRepository.findById(deal.getCanteenId())
+                    .map(c -> "Top deal at " + c.getCanteenName())
+                    .orElse("Top deal at your canteen");
+        }
+
+        return "Matches your recent orders";
     }
 
     // ── Gemini API Communication ──
