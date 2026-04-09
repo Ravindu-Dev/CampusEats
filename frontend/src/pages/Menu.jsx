@@ -139,19 +139,34 @@ function Menu() {
                     canteenData.forEach(c => { canteenMap[c.id] = c })
                 }
 
-                const uniqueCanteenIds = [...new Set(itemsData.map(item => item.canteenId).filter(Boolean))]
-                await Promise.all(
-                    uniqueCanteenIds.map(async (canteenId) => {
-                        if (!canteenMap[canteenId]) {
-                            try {
-                                const response = await axios.get(`/api/canteens/${canteenId}`)
-                                canteenMap[canteenId] = response.data
-                            } catch (error) {
-                                canteenMap[canteenId] = { id: canteenId, canteenName: `Canteen ${canteenId.substring(0, 4)}`, status: 'APPROVED', active: true }
+                // If bulk fetch succeeded, use it as the source of truth.
+                // Only do individual lookups if the bulk call itself failed.
+                const bulkFetchSucceeded = canteenData && canteenData.length > 0
+                if (!bulkFetchSucceeded) {
+                    const uniqueCanteenIds = [...new Set(itemsData.map(item => item.canteenId).filter(Boolean))]
+                    await Promise.all(
+                        uniqueCanteenIds.map(async (canteenId) => {
+                            if (!canteenMap[canteenId]) {
+                                try {
+                                    const response = await axios.get(`/api/canteens/${canteenId}`)
+                                    canteenMap[canteenId] = response.data
+                                } catch (error) {
+                                    canteenMap[canteenId] = { id: canteenId, canteenName: `Canteen ${canteenId.substring(0, 4)}`, status: 'APPROVED', active: true }
+                                }
                             }
+                        })
+                    )
+                } else {
+                    // For any menu items whose canteenId isn't in the bulk list,
+                    // create a silent placeholder without making network requests.
+                    const uniqueCanteenIds = [...new Set(itemsData.map(item => item.canteenId).filter(Boolean))]
+                    uniqueCanteenIds.forEach(canteenId => {
+                        if (!canteenMap[canteenId]) {
+                            // active: false hides these from the restaurant filter bar
+                            canteenMap[canteenId] = { id: canteenId, canteenName: `Campus Canteen`, status: 'APPROVED', active: false }
                         }
                     })
-                )
+                }
 
                 setCanteens(canteenMap)
 
@@ -198,6 +213,9 @@ function Menu() {
 
     const filteredItems = menuItems.filter(item => {
         if (isCanteenHidden(item.canteenId)) return false
+        // Exclude items from orphaned/inactive canteens (deleted test canteens)
+        const canteen = canteens[item.canteenId]
+        if (canteen && !canteen.active) return false
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
@@ -480,7 +498,7 @@ function Menu() {
                                 <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${!selectedRestaurant ? 'bg-white/20' : 'bg-white/5'}`}>🍽️</div>
                                 <div className="text-center">
                                     <p className="font-bold text-xs">All Restaurants</p>
-                                    <p className={`text-xs mt-0.5 ${!selectedRestaurant ? 'text-orange-100' : 'text-gray-600'}`}>{menuItems.filter(i => i.available && !isCanteenHidden(i.canteenId)).length} items</p>
+                                    <p className={`text-xs mt-0.5 ${!selectedRestaurant ? 'text-orange-100' : 'text-gray-600'}`}>{menuItems.filter(i => i.available && !isCanteenHidden(i.canteenId) && canteens[i.canteenId]?.active !== false).length} items</p>
                                 </div>
                             </button>
 
