@@ -369,7 +369,7 @@ public class ChatbotService {
             List<MenuItem> vegItems = menuItemRepository.findAll().stream()
                     .filter(MenuItem::isAvailable)
                     .filter(MenuItem::isVegetarian)
-                    .limit(10)
+                    .limit(30)
                     .collect(Collectors.toList());
             if (vegItems.isEmpty()) {
                 result.put("reply", "🥗 No vegetarian/vegan items are listed right now. Check back later or browse the menu! 🍔");
@@ -388,7 +388,7 @@ public class ChatbotService {
         } else if (lower.contains("menu") || lower.contains("food") || lower.contains("eat")
                 || lower.contains("item") || lower.contains("available")) {
             List<MenuItem> items = menuItemRepository.findAll().stream()
-                    .filter(MenuItem::isAvailable).limit(10).collect(Collectors.toList());
+                    .filter(MenuItem::isAvailable).limit(30).collect(Collectors.toList());
             StringBuilder sb = new StringBuilder("🍽️ Here are some available items:\n\n");
             for (MenuItem item : items) {
                 String icon = item.isVegetarian() ? "🟢" : "🔴";
@@ -407,7 +407,7 @@ public class ChatbotService {
             } else {
                 StringBuilder sb = new StringBuilder("🎁 **Active Combo Deals:**\n\n");
                 for (ComboDeal deal : deals) {
-                    sb.append("🔥 **").append(deal.getName()).append("**");
+                    sb.append("- 🔥 **").append(deal.getName()).append("**");
                     if (deal.getDescription() != null) {
                         sb.append(" — ").append(deal.getDescription());
                     }
@@ -433,7 +433,7 @@ public class ChatbotService {
                     .filter(MenuItem::isAvailable)
                     .filter(item -> item.getPrice() <= limit)
                     .sorted(Comparator.comparingDouble(MenuItem::getPrice))
-                    .limit(10)
+                    .limit(30)
                     .collect(Collectors.toList());
             if (cheapItems.isEmpty()) {
                 result.put("reply", "💰 No items found under Rs. " + String.format("%.0f", limit) + " right now. Try a higher budget! 🍔");
@@ -458,7 +458,7 @@ public class ChatbotService {
             } else {
                 StringBuilder sb = new StringBuilder("🕐 **Canteen Hours:**\n\n");
                 for (Canteen c : canteens) {
-                    sb.append("🏪 **").append(c.getCanteenName()).append("**\n");
+                    sb.append("- 🏪 **").append(c.getCanteenName()).append("**\n");
                     sb.append("   ⏰ ").append(c.getOpeningTime() != null ? c.getOpeningTime() : "N/A")
                             .append(" – ").append(c.getClosingTime() != null ? c.getClosingTime() : "N/A").append("\n");
                     if (c.getOperatingDays() != null && !c.getOperatingDays().isEmpty()) {
@@ -479,7 +479,7 @@ public class ChatbotService {
             for (CanteenQueueStatusDTO q : queue) {
                 String emoji = q.getQueueStatus().equals("HIGH") ? "🔴" :
                         q.getQueueStatus().equals("MEDIUM") ? "🟡" : "🟢";
-                sb.append(emoji).append(" **").append(q.getCanteenName()).append("** — ")
+                sb.append("- ").append(emoji).append(" **").append(q.getCanteenName()).append("** — ")
                         .append(q.getPendingOrderCount()).append(" pending\n");
             }
             result.put("reply", sb.toString());
@@ -494,12 +494,33 @@ public class ChatbotService {
                             + "🕐 **\"Canteen hours\"** — Opening & closing times\n\n"
                             + "Just type your question!");
         } else {
-            result.put("reply",
-                    "🤔 I'm not sure I understood that. Try asking about:\n\n"
-                            + "• **Menu** / food items\n• **Vegan** / vegetarian options\n"
-                            + "• Which canteen is least **busy**\n• **Combo deals** & offers\n"
-                            + "• Items under a **budget**\n• Canteen **hours**\n\n"
-                            + "Or type **help**! 🍔");
+            // If no commands matched, try searching menu items by name/description
+            List<MenuItem> matchingItems = menuItemRepository.findAll().stream()
+                    .filter(MenuItem::isAvailable)
+                    .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(lower)) ||
+                            (item.getDescription() != null && item.getDescription().toLowerCase().contains(lower)))
+                    .limit(10)
+                    .collect(Collectors.toList());
+
+            if (!matchingItems.isEmpty()) {
+                StringBuilder sb = new StringBuilder("🔍 Here's what I found for **\"" + lower + "\"**:\n\n");
+                for (MenuItem item : matchingItems) {
+                    String icon = item.isVegetarian() ? "🟢" : "🔴";
+                    sb.append("- ").append(icon).append(" **").append(item.getName()).append("** — Rs. ")
+                            .append(String.format("%.0f", item.getPrice())).append("\n");
+                    if (item.getDescription() != null && !item.getDescription().isEmpty()) {
+                        sb.append("   _").append(item.getDescription()).append("_\n\n");
+                    }
+                }
+                result.put("reply", sb.toString());
+            } else {
+                result.put("reply",
+                        "🤔 I'm not sure I understood that. Try asking about:\n\n"
+                                + "• **Menu** / food items\n• **Vegan** / vegetarian options\n"
+                                + "• Which canteen is least **busy**\n• **Combo deals** & offers\n"
+                                + "• Items under a **budget**\n• Canteen **hours**\n\n"
+                                + "Or type **help**! 🍔");
+            }
         }
 
         result.put("data", Collections.emptyList());
