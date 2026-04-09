@@ -154,6 +154,14 @@ public class CanteenService {
         return canteenRepository.findAll();
     }
 
+    public void syncCanteenStatus(String canteenId, String ownerApprovalStatus) {
+        canteenRepository.findById(canteenId).ifPresent(canteen -> {
+            canteen.setStatus(ownerApprovalStatus);
+            canteen.setActive("APPROVED".equals(ownerApprovalStatus));
+            canteenRepository.save(canteen);
+        });
+    }
+
     public List<CanteenQueueStatusDTO> getAllCanteenQueueStatus() {
         // Get all active canteens
         List<Canteen> canteens = canteenRepository.findAll().stream()

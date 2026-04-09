@@ -1,7 +1,9 @@
 package com.campuseats.service;
 
+import com.campuseats.model.Canteen;
 import com.campuseats.model.CanteenOwner;
 import com.campuseats.repository.CanteenOwnerRepository;
+import com.campuseats.repository.CanteenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import java.util.List;
 public class CanteenOwnerService {
 
     private final CanteenOwnerRepository canteenOwnerRepository;
+    private final CanteenRepository canteenRepository;
 
     public CanteenOwner createCanteenOwner(CanteenOwner owner) {
         return canteenOwnerRepository.save(owner);
@@ -55,6 +58,15 @@ public class CanteenOwnerService {
         owner.setApprovedAt(LocalDateTime.now());
         owner.setEnabled(true);
 
+        // Also update the linked Canteen's status to APPROVED
+        if (owner.getCanteenId() != null) {
+            canteenRepository.findById(owner.getCanteenId()).ifPresent(canteen -> {
+                canteen.setStatus("APPROVED");
+                canteen.setActive(true);
+                canteenRepository.save(canteen);
+            });
+        }
+
         return canteenOwnerRepository.save(owner);
     }
 
@@ -67,6 +79,15 @@ public class CanteenOwnerService {
         owner.setApprovedAt(LocalDateTime.now());
         owner.setRejectionReason(reason);
         owner.setEnabled(false);
+
+        // Also update the linked Canteen's status to REJECTED
+        if (owner.getCanteenId() != null) {
+            canteenRepository.findById(owner.getCanteenId()).ifPresent(canteen -> {
+                canteen.setStatus("REJECTED");
+                canteen.setActive(false);
+                canteenRepository.save(canteen);
+            });
+        }
 
         return canteenOwnerRepository.save(owner);
     }

@@ -182,6 +182,27 @@ public class AdminController {
         }
     }
 
+    /**
+     * One-time repair: syncs every Canteen's status field to match its owner's
+     * approvalStatus. Fixes canteens that were approved before this bug was fixed.
+     */
+    @PostMapping("/sync-canteen-statuses")
+    public ResponseEntity<?> syncCanteenStatuses() {
+        try {
+            List<CanteenOwner> allOwners = canteenOwnerService.getAllCanteenOwners();
+            int synced = 0;
+            for (CanteenOwner owner : allOwners) {
+                if (owner.getCanteenId() == null) continue;
+                canteenService.syncCanteenStatus(owner.getCanteenId(), owner.getApprovalStatus());
+                synced++;
+            }
+            return ResponseEntity.ok("Synced " + synced + " canteen(s).");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String authHeader) {
         try {
