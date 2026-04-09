@@ -9,6 +9,8 @@ import { AuthContext } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import orderService from '../services/orderService'
+import userService from '../services/userService'
 
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages']
 
@@ -55,6 +57,8 @@ function Menu() {
     const [showLoyaltyBadge, setShowLoyaltyBadge] = useState(false)
     const [selectedCombo, setSelectedCombo] = useState(null)
     const [selectedItem, setSelectedItem] = useState(null)
+    const [showFavoritesModal, setShowFavoritesModal] = useState(false)
+    const [favoriteItems, setFavoriteItems] = useState([])
     const [currentPage, setCurrentPage] = useState(1)
     const ITEMS_PER_PAGE = 12
     const menuGridRef = useRef(null)
@@ -73,6 +77,27 @@ function Menu() {
                 left: ref.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount),
                 behavior: 'smooth'
             })
+        }
+    }
+
+    const handleToggleFavorite = async (item, e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        const isFav = favoriteItems.some(f => f.id === item.id)
+        if (isFav) {
+            setFavoriteItems(prev => prev.filter(f => f.id !== item.id))
+            try {
+                await userService.removeFavorite(item.id)
+            } catch {
+                setFavoriteItems(prev => [...prev, item])
+            }
+        } else {
+            setFavoriteItems(prev => [...prev, item])
+            try {
+                await userService.addFavorite(item.id)
+            } catch {
+                setFavoriteItems(prev => prev.filter(f => f.id !== item.id))
+            }
         }
     }
 
@@ -181,12 +206,14 @@ function Menu() {
                 // Fetch personalized recommendations and loyalty (if logged in)
                 if (user) {
                     try {
-                        const [recCombos, loyalty] = await Promise.all([
+                        const [recCombos, loyalty, favorites] = await Promise.all([
                             comboDealService.getRecommendedCombos(),
-                            loyaltyService.getAccount()
+                            loyaltyService.getAccount(),
+                            userService.getFavorites().catch(() => [])
                         ])
                         setRecommendedCombos(recCombos)
                         setLoyaltyAccount(loyalty)
+                        setFavoriteItems(favorites || [])
                     } catch (err) {
                         console.error('Error fetching recommendations/loyalty:', err)
                     }
@@ -216,6 +243,11 @@ function Menu() {
         // Exclude items from orphaned/inactive canteens (deleted test canteens)
         const canteen = canteens[item.canteenId]
         if (canteen && !canteen.active) return false
+
+        if (selectedCategory === 'Your Favorite') {
+            return favoriteItems.some(f => f.id === item.id);
+        }
+
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory
@@ -557,6 +589,12 @@ function Menu() {
                                     {cat}
                                 </button>
                             ))}
+                            {user && favoriteItems.some(f => !isCanteenHidden(f.canteenId) && canteens[f.canteenId]?.active !== false) && (
+                                <button onClick={() => setShowFavoritesModal(true)}
+                                    className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200 bg-white/[0.05] border border-white/[0.08] text-orange-400 hover:border-orange-500/30 hover:text-orange-300 hover:shadow-[0_0_15px_rgba(234,88,12,0.2)]`}>
+                                    ❤️ Your Favorites
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -607,6 +645,18 @@ function Menu() {
                                             <div className="absolute top-3 left-3 bg-green-500/90 backdrop-blur-sm p-1.5 rounded-lg">
                                                 <div className="border border-white p-0.5 rounded-sm"><div className="w-2 h-2 bg-white rounded-full" /></div>
                                             </div>
+                                        )}
+                                        {user && (
+                                            <button 
+                                                onClick={(e) => handleToggleFavorite(item, e)}
+                                                className={`absolute top-4 left-4 p-2.5 rounded-full backdrop-blur-lg border transition-all duration-300 z-10 hover:scale-110 group/heart ${favoriteItems.some(f => f.id === item.id) ? 'bg-black/50 border-red-500/30' : 'bg-black/30 border-white/10 hover:bg-black/50'}`}
+                                            >
+                                                {favoriteItems.some(f => f.id === item.id) ? (
+                                                    <svg className="w-4 h-4 text-red-500 fill-current drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                                ) : (
+                                                    <svg className="w-4 h-4 text-white/50 group-hover/heart:text-white transition-colors" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                                )}
+                                            </button>
                                         )}
                                         <div className="absolute bottom-3 left-3">
                                             <span className="px-2.5 py-1 bg-black/50 backdrop-blur-md rounded-lg text-[10px] font-bold text-white/80 uppercase tracking-widest border border-white/10">{item.category}</span>
@@ -837,6 +887,66 @@ function Menu() {
                                     {addingCombo[selectedCombo.id] ? 'Synchronizing with Cart…' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>Activate Special Offer</>}
                                 </span>
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Favorites Modal */}
+            {showFavoritesModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pb-20">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl transition-opacity animate-in fade-in duration-500" onClick={() => setShowFavoritesModal(false)} />
+                    <div className="relative w-full max-w-4xl max-h-[85vh] bg-[#050505] border border-white/10 rounded-3xl overflow-hidden shadow-[0_0_80px_rgba(234,88,12,0.15),inset_0_0_0_1px_rgba(255,255,255,0.05)] flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-300">
+                        
+                        {/* Title Section */}
+                        <div className="w-full md:w-1/3 p-10 bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border-b md:border-b-0 md:border-r border-white/5 flex flex-col justify-center relative overflow-hidden group/left">
+                            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-orange-600/20 rounded-full blur-[80px] pointer-events-none group-hover/left:bg-orange-600/30 transition-all duration-1000" />
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-50" />
+                            <div className="relative z-10">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full mb-6 shadow-inner">
+                                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                                    <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Personalized</span>
+                                </div>
+                                <h2 className="text-5xl font-black text-white mb-5 tracking-tighter leading-[0.9]">Your<br/><span className="text-transparent bg-clip-text bg-gradient-to-br from-orange-400 via-red-500 to-pink-500">Favorites</span></h2>
+                                <p className="text-gray-400 text-sm leading-relaxed font-medium">Your most frequently ordered campus meals, curated just for you. Ready to be devoured again!</p>
+                            </div>
+                        </div>
+
+                        {/* Items Section */}
+                        <div className="w-full md:w-2/3 p-8 bg-[#0a0a0a]/50 backdrop-blur-3xl overflow-y-auto custom-scrollbar max-h-[60vh] md:max-h-full relative">
+                            <button onClick={() => setShowFavoritesModal(false)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-full text-white/50 hover:text-white transition-all z-20 hover:rotate-90 duration-300">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4">
+                                {favoriteItems.filter(f => !isCanteenHidden(f.canteenId) && canteens[f.canteenId]?.active !== false).map(item => {
+                                    const canteen = canteens[item.canteenId];
+                                    return (
+                                        <div key={item.id} className="bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/[0.05] hover:border-orange-500/30 rounded-2xl p-4 flex flex-col group transition-all duration-500 hover:shadow-[0_10px_30px_rgba(234,88,12,0.1)] relative overflow-hidden cursor-pointer" onClick={() => {setShowFavoritesModal(false); setSelectedItem(item);}}>
+                                            <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:via-orange-500/30 transition-all duration-500" />
+                                            <div className="h-36 rounded-xl mb-4 overflow-hidden bg-white/5 relative ring-1 ring-white/10 ring-inset">
+                                                {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" /> : <div className="w-full h-full flex items-center justify-center text-4xl">🍽️</div>}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                                <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-white/90">
+                                                    <div className="p-1 bg-white/10 backdrop-blur-md rounded-md border border-white/10 text-orange-400">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                                    </div>
+                                                    <span className="text-[10px] font-bold tracking-wide truncate max-w-[120px]">{canteen?.canteenName || 'Campus Canteen'}</span>
+                                                </div>
+                                            </div>
+                                            <h3 className="font-black text-white text-base leading-tight mb-2 line-clamp-1 group-hover:text-orange-400 transition-colors">{item.name}</h3>
+                                            <div className="flex items-center justify-between mb-4 mt-auto">
+                                                <div className="flex items-end gap-1">
+                                                    <span className="text-gray-500 text-[10px] font-bold">Rs.</span>
+                                                    <span className="text-lg text-orange-400 font-black leading-none">{item.price}</span>
+                                                </div>
+                                            </div>
+                                            <button onClick={(e) => {e.stopPropagation(); handleAddToCart(item);}} disabled={addingToCart[item.id]} className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${addingToCart[item.id] ? 'bg-white/5 border-white/5 text-gray-500 cursor-not-allowed' : 'bg-white/5 border-white/10 text-white hover:bg-orange-500 hover:border-orange-400 hover:shadow-[0_0_20px_rgba(234,88,12,0.4)]'}`}>
+                                                {addingToCart[item.id] ? <><div className="w-3.5 h-3.5 border-2 border-gray-600 border-t-gray-400 rounded-full animate-spin" />Adding...</> : <>+ Add to Cart</>}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>

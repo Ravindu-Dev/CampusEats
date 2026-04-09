@@ -7,6 +7,8 @@ import com.campuseats.model.CartItem;
 import com.campuseats.model.Order;
 import com.campuseats.repository.CartRepository;
 import com.campuseats.repository.OrderRepository;
+import com.campuseats.model.MenuItem;
+import com.campuseats.repository.MenuItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,7 @@ public class OrderService {
         private final PushNotificationService pushNotificationService;
         private final LoyaltyService loyaltyService;
         private final EmailService emailService;
+        private final MenuItemRepository menuItemRepository;
 
         public List<OrderResponse> createOrder(String userId, CreateOrderRequest request) {
                 // Get user's cart
@@ -379,4 +382,5 @@ public class OrderService {
                                 return false;
                 }
         }
+
 }
