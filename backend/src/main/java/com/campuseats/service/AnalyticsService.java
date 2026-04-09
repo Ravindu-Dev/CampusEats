@@ -30,6 +30,7 @@ public class AnalyticsService {
         long totalOrders = getTotalOrders(startDate, canteenId);
         double totalRevenue = getTotalRevenue(startDate, canteenId);
         long activeUsers = getActiveUsers(startDate, canteenId);
+        double averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
 
         List<RevenueTrendDTO> revenueTrend = getRevenueTrend(startDate, canteenId);
         List<UserGrowthDTO> userGrowth = (canteenId == null || canteenId.isEmpty())
@@ -38,7 +39,16 @@ public class AnalyticsService {
                 ? getTopCanteens(startDate) : new ArrayList<>();
 
         CanteenPerformanceDTO topCanteen = topCanteens.isEmpty() ? null : topCanteens.get(0);
-        List<String> insights = generateInsights(totalRevenue, totalOrders, topCanteen, canteenId);
+        List<String> insights = generateInsights(totalRevenue, totalOrders, averageOrderValue, topCanteen, canteenId);
+
+        // ── New metrics ────────────────────────────────────────────────────────
+        List<HourlyDistributionDTO> hourlyDistribution = getHourlyDistribution(startDate, canteenId);
+        List<ProductPerformanceDTO> topSellingProducts = getTopSellingProducts(startDate, canteenId);
+        ProductPerformanceDTO bestSeller = topSellingProducts.isEmpty() ? null : topSellingProducts.get(0);
+        List<CanteenSatisfactionDTO> canteenSatisfaction = getCanteenSatisfaction(startDate, canteenId);
+        FulfillmentStatsDTO fulfillmentStats = getFulfillmentStats(startDate, canteenId);
+        double repeatOrderRate = getRepeatOrderRate(startDate, canteenId);
+        long atRiskCustomers = getAtRiskCustomers(startDate, canteenId);
 
         return AnalyticsOverviewResponse.builder()
                 .totalRevenue(totalRevenue)
@@ -49,6 +59,13 @@ public class AnalyticsService {
                 .userGrowth(userGrowth)
                 .topCanteens(topCanteens)
                 .insights(insights)
+                .hourlyDistribution(hourlyDistribution)
+                .topSellingProducts(topSellingProducts)
+                .bestSeller(bestSeller)
+                .canteenSatisfaction(canteenSatisfaction)
+                .fulfillmentStats(fulfillmentStats)
+                .repeatOrderRate(repeatOrderRate)
+                .atRiskCustomers(atRiskCustomers)
                 .build();
     }
 
@@ -56,7 +73,6 @@ public class AnalyticsService {
 
     private double getTotalRevenue(LocalDateTime startDate, String canteenId) {
         if (canteenId != null && !canteenId.isEmpty()) {
-            // Canteen-specific: unwind items, keep only that canteen's items, sum price*qty
             List<AggregationOperation> ops = new ArrayList<>();
             ops.add(Aggregation.match(Criteria.where("createdAt").gte(startDate)
                     .and("paymentStatus").is("succeeded")));
@@ -73,7 +89,6 @@ public class AnalyticsService {
                     ? ((Number) result.get("totalRevenue")).doubleValue() : 0.0;
         }
 
-        // Platform-wide: one totalAmount per order, no double-counting
         Aggregation agg = Aggregation.newAggregation(
                 Aggregation.match(Criteria.where("createdAt").gte(startDate)
                         .and("paymentStatus").is("succeeded")),
@@ -88,7 +103,7 @@ public class AnalyticsService {
     // ── Order count ──────────────────────────────────────────────────────────
 
     private long getTotalOrders(LocalDateTime startDate, String canteenId) {
-        Criteria criteria = Criteria.where("createdAt").gte(startDate);
+        Criteria criteria = Criteria.where("createdAt").gte(startDate).and("paymentStatus").is("succeeded");
         if (canteenId != null && !canteenId.isEmpty()) {
             criteria.and("orderItems.canteenId").is(canteenId);
         }
@@ -98,7 +113,7 @@ public class AnalyticsService {
     // ── Active users ─────────────────────────────────────────────────────────
 
     private long getActiveUsers(LocalDateTime startDate, String canteenId) {
-        Criteria criteria = Criteria.where("createdAt").gte(startDate);
+        Criteria criteria = Criteria.where("createdAt").gte(startDate).and("paymentStatus").is("succeeded");
         if (canteenId != null && !canteenId.isEmpty()) {
             criteria.and("orderItems.canteenId").is(canteenId);
         }
@@ -115,7 +130,6 @@ public class AnalyticsService {
                     .and("paymentStatus").is("succeeded")));
             ops.add(Aggregation.unwind("orderItems"));
             ops.add(Aggregation.match(Criteria.where("orderItems.canteenId").is(canteenId)));
-            // project date + itemRevenue
             ops.add(context -> new Document("$project", new Document()
                     .append("date", new Document("$dateToString",
                             new Document("format", "%Y-%m-%d").append("date", "$createdAt")))
@@ -165,16 +179,11 @@ public class AnalyticsService {
 
     // ── Top canteens ─────────────────────────────────────────────────────────
 
-    /**
-     * Uses item-level price×qty to avoid double-counting totalAmount across
-     * multiple items in the same order.
-     */
     private List<CanteenPerformanceDTO> getTopCanteens(LocalDateTime startDate) {
         List<AggregationOperation> ops = new ArrayList<>();
         ops.add(Aggregation.match(Criteria.where("createdAt").gte(startDate)
                 .and("paymentStatus").is("succeeded")));
         ops.add(Aggregation.unwind("orderItems"));
-        // project canteenId, canteenName, itemRevenue
         ops.add(context -> new Document("$project", new Document()
                 .append("canteenId", "$orderItems.canteenId")
                 .append("canteenName", "$orderItems.canteenName")
@@ -196,19 +205,171 @@ public class AnalyticsService {
                 .getMappedResults();
     }
 
+    // ── Peak Hours ────────────────────────────────────────────────────────────
+
+    private List<HourlyDistributionDTO> getHourlyDistribution(LocalDateTime startDate, String canteenId) {
+        List<AggregationOperation> ops = new ArrayList<>();
+        Criteria criteria = Criteria.where("createdAt").gte(startDate);
+        if (canteenId != null && !canteenId.isEmpty()) {
+            criteria.and("orderItems.canteenId").is(canteenId);
+        }
+        ops.add(Aggregation.match(criteria));
+        ops.add(context -> new Document("$project", new Document()
+                .append("hour", new Document("$hour", "$createdAt"))));
+        ops.add(context -> new Document("$group", new Document("_id", "$hour")
+                .append("orderCount", new Document("$sum", 1))));
+        ops.add(context -> new Document("$project", new Document("_id", 0)
+                .append("hour", "$_id")
+                .append("orderCount", 1)));
+        ops.add(Aggregation.sort(Sort.Direction.ASC, "hour"));
+        return mongoTemplate.aggregate(Aggregation.newAggregation(ops), "orders", HourlyDistributionDTO.class)
+                .getMappedResults();
+    }
+
+    // ── Top Selling Products ───────────────────────────────────────────────────
+
+    private List<ProductPerformanceDTO> getTopSellingProducts(LocalDateTime startDate, String canteenId) {
+        List<AggregationOperation> ops = new ArrayList<>();
+        ops.add(Aggregation.match(Criteria.where("createdAt").gte(startDate)
+                .and("paymentStatus").is("succeeded")));
+        ops.add(Aggregation.unwind("orderItems"));
+        if (canteenId != null && !canteenId.isEmpty()) {
+            ops.add(Aggregation.match(Criteria.where("orderItems.canteenId").is(canteenId)));
+        }
+        ops.add(context -> new Document("$group", new Document("_id", "$orderItems.name")
+                .append("totalSold", new Document("$sum", "$orderItems.quantity"))
+                .append("revenue", new Document("$sum",
+                        new Document("$multiply", Arrays.asList("$orderItems.price", "$orderItems.quantity"))))
+                .append("canteenName", new Document("$first", "$orderItems.canteenName"))));
+        ops.add(context -> new Document("$project", new Document("_id", 0)
+                .append("productName", "$_id")
+                .append("totalSold", 1)
+                .append("revenue", 1)
+                .append("canteenName", 1)));
+        ops.add(Aggregation.sort(Sort.Direction.DESC, "totalSold"));
+        ops.add(Aggregation.limit(10));
+        return mongoTemplate.aggregate(Aggregation.newAggregation(ops), "orders", ProductPerformanceDTO.class)
+                .getMappedResults();
+    }
+
+    // ── Canteen Satisfaction (from reviews) ───────────────────────────────────
+
+    private List<CanteenSatisfactionDTO> getCanteenSatisfaction(LocalDateTime startDate, String canteenId) {
+        List<AggregationOperation> ops = new ArrayList<>();
+        Criteria criteria = Criteria.where("createdAt").gte(startDate);
+        if (canteenId != null && !canteenId.isEmpty()) {
+            criteria.and("canteenId").is(canteenId);
+        }
+        ops.add(Aggregation.match(criteria));
+        ops.add(context -> new Document("$group", new Document("_id", "$canteenId")
+                .append("canteenName", new Document("$first", "$canteenName"))
+                .append("averageRating", new Document("$avg", "$rating"))
+                .append("reviewCount", new Document("$sum", 1))));
+        ops.add(context -> new Document("$project", new Document("_id", 0)
+                .append("canteenId", "$_id")
+                .append("canteenName", 1)
+                .append("averageRating", new Document("$round", Arrays.asList("$averageRating", 1)))
+                .append("reviewCount", 1)));
+        ops.add(Aggregation.sort(Sort.Direction.DESC, "averageRating"));
+        return mongoTemplate.aggregate(Aggregation.newAggregation(ops), "reviews", CanteenSatisfactionDTO.class)
+                .getMappedResults();
+    }
+
+    // ── Fulfillment & Kitchen Efficiency ──────────────────────────────────────
+
+    private FulfillmentStatsDTO getFulfillmentStats(LocalDateTime startDate, String canteenId) {
+        List<AggregationOperation> ops = new ArrayList<>();
+        Criteria criteria = Criteria.where("createdAt").gte(startDate)
+                .and("readyAt").exists(true)
+                .and("completedAt").exists(true);
+        if (canteenId != null && !canteenId.isEmpty()) {
+            criteria.and("orderItems.canteenId").is(canteenId);
+        }
+        ops.add(Aggregation.match(criteria));
+        ops.add(context -> new Document("$project", new Document()
+                .append("waitMinutes", new Document("$divide", Arrays.asList(
+                        new Document("$subtract", Arrays.asList("$readyAt", "$createdAt")), 60000)))
+                .append("pickupDelayMinutes", new Document("$divide", Arrays.asList(
+                        new Document("$subtract", Arrays.asList("$completedAt", "$readyAt")), 60000)))));
+        ops.add(context -> new Document("$group", new Document("_id", null)
+                .append("avgWaitMinutes", new Document("$avg", "$waitMinutes"))
+                .append("avgPickupDelayMinutes", new Document("$avg", "$pickupDelayMinutes"))
+                .append("sampleCount", new Document("$sum", 1))));
+
+        AggregationResults<Document> results = mongoTemplate.aggregate(
+                Aggregation.newAggregation(ops), "orders", Document.class);
+        Document doc = results.getUniqueMappedResult();
+        if (doc == null) {
+            return FulfillmentStatsDTO.builder()
+                    .avgWaitMinutes(0.0).avgPickupDelayMinutes(0.0).sampleCount(0L).build();
+        }
+        return FulfillmentStatsDTO.builder()
+                .avgWaitMinutes(doc.get("avgWaitMinutes") != null
+                        ? Math.round(((Number) doc.get("avgWaitMinutes")).doubleValue() * 10.0) / 10.0 : 0.0)
+                .avgPickupDelayMinutes(doc.get("avgPickupDelayMinutes") != null
+                        ? Math.round(((Number) doc.get("avgPickupDelayMinutes")).doubleValue() * 10.0) / 10.0 : 0.0)
+                .sampleCount(doc.get("sampleCount") != null
+                        ? ((Number) doc.get("sampleCount")).longValue() : 0L)
+                .build();
+    }
+
+    // ── Customer Retention: Repeat Order Rate ─────────────────────────────────
+
+    private double getRepeatOrderRate(LocalDateTime startDate, String canteenId) {
+        Criteria criteria = Criteria.where("createdAt").gte(startDate);
+        if (canteenId != null && !canteenId.isEmpty()) {
+            criteria.and("orderItems.canteenId").is(canteenId);
+        }
+        List<AggregationOperation> ops = new ArrayList<>();
+        ops.add(Aggregation.match(criteria));
+        ops.add(context -> new Document("$group", new Document("_id", "$userId")
+                .append("orderCount", new Document("$sum", 1))));
+        ops.add(context -> new Document("$group", new Document("_id", null)
+                .append("totalUsers", new Document("$sum", 1))
+                .append("repeatUsers", new Document("$sum",
+                        new Document("$cond", Arrays.asList(
+                                new Document("$gt", Arrays.asList("$orderCount", 1)), 1, 0))))));
+        AggregationResults<Document> results = mongoTemplate.aggregate(
+                Aggregation.newAggregation(ops), "orders", Document.class);
+        Document doc = results.getUniqueMappedResult();
+        if (doc == null) return 0.0;
+        long total = ((Number) doc.get("totalUsers")).longValue();
+        long repeat = ((Number) doc.get("repeatUsers")).longValue();
+        return total == 0 ? 0.0 : Math.round((repeat * 100.0 / total) * 10.0) / 10.0;
+    }
+
+    // ── Customer Retention: At-Risk Customers ─────────────────────────────────
+
+    private long getAtRiskCustomers(LocalDateTime startDate, String canteenId) {
+        LocalDateTime tenDaysAgo = LocalDateTime.now().minusDays(10);
+        Criteria allCriteria = Criteria.where("createdAt").gte(startDate);
+        if (canteenId != null && !canteenId.isEmpty()) {
+            allCriteria.and("orderItems.canteenId").is(canteenId);
+        }
+        List<String> allUsers = mongoTemplate.findDistinct(
+                new Query(allCriteria), "userId", Order.class, String.class);
+        Criteria recentCriteria = Criteria.where("createdAt").gte(tenDaysAgo);
+        if (canteenId != null && !canteenId.isEmpty()) {
+            recentCriteria.and("orderItems.canteenId").is(canteenId);
+        }
+        List<String> recentUsers = mongoTemplate.findDistinct(
+                new Query(recentCriteria), "userId", Order.class, String.class);
+        return allUsers.stream().filter(u -> !recentUsers.contains(u)).count();
+    }
+
     // ── Insights ─────────────────────────────────────────────────────────────
 
-    private List<String> generateInsights(double totalRevenue, long totalOrders,
+    private List<String> generateInsights(double totalRevenue, long totalOrders, double averageOrderValue,
                                           CanteenPerformanceDTO topCanteen, String canteenId) {
         List<String> insights = new ArrayList<>();
         insights.add(String.format("Total revenue for the selected period is Rs. %.2f.", totalRevenue));
         insights.add(String.format("A total of %d orders were placed.", totalOrders));
+        if (totalOrders > 0) {
+            insights.add(String.format("Average order value is Rs. %.2f.", averageOrderValue));
+        }
         if ((canteenId == null || canteenId.isEmpty()) && topCanteen != null) {
             insights.add(String.format("Top performing canteen: %s with Rs. %.2f in revenue.",
                     topCanteen.getCanteenName(), topCanteen.getRevenue()));
-        }
-        if (totalOrders > 0) {
-            insights.add(String.format("Average order value is Rs. %.2f.", totalRevenue / totalOrders));
         }
         return insights;
     }
