@@ -103,6 +103,24 @@ const TOOLTIP_PROPS = {
   cursor: { fill: 'rgba(255,255,255,0.04)' },
 };
 
+// ── Image to Base64 helper ───────────────────────────────────────────────
+const getImageDataURL = (url) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = (e) => reject(e);
+    img.src = url;
+  });
+};
+
 
 // ──────────────────────────────────────────────────────────────────────────────
 //  MAIN COMPONENT
@@ -137,6 +155,14 @@ const AdminAnalytics = () => {
     if (!data) return;
     setExporting(true);
     try {
+      // ── Load logo ──
+      let logoData = null;
+      try {
+        logoData = await getImageDataURL('/logo.png');
+      } catch (e) {
+        console.warn('Logo could not be loaded for PDF export', e);
+      }
+
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const W = pdf.internal.pageSize.getWidth();
       const H = pdf.internal.pageSize.getHeight();
@@ -187,6 +213,11 @@ const AdminAnalytics = () => {
       const pageHeader = (title) => {
         fc(...BK); pdf.rect(0, 0, W, 22, 'F');
         fc(...OR); pdf.rect(0, 0, 4, 22, 'F');
+        
+        if (logoData) {
+          pdf.addImage(logoData, 'PNG', W - m - 12, 5, 12, 12);
+        }
+
         tc(...WH); bold(11.5); pdf.text(title, m + 4, 10);
         tc(...TL); norm(7.5); pdf.text(`${periodLabel}  ·  ${canteenLabel}`, m + 4, 17);
       };
@@ -244,10 +275,17 @@ const AdminAnalytics = () => {
       fc(...OR); pdf.rect(0, 0, W, 3, 'F');
 
       // Logo box
-      fc(...OR); pdf.roundedRect(W / 2 - 20, 48, 40, 40, 5, 5, 'F');
-      fc(200, 70, 0); pdf.roundedRect(W / 2 - 16, 72, 32, 12, 2, 2, 'F');
-      tc(...WH); bold(20); pdf.text('CE', W / 2, 67, { align: 'center' });
-      bold(8);   pdf.text('CAMPUS EATS', W / 2, 80, { align: 'center' });
+      if (logoData) {
+        // Actual Logo
+        pdf.addImage(logoData, 'PNG', W / 2 - 18, 48, 36, 36);
+        tc(...WH); bold(8); pdf.text('CAMPUS EATS', W / 2, 90, { align: 'center' });
+      } else {
+        // Fallback design
+        fc(...OR); pdf.roundedRect(W / 2 - 20, 48, 40, 40, 5, 5, 'F');
+        fc(200, 70, 0); pdf.roundedRect(W / 2 - 16, 72, 32, 12, 2, 2, 'F');
+        tc(...WH); bold(20); pdf.text('CE', W / 2, 67, { align: 'center' });
+        bold(8);   pdf.text('CAMPUS EATS', W / 2, 80, { align: 'center' });
+      }
 
       // Title
       tc(...WH); bold(34); pdf.text('Analytics Report', W / 2, 110, { align: 'center' });
