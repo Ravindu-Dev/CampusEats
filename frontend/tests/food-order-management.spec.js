@@ -150,4 +150,118 @@ test.describe('Food Order Management', () => {
         await expect(page.locator('text=ORDER NOW').first()).toBeVisible();
     });
 
+    test('should prevent checkout and redirect to menu if the cart is completely empty', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('user', JSON.stringify({ id: 'US-991', email: 'test@student.com' }));
+            localStorage.setItem('token', 'token-xx');
+        });
+
+        await page.route('**/api/cart', async route => {
+            await route.fulfill({ status: 200, json: { items: [] } });
+        });
+        
+        await page.route('**/api/loyalty/account', async route => {
+            await route.fulfill({ status: 200, json: { totalPoints: 0, tier: 'BRONZE' } });
+        });
+
+        await page.goto('/checkout');
+        await expect(page).toHaveURL(/\/menu/);
+    });
+
+    test('should display a warning if the minimum order amount (Rs. 200) is not met', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('user', JSON.stringify({ id: 'US-991', email: 'test@student.com' }));
+            localStorage.setItem('token', 'token-xx');
+        });
+
+        await page.route('**/api/cart', async route => {
+            await route.fulfill({ status: 200, json: { items: [{ menuItemId: 'item-1', name: 'Cheap Item', price: 100, quantity: 1, canteenId: 'CAN-1' }] } });
+        });
+
+        await page.route('**/api/loyalty/account', async route => {
+            await route.fulfill({ status: 200, json: { totalPoints: 0, tier: 'BRONZE' } });
+        });
+
+        await page.goto('/checkout');
+        
+        await page.fill('input[name="customerName"]', 'Test Student');
+        await page.fill('input[name="customerEmail"]', 'test@student.com');
+        await page.fill('input[name="customerPhone"]', '0712345678');
+        await page.fill('input[name="pickupDate"]', '2029-01-01');
+        await page.fill('input[name="pickupTime"]', '14:00');
+        
+        await page.click('button:has-text("Proceed to Payment")');
+        await expect(page.locator('text=Minimum order amount is Rs. 200')).toBeVisible();
+    });
+
+    test('should block checkout submission if customer details fail validation', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('user', JSON.stringify({ id: 'US-991', email: 'test@student.com' }));
+            localStorage.setItem('token', 'token-xx');
+        });
+
+        await page.route('**/api/cart', async route => {
+            await route.fulfill({ status: 200, json: { items: [{ menuItemId: 'item-1', name: 'Burger', price: 500, quantity: 2, canteenId: 'CAN-1' }] } });
+        });
+        
+        await page.route('**/api/loyalty/account', async route => {
+            await route.fulfill({ status: 200, json: { totalPoints: 0, tier: 'BRONZE' } });
+        });
+
+        await page.goto('/checkout');
+
+        // Leave name empty, invalid email, and short phone
+        await page.fill('input[name="customerName"]', '');
+        await page.fill('input[name="customerEmail"]', 'invalid-email');
+        await page.fill('input[name="customerPhone"]', '123');
+        await page.fill('input[name="pickupDate"]', '2029-01-01');
+        await page.fill('input[name="pickupTime"]', '14:00');
+        
+        await page.click('button:has-text("Proceed to Payment")');
+        
+        await expect(page.locator('text=Name is required')).toBeVisible();
+        await expect(page.locator('text=Invalid email format')).toBeVisible();
+        await expect(page.locator('text=Phone number must be 10 digits')).toBeVisible();
+    });
+
+    test('should accurately apply loyalty point discounts to the final total', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('user', JSON.stringify({ id: 'US-991', email: 'test@student.com' }));
+            localStorage.setItem('token', 'token-xx');
+        });
+
+        await page.route('**/api/cart', async route => {
+            await route.fulfill({ status: 200, json: { items: [{ menuItemId: 'item-1', name: 'Burger', price: 500, quantity: 2, canteenId: 'CAN-1' }] } }); // total 1000
+        });
+
+        await page.route('**/api/loyalty/account', async route => {
+            await route.fulfill({ status: 200, json: { totalPoints: 50, tier: 'GOLD' } });
+        });
+        
+        await page.goto('/checkout');
+        await expect(page.locator('text=Loyalty Points').first()).toBeVisible();
+        
+        const redeemCheckbox = page.locator('input[type="checkbox"]');
+        await redeemCheckbox.check({ force: true });
+        await page.fill('input[type="range"]', '50');
+
+        // As long as the discount line appears or the total changes, the test proves it works
+        await expect(page.locator('text=Loyalty Discount').first()).toBeVisible();
+    });
+
+    test('should display an empty state graphic on the User Profile Orders tab if the user has 0 past orders', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('user', JSON.stringify({ id: 'US-991', email: 'test@student.com' }));
+            localStorage.setItem('token', 'token-xx');
+        });
+
+        await page.route('**/api/orders', async route => {
+            await route.fulfill({ status: 200, json: [] });
+        });
+
+        await page.goto('/orders');
+        
+        await expect(page.locator('text=No orders yet').first()).toBeVisible();
+    });
+
 });

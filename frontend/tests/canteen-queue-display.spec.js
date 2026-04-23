@@ -57,4 +57,39 @@ test.describe('Unique Features: Canteen Queue Display', () => {
         await expect(lowQueueLocator).toContainText('✓');
     });
 
+    test('should gracefully handle Canteen Queue API failures without breaking the public menu page rendering', async ({ page }) => {
+        await page.route('**/api/menu-items*', async route => {
+            await route.fulfill({ status: 200, json: [] });
+        });
+        await page.route('**/api/combo-deals*', async route => {
+             await route.fulfill({ status: 200, json: [] });
+        });
+
+        await page.route('**/api/canteens', async route => {
+            await route.fulfill({
+                status: 200, 
+                json: [
+                    { id: 'CAN-HIGH', canteenName: 'Burger Joint', status: 'APPROVED', active: true }
+                ]
+            });
+        });
+
+        // Simulating a backend failure for the queue API
+        await page.route('**/api/canteens/queue-status*', async route => {
+            await route.fulfill({
+                status: 500, 
+                json: { error: 'Internal Server Error' }
+            });
+        });
+
+        await page.goto('/menu');
+
+        // Page should still fully load restaurants despite queue status crashing
+        await expect(page.locator('h2:has-text("Browse by Restaurant")')).toBeVisible();
+        await expect(page.locator('text=Burger Joint')).toBeVisible();
+        
+        // Badges should NOT be visible
+        await expect(page.locator('text=High Queue')).not.toBeVisible();
+    });
+
 });

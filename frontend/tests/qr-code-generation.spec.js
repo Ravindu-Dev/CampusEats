@@ -99,4 +99,53 @@ test.describe('Unique Features: QR Generation and Scanning', () => {
         await expect(page.locator('text=handed off successfully')).toBeVisible();
     });
 
+    test('should display a clear "Verification Failed" error if the Canteen Staff scans a fake or invalid QR code', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('canteenOwner', JSON.stringify({ id: 'O-123', ownerName: 'Admin', canteenId: 'CAN-1', token: 'fake-jwt' }));
+        });
+
+        await page.route('**/api/orders/verify-qr*', async route => {
+            await route.fulfill({
+                status: 400,
+                json: { error: 'Invalid QR code or order not found' }
+            });
+        });
+
+        await page.goto('/canteen/scan-qr');
+        await page.fill('input#orderId', 'INVALID-QR-DATA');
+        await page.click('button:has-text("Verify Order")');
+
+        await expect(page.locator('text=Verification Failed')).toBeVisible();
+        await expect(page.locator('text=Invalid QR code or order not found')).toBeVisible();
+    });
+
+    test('should block the "Confirm Handoff" button if the scanned order is only in PREPARING status instead of READY', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('canteenOwner', JSON.stringify({ id: 'O-123', ownerName: 'Admin', canteenId: 'CAN-1', token: 'fake-jwt' }));
+        });
+
+        await page.route('**/api/orders/verify-qr*', async route => {
+            await route.fulfill({
+                status: 200,
+                json: {
+                    id: 'ORD-PREP-55',
+                    customerName: 'Test Student',
+                    customerPhone: '0712345678',
+                    orderStatus: 'PREPARING', // NOT READY
+                    totalAmount: 300,
+                    paymentStatus: 'SUCCEEDED',
+                    orderItems: [{ name: 'Espresso', quantity: 1, price: 300 }]
+                }
+            });
+        });
+
+        await page.goto('/canteen/scan-qr');
+        await page.fill('input#orderId', 'ORD-PREP-55');
+        await page.click('button:has-text("Verify Order")');
+
+        await expect(page.locator('text=Order Not Ready')).toBeVisible();
+        
+        const confirmButton = page.locator('button:has-text("Confirm Handoff")');
+        await expect(confirmButton).toBeDisabled();
+    });
 });
