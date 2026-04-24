@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npx playwright test",
+    "test:order": "npx playwright test order-status-management",
+    "test:attendance": "npx playwright test attendance-management",
+    "test:chatbot": "npx playwright test eatsbot-chatbot",
+    "test:report": "npx playwright show-report"
   },
   "dependencies": {
     "@emailjs/browser": "^4.3.3",

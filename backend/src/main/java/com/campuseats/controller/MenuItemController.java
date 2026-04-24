@@ -28,13 +28,19 @@ public class MenuItemController {
     }
 
     @PostMapping
-    public ResponseEntity<MenuItem> createMenuItem(@RequestBody MenuItem menuItem) {
+    public ResponseEntity<?> createMenuItem(@RequestBody MenuItem menuItem) {
+        if (menuItem.getPrice() != null && menuItem.getPrice() < 0) {
+            return ResponseEntity.badRequest().body("Price cannot be negative");
+        }
         menuItem.setLastUpdated(LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CREATED).body(menuItemRepository.save(menuItem));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateMenuItem(@PathVariable("id") String id, @RequestBody MenuItem menuItemDetails) {
+        if (menuItemDetails.getPrice() != null && menuItemDetails.getPrice() < 0) {
+            return ResponseEntity.badRequest().body("Price cannot be negative");
+        }
         return menuItemRepository.findById(id)
                 .map(menuItem -> {
                     menuItem.setName(menuItemDetails.getName());
